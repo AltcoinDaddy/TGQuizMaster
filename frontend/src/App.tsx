@@ -27,25 +27,31 @@ function App() {
   const [showOnboarding, setShowOnboarding] = useState<boolean | null>(null);
 
   useEffect(() => {
-    const completed = localStorage.getItem('onboarding_completed');
-    setShowOnboarding(!completed);
+    try {
+      console.log('App initialization started');
+      const completed = localStorage.getItem('onboarding_completed');
+      setShowOnboarding(!completed);
 
-    // Force dark mode for premium aesthetic
-    document.documentElement.classList.add('dark');
+      // Force dark mode
+      document.documentElement.classList.add('dark');
 
-    // Initialize Telegram User
-    const tg = (window as any).Telegram?.WebApp;
-    if (tg) {
-      tg.ready();
-      tg.expand();
+      // Initialize Telegram
+      const tg = (window as any).Telegram?.WebApp;
+      if (tg) {
+        tg.ready();
+        tg.expand();
 
-      if (tg.initDataUnsafe?.user?.id) {
-        useAppStore.getState().setUser({
-          telegramId: tg.initDataUnsafe.user.id.toString(),
-          username: tg.initDataUnsafe.user.username || 'Anon_Player',
-          firstName: tg.initDataUnsafe.user.first_name
-        });
+        if (tg.initDataUnsafe?.user?.id) {
+          useAppStore.getState().setUser({
+            telegramId: tg.initDataUnsafe.user.id.toString(),
+            username: tg.initDataUnsafe.user.username || 'Anon_Player',
+            firstName: tg.initDataUnsafe.user.first_name
+          });
+        }
       }
+    } catch (e) {
+      console.error('App init error:', e);
+      setShowOnboarding(false);
     }
   }, []);
 

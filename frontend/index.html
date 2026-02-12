@@ -11,6 +11,16 @@
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
     rel="stylesheet" />
+  <script>
+    window.onerror = function (msg, url, lineNo, columnNo, error) {
+      alert("JS Error: " + msg + "\nAt: " + lineNo + ":" + columnNo);
+      return false;
+    };
+    window.addEventListener('unhandledrejection', function (event) {
+      alert("Promise Error: " + event.reason);
+    });
+    console.log("HTML head scripts loaded");
+  </script>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
@@ -102,7 +112,13 @@
 </head>
 
 <body>
-  <div id="root"></div>
+  <div id="root">
+    <div id="pre-loader"
+      class="flex flex-col items-center justify-center min-h-screen bg-[#102216] text-primary space-y-4">
+      <div class="animate-pulse font-black italic text-2xl">CORE BOOTING...</div>
+      <div class="text-[10px] opacity-40">If this stays blank, check JS logs</div>
+    </div>
+  </div>
   <script type="module" src="/src/main.tsx"></script>
 </body>
 
