@@ -11,8 +11,8 @@ if (!token) {
     const bot = new TelegramBot(token, { polling: true });
     const starsService = new StarsService(bot);
 
-    // WebApp URL for the Menu Button (optional fallback)
-    const webAppUrl = process.env.VITE_API_URL || 'https://your-mini-app-url.com';
+    // WebApp URL for the Menu Button (uses env or hardcoded fallback)
+    const webAppUrl = process.env.VITE_API_URL || 'https://tg-quiz-master.vercel.app';
 
     console.log('Telegram Bot initializing...');
 
