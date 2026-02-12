@@ -3,7 +3,7 @@ import http from 'http';
 import { Server } from 'socket.io';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import { v4 as uuidv4 } from 'uuid';
+import crypto from 'crypto';
 import { supabase } from './config/supabase';
 
 import { GameManager } from './utils/GameManager';
@@ -127,7 +127,7 @@ io.on('connection', (socket) => {
             });
 
             if (!roomId) {
-                roomId = uuidv4();
+                roomId = crypto.randomUUID();
                 // Determine prize pool based on entry fee or default
                 const pool = feeAmount * 5 * 0.9; // Simple pool logic
                 rooms.set(roomId, new GameManager(roomId, io, feeCurrency === 'TON' ? 'ton' : 'stars', pool));
