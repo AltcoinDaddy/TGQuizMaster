@@ -42,7 +42,7 @@ if (!token) {
                         { text: '🎮 Play Now', web_app: { url: webAppUrl } }
                     ],
                     [
-                        { text: '📣 Join Community', url: 'https://t.me/tgquizmaster_community' },
+                        { text: '📣 Join Community', url: 'https://t.me/TGQuizMaster' },
                         { text: '❓ How to Play', callback_data: 'how_to_play' }
                     ]
                 ]
