@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>TGQuizMaster</title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap"
+    rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+    rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "primary": "#0df259",
+            "background-light": "#f5f8f6",
+            "background-dark": "#102216",
+            "accent-gold": "#FFD700",
+            "accent-purple": "#A855F7",
+          },
+          fontFamily: {
+            "display": ["Plus Jakarta Sans"]
+          },
+          borderRadius: { "DEFAULT": "1rem", "lg": "2rem", "xl": "3rem", "full": "9999px" },
+        },
+      },
+    }
+  </script>
+
+  <style>
+    body {
+      -webkit-tap-highlight-color: transparent;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      color: #fff;
+      background-color: #102216;
+      margin: 0;
+      overflow-x: hidden;
+    }
+
+    .bg-mesh {
+      background: radial-gradient(circle at top right, rgba(13, 242, 89, 0.12), transparent 40%),
+        radial-gradient(circle at bottom left, rgba(13, 242, 89, 0.08), transparent 40%);
+    }
+
+    .glass-card {
+      background: rgba(255, 255, 255, 0.03);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 2rem;
+    }
+
+    .glass-card-primary {
+      background: rgba(13, 242, 89, 0.05);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(13, 242, 89, 0.1);
+      border-radius: 2rem;
+    }
+
+    .primary-button {
+      background-color: #0df259;
+      color: #102216;
+      font-weight: 900;
+      padding: 1rem 2rem;
+      border-radius: 1rem;
+      box-shadow: 0 10px 20px rgba(13, 242, 89, 0.2);
+      transition: all 0.2s;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-style: italic;
+      border: none;
+      cursor: pointer;
+    }
+
+    .primary-button:active {
+      transform: scale(0.95);
+    }
+
+    /* Detailed design elements from Audit */
+    .bonus-glow {
+      box-shadow: 0 0 20px rgba(168, 85, 247, 0.4), 0 0 40px rgba(255, 215, 0, 0.2);
+    }
+
+    .day-active-glow {
+      box-shadow: 0 0 15px rgba(13, 242, 89, 0.5);
+    }
+
+    .particle {
+      position: absolute;
+      pointer-events: none;
+      opacity: 0.4;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="root"></div>
+  <script type="module" src="/src/main.tsx"></script>
+</body>
+
+</html>
