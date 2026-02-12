@@ -38,11 +38,8 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
             setCurrentStep(currentStep + 1);
         } else {
             localStorage.setItem('onboarding_completed', 'true');
-            if (onComplete) {
-                onComplete();
-            } else {
-                navigate('/');
-            }
+            if (onComplete) onComplete();
+            navigate('/');
         }
     };
 
