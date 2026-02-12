@@ -81,4 +81,23 @@ if (!token) {
             bot.sendMessage(chatId, "📖 **How to Play TGQuizMaster**\n\n1. Launch the Mini App\n2. Join a Paid or Free tournament\n3. Answer questions as fast as possible\n4. Top 3 scorers win the prize pool!\n\nUse power-ups like 50/50 and Time Freeze to get an edge! ⚡️");
         }
     });
+
+    // Admin Command: Set Menu Button
+    bot.onText(/\/setmenu/, async (msg) => {
+        const chatId = msg.chat.id;
+        try {
+            await (bot as any).setChatMenuButton({
+                chat_id: chatId,
+                menu_button: {
+                    type: 'web_app',
+                    text: '🎮 Play',
+                    web_app: { url: webAppUrl }
+                }
+            });
+            bot.sendMessage(chatId, `✅ **Menu Button Updated!**\n\nYour menu button now points to: ${webAppUrl}`);
+        } catch (error: any) {
+            console.error('Failed to set menu button:', error.message);
+            bot.sendMessage(chatId, `⚠️ Failed to update menu button: ${error.message}`);
+        }
+    });
 }

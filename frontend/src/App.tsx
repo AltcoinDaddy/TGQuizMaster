@@ -35,16 +35,27 @@ function App() {
 
     // Initialize Telegram User
     const tg = (window as any).Telegram?.WebApp;
-    if (tg?.initDataUnsafe?.user?.id) {
-      useAppStore.getState().setUser({
-        telegramId: tg.initDataUnsafe.user.id.toString(),
-        username: tg.initDataUnsafe.user.username || 'Anon_Player',
-        firstName: tg.initDataUnsafe.user.first_name
-      });
+    if (tg) {
+      tg.ready();
+      tg.expand();
+
+      if (tg.initDataUnsafe?.user?.id) {
+        useAppStore.getState().setUser({
+          telegramId: tg.initDataUnsafe.user.id.toString(),
+          username: tg.initDataUnsafe.user.username || 'Anon_Player',
+          firstName: tg.initDataUnsafe.user.first_name
+        });
+      }
     }
   }, []);
 
-  if (showOnboarding === null) return null;
+  if (showOnboarding === null) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-[#102216]">
+        <div className="animate-pulse text-primary font-black italic">LOADING...</div>
+      </div>
+    );
+  }
 
   return (
     <Router>
