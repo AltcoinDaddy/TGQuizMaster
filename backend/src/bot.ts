@@ -14,7 +14,21 @@ if (!token) {
     // WebApp URL for the Menu Button (optional fallback)
     const webAppUrl = process.env.VITE_API_URL || 'https://your-mini-app-url.com';
 
-    console.log('Telegram Bot started...');
+    console.log('Telegram Bot initializing...');
+
+    // Polling Error Handling
+    bot.on('polling_error', (error) => {
+        console.error('Bot Polling Error:', error.message);
+        if (error.message.includes('409 Conflict')) {
+            console.error('CRITICAL: Another instance of this bot is already running. Please terminate other processes.');
+        }
+    });
+
+    bot.on('error', (error) => {
+        console.error('General Bot Error:', error.message);
+    });
+
+    console.log('Telegram Bot started and listening for commands.');
 
     // /start command
     bot.onText(/\/start/, (msg) => {
