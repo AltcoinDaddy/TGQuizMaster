@@ -12,6 +12,9 @@ export const Header: React.FC = () => {
         ? `${userFriendlyAddress.slice(0, 4)}...${userFriendlyAddress.slice(-4)}`
         : '';
 
+    // Calculate level based on XP (every 1000 XP is 1 level)
+    const currentLevel = Math.floor((user.xp || 0) / 1000) + 1;
+
     const handleWalletClick = () => {
         if (isConnected) {
             tonConnectUI.disconnect();
@@ -31,7 +34,7 @@ export const Header: React.FC = () => {
                             src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`}
                         />
                         <div className="absolute -bottom-1 -right-1 bg-primary w-4 h-4 rounded-full border-2 border-background-dark flex items-center justify-center">
-                            <span className="text-[8px] text-background-dark font-bold">LV{user.level}</span>
+                            <span className="text-[8px] text-background-dark font-bold">LV{currentLevel}</span>
                         </div>
                     </div>
                     <div>

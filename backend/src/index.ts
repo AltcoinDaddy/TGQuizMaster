@@ -172,6 +172,46 @@ io.on('connection', (socket) => {
         }
     });
 
+    socket.on('sync_profile', async (data) => {
+        const { telegramId, username } = data;
+        const userId = telegramId ? parseInt(telegramId) : 0;
+        if (!userId) return;
+
+        try {
+            let { data: user, error: fetchError } = await supabase
+                .from('users')
+                .select('*')
+                .eq('telegram_id', userId)
+                .single();
+
+            if (fetchError && fetchError.code === 'PGRST116') {
+                // Not found, create with defaults
+                const { data: newUser, error: createError } = await supabase
+                    .from('users')
+                    .insert({
+                        telegram_id: userId,
+                        username: username || 'Anon_Player',
+                        balance_stars: 1000,
+                        balance_ton: 5.0
+                    })
+                    .select()
+                    .single();
+                if (createError) throw createError;
+                user = newUser;
+            } else if (fetchError) throw fetchError;
+
+            socket.emit('profile_synced', {
+                stars: user.balance_stars,
+                ton: user.balance_ton,
+                xp: user.stats_xp || 0,
+                wins: user.stats_wins || 0,
+                totalGames: user.stats_total_games || 0
+            });
+        } catch (error) {
+            console.error('Sync Profile Error:', error);
+        }
+    });
+
     socket.on('disconnect', () => {
         console.log('User disconnected:', socket.id);
     });

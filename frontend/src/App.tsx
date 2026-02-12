@@ -1,4 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { socket } from './utils/socket';
 import { useState, useEffect } from 'react';
 import { Home } from './components/screens/Home';
 import { QuizRoom } from './components/screens/QuizRoom';
@@ -41,14 +42,32 @@ function App() {
         tg.ready();
         tg.expand();
 
-        if (tg.initDataUnsafe?.user?.id) {
+        const user = tg.initDataUnsafe?.user;
+        if (user?.id) {
+          const telegramId = user.id.toString();
+          const username = user.username || 'Anon_Player';
+
           useAppStore.getState().setUser({
-            telegramId: tg.initDataUnsafe.user.id.toString(),
-            username: tg.initDataUnsafe.user.username || 'Anon_Player',
-            firstName: tg.initDataUnsafe.user.first_name
+            telegramId,
+            username,
+            firstName: user.first_name
           });
+
+          // Connect Socket and Sync Profile
+          socket.connect();
+          socket.emit('sync_profile', { telegramId, username });
         }
       }
+
+      // Socket Listeners
+      socket.on('profile_synced', (data) => {
+        console.log('Profile synced with backend:', data);
+        useAppStore.getState().syncFromBackend(data);
+      });
+
+      return () => {
+        socket.off('profile_synced');
+      };
     } catch (e) {
       console.error('App init error:', e);
       setShowOnboarding(false);

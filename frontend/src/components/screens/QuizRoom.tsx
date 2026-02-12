@@ -3,10 +3,8 @@ import { useLocation } from 'react-router-dom';
 import { MainLayout } from '../layout/MainLayout';
 import { GlassCard } from '../ui/GlassCard';
 import { PowerUp } from '../ui/PowerUp';
-import { io } from 'socket.io-client';
+import { socket } from '../../utils/socket';
 import { useAppStore } from '../../store/useAppStore';
-
-const socket = io(import.meta.env.VITE_API_URL || 'http://localhost:3001');
 
 export const QuizRoom: React.FC = () => {
     const { user } = useAppStore();

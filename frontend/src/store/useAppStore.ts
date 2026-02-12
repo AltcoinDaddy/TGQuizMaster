@@ -4,7 +4,9 @@ interface UserState {
     telegramId: string;
     username: string;
     firstName?: string;
-    level: number;
+    xp: number;
+    wins: number;
+    totalGames: number;
     isPro: boolean;
     stars: number;
     tonBalance: number;
@@ -18,16 +20,19 @@ interface AppStore {
     setWalletConnected: (connected: boolean) => void;
     updateStars: (amount: number) => void;
     updateTON: (amount: number) => void;
+    syncFromBackend: (data: any) => void;
 }
 
 export const useAppStore = create<AppStore>((set) => ({
     user: {
         telegramId: "123456789", // Default for dev
         username: "@Alex_Quiz",
-        level: 5,
+        xp: 0,
+        wins: 0,
+        totalGames: 0,
         isPro: true,
-        stars: 1240,
-        tonBalance: 5.50,
+        stars: 0,
+        tonBalance: 0,
         inventory: [],
         walletConnected: false,
     },
@@ -39,4 +44,15 @@ export const useAppStore = create<AppStore>((set) => ({
         set((state) => ({ user: { ...state.user, stars: state.user.stars + amount } })),
     updateTON: (amount) =>
         set((state) => ({ user: { ...state.user, tonBalance: state.user.tonBalance + amount } })),
+    syncFromBackend: (data) =>
+        set((state) => ({
+            user: {
+                ...state.user,
+                stars: data.stars,
+                tonBalance: data.ton,
+                xp: data.xp,
+                wins: data.wins,
+                totalGames: data.totalGames
+            }
+        })),
 }));

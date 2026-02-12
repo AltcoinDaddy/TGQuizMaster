@@ -3,9 +3,11 @@ import { MainLayout } from '../layout/MainLayout';
 import { GlassCard } from '../ui/GlassCard';
 import { Wallet, Settings, ChevronRight, LogOut, Award, PlayCircle, Zap, HelpCircle, ExternalLink, ShieldCheck } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useAppStore } from '../../store/useAppStore';
 
 export const Profile: React.FC = () => {
     const navigate = useNavigate();
+    const user = useAppStore(state => state.user);
 
     const transactions = [
         { id: 1, title: 'Trivia Win: Weekly Pro', date: '24 Oct, 14:20', amount: '+15.0 TON', type: 'win' },
@@ -29,7 +31,7 @@ export const Profile: React.FC = () => {
                     <div className="relative mb-6">
                         <div className="absolute inset-0 bg-primary/20 rounded-full blur-2xl scale-125"></div>
                         <img
-                            src="https://api.dicebear.com/7.x/avataaars/svg?seed=Alex"
+                            src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`}
                             className="relative w-32 h-32 rounded-full border-4 border-primary shadow-[0_0_40px_rgba(13,242,89,0.4)] object-cover bg-background-dark p-1"
                             alt="Profile"
                         />
@@ -38,23 +40,25 @@ export const Profile: React.FC = () => {
                         </div>
                     </div>
 
-                    <h2 className="text-3xl font-black text-white italic tracking-tighter mb-1 uppercase">ALEX RIVIER</h2>
-                    <p className="text-primary font-black text-[10px] uppercase tracking-[0.3em] mb-6 italic opacity-80">@alex_quiz_master</p>
+                    <h2 className="text-3xl font-black text-white italic tracking-tighter mb-1 uppercase tracking-tighter leading-none">
+                        {user.firstName || user.username}
+                    </h2>
+                    <p className="text-primary font-black text-[10px] uppercase tracking-[0.3em] mb-6 italic opacity-80">@{user.username}</p>
 
                     <div className="flex gap-4">
                         <div className="flex flex-col items-center">
-                            <span className="text-lg font-black italic">42</span>
+                            <span className="text-lg font-black italic">{user.wins}</span>
                             <span className="text-[8px] font-black uppercase tracking-widest opacity-40">Wins</span>
                         </div>
                         <div className="w-[1px] h-8 bg-white/10"></div>
                         <div className="flex flex-col items-center">
-                            <span className="text-lg font-black italic">1,240</span>
-                            <span className="text-[8px] font-black uppercase tracking-widest opacity-40">Rank</span>
+                            <span className="text-lg font-black italic">{user.xp}</span>
+                            <span className="text-[8px] font-black uppercase tracking-widest opacity-40">XP</span>
                         </div>
                         <div className="w-[1px] h-8 bg-white/10"></div>
                         <div className="flex flex-col items-center">
-                            <span className="text-lg font-black italic">12</span>
-                            <span className="text-[8px] font-black uppercase tracking-widest opacity-40">Streak</span>
+                            <span className="text-lg font-black italic">{user.totalGames}</span>
+                            <span className="text-[8px] font-black uppercase tracking-widest opacity-40">Games</span>
                         </div>
                     </div>
                 </div>
