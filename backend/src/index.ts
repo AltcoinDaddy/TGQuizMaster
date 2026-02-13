@@ -51,6 +51,48 @@ app.post('/api/create-payment-link', async (req, res) => {
     }
 });
 
+// Leaderboard API
+app.get('/api/leaderboard', async (req, res) => {
+    try {
+        const { data: topPlayers, error } = await supabase
+            .from('users')
+            .select('*')
+            .order('stats_wins', { ascending: false })
+            .limit(50);
+
+        if (error) throw error;
+
+        // Map to frontend format
+        const leaderboard = topPlayers.map((p, index) => ({
+            rank: index + 1,
+            name: p.username || `Player ${p.telegram_id}`,
+            score: `${p.stats_wins || 0} Wins`,
+            isTop: index === 0,
+            xp: p.stats_xp || 0,
+            reward: `${((p.stats_wins || 0) * 0.5).toFixed(1)} TON`, // Mock reward calc
+            telegramId: p.telegram_id.toString()
+        }));
+
+        res.json({ leaderboard });
+    } catch (error: any) {
+        console.error('Leaderboard Error:', error.message);
+        res.status(500).json({ error: 'Failed to fetch leaderboard' });
+    }
+});
+
+// Tournaments API
+app.get('/api/tournaments', (req, res) => {
+    try {
+        const activeRooms = Array.from(rooms.values()).map(mgr => mgr.getRoomInfo());
+        // Also verify the Host button works by ensuring at least one room exists? 
+        // No, let user create one.
+        res.json({ tournaments: activeRooms });
+    } catch (error: any) {
+        console.error('Tournaments API Error:', error.message);
+        res.status(500).json({ error: 'Failed to fetch tournaments' });
+    }
+});
+
 // Game State
 const rooms = new Map<string, GameManager>();
 
@@ -154,7 +196,7 @@ io.on('connection', (socket) => {
 
             if (data.roomType === 'practice') {
                 roomId = crypto.randomUUID();
-                const mgr = new GameManager(roomId, io, 'practice', 0);
+                const mgr = new GameManager(roomId, io, 'practice', 0, 0);
                 rooms.set(roomId, mgr);
 
                 mgr.addPlayer({
@@ -173,15 +215,19 @@ io.on('connection', (socket) => {
             // Find a room matching the currency/type or create new
             roomId = Array.from(rooms.keys()).find(id => {
                 const mgr = rooms.get(id);
-                // Check if room is open AND matches the currency type (simplified logic)
-                return mgr && mgr.getPlayers().length < 5;
+                if (!mgr) return false;
+                const info = mgr.getRoomInfo();
+                return info.players < info.maxPlayers &&
+                    info.status === 'waiting' &&
+                    info.currency === (feeCurrency === 'TON' ? 'TON' : 'Stars') &&
+                    Math.abs(info.entryFee - feeAmount) < 0.01; // Float safety
             });
 
             if (!roomId) {
                 roomId = crypto.randomUUID();
                 // Determine prize pool based on entry fee or default
                 const pool = feeAmount * 5 * 0.9; // Simple pool logic
-                rooms.set(roomId, new GameManager(roomId, io, feeCurrency === 'TON' ? 'ton' : 'stars', pool));
+                rooms.set(roomId, new GameManager(roomId, io, feeCurrency === 'TON' ? 'ton' : 'stars', pool, feeAmount));
             }
 
             const manager = rooms.get(roomId)!;

@@ -11,8 +11,22 @@ export const Profile: React.FC = () => {
     const user = useAppStore(state => state.user);
 
     const [tonConnectUI] = useTonConnectUI();
-    const handleDisconnect = () => {
-        tonConnectUI.disconnect();
+
+    const handleDisconnect = async () => {
+        try {
+            await tonConnectUI.disconnect();
+            console.log('Wallet disconnected via SDK');
+        } catch (e) {
+            console.warn('Disconnect error (ignoring to force logout):', e);
+        }
+
+        // Visual feedback and navigation
+        console.log('Processed wallet disconnect');
+        const tg = (window as any).Telegram?.WebApp;
+        if (tg && tg.showAlert && typeof tg.showAlert === 'function') {
+            try { tg.showAlert('Wallet Disconnected'); } catch (e) { console.warn(e); }
+        }
+        navigate('/');
     };
 
     const transactions = [

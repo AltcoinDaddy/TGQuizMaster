@@ -24,13 +24,15 @@ export class GameManager {
     private io: any;
     private tournamentType: 'free' | 'stars' | 'ton' | 'practice' = 'free';
     private prizePool = 0;
+    private entryFee = 0;
 
-    constructor(roomId: string, io: any, type: 'free' | 'stars' | 'ton' | 'practice' = 'free', prize = 0) {
+    constructor(roomId: string, io: any, type: 'free' | 'stars' | 'ton' | 'practice' = 'free', prize = 0, fee = 0) {
         this.roomId = roomId;
         this.players = [];
         this.io = io;
         this.tournamentType = type;
         this.prizePool = prize;
+        this.entryFee = fee;
     }
 
     addPlayer(player: Player) {
@@ -39,6 +41,19 @@ export class GameManager {
 
     getPlayers() {
         return this.players;
+    }
+
+    getRoomInfo() {
+        return {
+            id: this.roomId,
+            players: this.players.length,
+            maxPlayers: 5, // Hardcoded for now
+            type: this.tournamentType,
+            prizePool: this.prizePool,
+            entryFee: this.entryFee,
+            status: this.currentIndex > 0 ? 'live' : 'waiting',
+            currency: this.tournamentType === 'stars' ? 'Stars' : 'TON'
+        };
     }
 
     async start() {

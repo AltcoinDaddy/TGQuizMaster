@@ -1,8 +1,12 @@
 import React from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { ArrowLeft } from 'lucide-react';
 import { useTonConnectUI, useTonAddress } from '@tonconnect/ui-react';
 import { useAppStore } from '../../store/useAppStore';
 
 export const Header: React.FC = () => {
+    const location = useLocation();
+    const navigate = useNavigate();
     const [tonConnectUI] = useTonConnectUI();
     const userFriendlyAddress = useTonAddress();
     const { user } = useAppStore();
@@ -27,6 +31,11 @@ export const Header: React.FC = () => {
         <header className="safe-top sticky top-0 z-50 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-md px-5 pt-4 pb-2">
             <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">
+                    {location.pathname !== '/' && (
+                        <button onClick={() => navigate('/')} className="mr-1 p-1.5 bg-white/10 rounded-full active:scale-95 transition-all hover:bg-white/20">
+                            <ArrowLeft size={20} className="text-white" />
+                        </button>
+                    )}
                     <div className="relative">
                         <img
                             alt="User Avatar"

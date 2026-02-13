@@ -172,7 +172,26 @@ export const CreateTournament: React.FC = () => {
             <div className="fixed bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-background-dark to-transparent z-[60]">
                 <Button
                     fullWidth
-                    onClick={() => navigate('/quiz')}
+                    onClick={() => {
+                        let entryFeeStr = 'Free';
+                        let currencyStr = 'Stars';
+                        if (feeType === 'stars') {
+                            entryFeeStr = '10 Stars';
+                            currencyStr = 'Stars';
+                        } else if (feeType === 'ton') {
+                            entryFeeStr = '2.5 TON';
+                            currencyStr = 'TON';
+                        }
+
+                        navigate('/quiz', {
+                            state: {
+                                type: 'tournament',
+                                entryFee: entryFeeStr,
+                                currency: currencyStr,
+                                category // sending for metadata if needed later
+                            }
+                        });
+                    }}
                     className="py-5 text-lg gap-3"
                 >
                     CREATE & INVITE FRIENDS

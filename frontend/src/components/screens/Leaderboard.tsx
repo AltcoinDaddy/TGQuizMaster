@@ -1,17 +1,41 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { MainLayout } from '../layout/MainLayout';
 import { Trophy, Star, ChevronRight, TrendingUp } from 'lucide-react';
+import { useAppStore } from '../../store/useAppStore';
 
 export const Leaderboard: React.FC = () => {
-    const [activeTab, setActiveTab] = useState<'daily' | 'weekly' | 'allTime'>('weekly');
+    const { user } = useAppStore();
+    const [leaderboardData, setLeaderboardData] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [activeTab, setActiveTab] = useState<'daily' | 'weekly' | 'allTime'>('weekly'); // Keeping for UI compliance
 
-    const topPlayers = [
-        { rank: 1, name: "@CryptoWizard", reward: "124.5 TON", score: "842 Wins", isTop: true },
-        { rank: 2, name: "@SatoshiVibes", reward: "98.2 TON", score: "712 Wins" },
-        { rank: 3, name: "@Web3King", reward: "72.4 TON", score: "654 Wins" },
-        { rank: 4, name: "YOU", reward: "45.1 TON", score: "421 Wins", isUser: true },
-        { rank: 5, name: "@QuizLord", reward: "32.8 TON", score: "389 Wins" },
-    ];
+    useEffect(() => {
+        const fetchLeaderboard = async () => {
+            try {
+                const res = await fetch(`${import.meta.env.VITE_API_URL}/api/leaderboard`);
+                const data = await res.json();
+                if (data.leaderboard) {
+                    const formattedDetails = data.leaderboard.map((p: any) => ({
+                        ...p,
+                        isUser: p.telegramId === user.telegramId,
+                        isTop: p.rank === 1
+                    }));
+                    setLeaderboardData(formattedDetails);
+                }
+            } catch (e) {
+                console.error('Failed to fetch leaderboard:', e);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchLeaderboard();
+    }, [user.telegramId]);
+
+    const topPlayers = loading
+        ? [{ rank: 1, name: "Loading...", reward: "---", score: "---" }]
+        : leaderboardData.length > 0
+            ? leaderboardData
+            : [{ rank: 1, name: "No Players Yet", reward: "---", score: "---" }];
 
     return (
         <MainLayout>
@@ -44,43 +68,62 @@ export const Leaderboard: React.FC = () => {
                 <div className="flex items-end justify-center gap-2 mb-12 h-64 relative">
                     <div className="absolute inset-0 bg-primary/5 blur-3xl rounded-full scale-75 -z-10"></div>
 
-                    {/* Rank 2 - Silver Pedestal */}
-                    <div className="flex flex-col items-center flex-1">
-                        <div className="relative mb-3">
-                            <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Satoshi" className="w-14 h-14 rounded-full border-2 border-slate-400 object-cover p-1 bg-background-dark" alt="2nd" />
-                            <div className="absolute -bottom-1 -right-1 bg-slate-400 text-[8px] font-black text-white px-2 py-0.5 rounded-full border-2 border-background-dark">2nd</div>
-                        </div>
-                        <div className="w-full bg-gradient-to-b from-slate-400/20 to-transparent h-24 rounded-t-3xl flex flex-col items-center pt-4 border-t-2 border-slate-400/40">
-                            <span className="text-[9px] font-black uppercase italic tracking-tighter truncate w-16 text-center text-slate-300">@Satoshi</span>
-                            <span className="text-xs font-black text-white italic">712.5 <span className="text-[8px] opacity-40">TON</span></span>
-                        </div>
-                    </div>
+                    {/* Top 3 Rendering - Dynamic */}
+                    {loading ? (
+                        <div className="flex items-center justify-center w-full h-48 animate-pulse text-white/20 font-black italic">LOADING ARENA...</div>
+                    ) : (
+                        <>
+                            {/* Rank 2 - Silver Pedestal */}
+                            <div className="flex flex-col items-center flex-1">
+                                {topPlayers[1] && (
+                                    <>
+                                        <div className="relative mb-3">
+                                            <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${topPlayers[1].name}`} className="w-14 h-14 rounded-full border-2 border-slate-400 object-cover p-1 bg-background-dark" alt="2nd" />
+                                            <div className="absolute -bottom-1 -right-1 bg-slate-400 text-[8px] font-black text-white px-2 py-0.5 rounded-full border-2 border-background-dark">2nd</div>
+                                        </div>
+                                        <div className="w-full bg-gradient-to-b from-slate-400/20 to-transparent h-24 rounded-t-3xl flex flex-col items-center pt-4 border-t-2 border-slate-400/40">
+                                            <span className="text-[9px] font-black uppercase italic tracking-tighter truncate w-16 text-center text-slate-300">{topPlayers[1].name}</span>
+                                            <span className="text-xs font-black text-white italic">{topPlayers[1].reward}</span>
+                                        </div>
+                                    </>
+                                )}
+                            </div>
 
-                    {/* Rank 1 - Golden Pedestal (Center) */}
-                    <div className="flex flex-col items-center flex-1 scale-110 relative z-10 -top-4">
-                        <div className="relative mb-3">
-                            <div className="absolute inset-0 bg-accent-gold/20 blur-xl rounded-full"></div>
-                            <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Wizard" className="relative w-18 h-18 rounded-full border-4 border-accent-gold object-cover p-1 bg-background-dark" alt="1st" />
-                            <div className="absolute -top-3 left-1/2 -translate-x-1/2 text-2xl drop-shadow-lg">👑</div>
-                            <div className="absolute -bottom-1 -right-1 bg-accent-gold text-[8px] font-black text-background-dark px-2 py-0.5 rounded-full border-2 border-background-dark">1st</div>
-                        </div>
-                        <div className="w-full bg-gradient-to-b from-accent-gold/30 to-transparent h-36 rounded-t-[2.5rem] flex flex-col items-center pt-6 border-t-4 border-accent-gold/50 bonus-glow">
-                            <span className="text-[10px] font-black uppercase italic tracking-tighter truncate w-20 text-center text-accent-gold">@Wizard</span>
-                            <span className="text-sm font-black text-white italic">1,240 <span className="text-[10px] opacity-40">TON</span></span>
-                        </div>
-                    </div>
+                            {/* Rank 1 - Golden Pedestal (Center) */}
+                            <div className="flex flex-col items-center flex-1 scale-110 relative z-10 -top-4">
+                                {topPlayers[0] && (
+                                    <>
+                                        <div className="relative mb-3">
+                                            <div className="absolute inset-0 bg-accent-gold/20 blur-xl rounded-full"></div>
+                                            <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${topPlayers[0].name}`} className="relative w-18 h-18 rounded-full border-4 border-accent-gold object-cover p-1 bg-background-dark" alt="1st" />
+                                            <div className="absolute -top-3 left-1/2 -translate-x-1/2 text-2xl drop-shadow-lg">👑</div>
+                                            <div className="absolute -bottom-1 -right-1 bg-accent-gold text-[8px] font-black text-background-dark px-2 py-0.5 rounded-full border-2 border-background-dark">1st</div>
+                                        </div>
+                                        <div className="w-full bg-gradient-to-b from-accent-gold/30 to-transparent h-36 rounded-t-[2.5rem] flex flex-col items-center pt-6 border-t-4 border-accent-gold/50 bonus-glow">
+                                            <span className="text-[10px] font-black uppercase italic tracking-tighter truncate w-20 text-center text-accent-gold">{topPlayers[0].name}</span>
+                                            <span className="text-sm font-black text-white italic">{topPlayers[0].reward}</span>
+                                        </div>
+                                    </>
+                                )}
+                            </div>
 
-                    {/* Rank 3 - Bronze Pedestal */}
-                    <div className="flex flex-col items-center flex-1">
-                        <div className="relative mb-3">
-                            <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=King" className="w-14 h-14 rounded-full border-2 border-orange-500/60 object-cover p-1 bg-background-dark" alt="3rd" />
-                            <div className="absolute -bottom-1 -right-1 bg-orange-600 text-[8px] font-black text-white px-2 py-0.5 rounded-full border-2 border-background-dark">3rd</div>
-                        </div>
-                        <div className="w-full bg-gradient-to-b from-orange-500/20 to-transparent h-20 rounded-t-3xl flex flex-col items-center pt-4 border-t-2 border-orange-500/40">
-                            <span className="text-[9px] font-black uppercase italic tracking-tighter truncate w-16 text-center text-orange-200">@Web3King</span>
-                            <span className="text-xs font-black text-white italic">450.2 <span className="text-[8px] opacity-40">TON</span></span>
-                        </div>
-                    </div>
+                            {/* Rank 3 - Bronze Pedestal */}
+                            <div className="flex flex-col items-center flex-1">
+                                {topPlayers[2] && (
+                                    <>
+                                        <div className="relative mb-3">
+                                            <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${topPlayers[2].name}`} className="w-14 h-14 rounded-full border-2 border-orange-500/60 object-cover p-1 bg-background-dark" alt="3rd" />
+                                            <div className="absolute -bottom-1 -right-1 bg-orange-600 text-[8px] font-black text-white px-2 py-0.5 rounded-full border-2 border-background-dark">3rd</div>
+                                        </div>
+                                        <div className="w-full bg-gradient-to-b from-orange-500/20 to-transparent h-20 rounded-t-3xl flex flex-col items-center pt-4 border-t-2 border-orange-500/40">
+                                            <span className="text-[9px] font-black uppercase italic tracking-tighter truncate w-16 text-center text-orange-200">{topPlayers[2].name}</span>
+                                            <span className="text-xs font-black text-white italic">{topPlayers[2].reward}</span>
+                                        </div>
+                                    </>
+                                )}
+                            </div>
+                        </>
+                    )}
                 </div>
 
                 {/* Competition List */}

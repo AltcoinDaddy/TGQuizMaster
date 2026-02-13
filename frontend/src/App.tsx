@@ -24,6 +24,7 @@ import { WaitingLobby } from './components/screens/WaitingLobby';
 import { PurchaseConfirmation } from './components/screens/PurchaseConfirmation';
 import { AdFreeUpsell } from './components/screens/AdFreeUpsell';
 import { Settings } from './components/screens/Settings';
+import { NavigationController } from './components/layout/NavigationController';
 
 function App() {
   const [showOnboarding, setShowOnboarding] = useState<boolean | null>(null);
@@ -85,6 +86,7 @@ function App() {
 
   return (
     <Router>
+      <NavigationController />
       <Routes>
         <Route path="/onboarding" element={<Onboarding onComplete={() => setShowOnboarding(false)} />} />
         <Route path="/" element={showOnboarding ? <Navigate to="/onboarding" /> : <Home />} />
