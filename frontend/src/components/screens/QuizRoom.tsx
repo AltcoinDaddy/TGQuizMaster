@@ -10,8 +10,11 @@ export const QuizRoom: React.FC = () => {
     const { user } = useAppStore();
     const [timeLeft, setTimeLeft] = useState(15);
     const [currentQuestion, setCurrentQuestion] = useState<any>(null);
+    const [questionIndex, setQuestionIndex] = useState(0);
+    const [totalQuestions, setTotalQuestions] = useState(10);
     const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
     const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
+    const [revealedAnswer, setRevealedAnswer] = useState<string | null>(null);
     const [players, setPlayers] = useState<any[]>([]);
     const [gameStatus, setGameStatus] = useState<'waiting' | 'playing' | 'ended'>('waiting');
 
@@ -45,13 +48,17 @@ export const QuizRoom: React.FC = () => {
                 return prev;
             });
             setCurrentQuestion(data.question);
+            setQuestionIndex(data.index + 1);
+            setTotalQuestions(data.total);
             setSelectedAnswer(null);
             setIsCorrect(null);
+            setRevealedAnswer(null);
         };
 
         const onTimerUpdate = (time: number) => setTimeLeft(time);
 
         const onRevealAnswer = (correctAnswer: string) => {
+            setRevealedAnswer(correctAnswer);
             if (selectedAnswer) {
                 setIsCorrect(selectedAnswer === correctAnswer);
             }
@@ -125,7 +132,7 @@ export const QuizRoom: React.FC = () => {
             socket.off('game_over', onGameOver);
             socket.off('connect', joinRoom);
         };
-    }, [user.username, selectedAnswer]);
+    }, [user.username]);
 
     const handleAnswer = (option: string) => {
         if (selectedAnswer || gameStatus !== 'playing') return;
@@ -191,7 +198,7 @@ export const QuizRoom: React.FC = () => {
                     <div className="flex flex-col">
                         <span className="text-[10px] font-black uppercase tracking-widest text-primary/80 italic">Trivia Battle</span>
                         <h1 className="text-xl font-black flex items-center gap-2 uppercase italic tracking-tighter">
-                            Question 4<span className="text-slate-500 font-medium">/10</span>
+                            Question {questionIndex}<span className="text-slate-500 font-medium">/{totalQuestions}</span>
                         </h1>
                     </div>
                     <div className="flex items-center gap-2 bg-primary/10 px-4 py-2 rounded-full border border-primary/20">
@@ -245,17 +252,23 @@ export const QuizRoom: React.FC = () => {
                     {currentQuestion?.options.map((option: string, idx: number) => {
                         const letters = ['A', 'B', 'C', 'D'];
                         const isSelected = selectedAnswer === option;
+                        const isRevealed = revealedAnswer === option;
+
+                        let buttonClass = 'bg-white/5 border-white/5 hover:border-primary/30';
+                        if (isSelected) {
+                            if (isCorrect === true) buttonClass = 'bg-primary/20 border-primary shadow-[0_0_20px_rgba(13,242,89,0.3)]';
+                            else if (isCorrect === false) buttonClass = 'bg-red-500/20 border-red-500';
+                            else buttonClass = 'bg-primary/20 border-primary shadow-[0_0_15px_rgba(13,242,89,0.2)]';
+                        } else if (isRevealed) {
+                            buttonClass = 'bg-primary/20 border-primary shadow-[0_0_20px_rgba(13,242,89,0.3)]';
+                        }
+
                         return (
                             <button
                                 key={option}
                                 onClick={() => handleAnswer(option)}
                                 disabled={!!selectedAnswer}
-                                className={`group w-full p-4 border-2 rounded-2xl flex items-center transition-all animate-in fade-in slide-in-from-bottom duration-300 active:scale-[0.98] ${isSelected
-                                    ? isCorrect === true ? 'bg-primary/20 border-primary shadow-[0_0_20px_rgba(13,242,89,0.3)]'
-                                        : isCorrect === false ? 'bg-red-500/20 border-red-500'
-                                            : 'bg-primary/20 border-primary shadow-[0_0_15px_rgba(13,242,89,0.2)]'
-                                    : 'bg-white/5 border-white/5 hover:border-primary/30'
-                                    }`}
+                                className={`group w-full p-4 border-2 rounded-2xl flex items-center transition-all animate-in fade-in slide-in-from-bottom duration-300 active:scale-[0.98] ${buttonClass}`}
                                 style={{ animationDelay: `${idx * 100}ms` }}
                             >
                                 <div className={`w-10 h-10 rounded-full flex items-center justify-center font-black mr-4 transition-colors ${isSelected ? 'bg-primary text-background-dark' : 'bg-white/10 group-hover:bg-primary group-hover:text-background-dark'
@@ -263,8 +276,11 @@ export const QuizRoom: React.FC = () => {
                                     {letters[idx]}
                                 </div>
                                 <span className="text-lg font-black italic tracking-tighter">{option}</span>
-                                {isSelected && isCorrect === true && (
-                                    <i className="material-icons text-primary ml-auto drop-shadow-[0_0_8px_rgba(13,242,89,0.8)]">check_circle</i>
+                                {((isSelected && isCorrect !== null) || (isRevealed && option === revealedAnswer)) && (
+                                    <i className={`material-icons ml-auto ${(option === revealedAnswer || isCorrect === true) ? 'text-primary drop-shadow-[0_0_8px_rgba(13,242,89,0.8)]' : 'text-red-500 drop-shadow-[0_0_8px_rgba(239,68,68,0.8)]'
+                                        }`}>
+                                        {(option === revealedAnswer || isCorrect === true) ? 'check_circle' : 'cancel'}
+                                    </i>
                                 )}
                             </button>
                         );
