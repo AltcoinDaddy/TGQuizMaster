@@ -5,6 +5,7 @@ import { GlassCard } from '../ui/GlassCard';
 import { PowerUp } from '../ui/PowerUp';
 import { socket } from '../../utils/socket';
 import { useAppStore } from '../../store/useAppStore';
+import { soundManager } from '../../utils/SoundManager';
 
 export const QuizRoom: React.FC = () => {
     const { user } = useAppStore();
@@ -55,12 +56,24 @@ export const QuizRoom: React.FC = () => {
             setRevealedAnswer(null);
         };
 
-        const onTimerUpdate = (time: number) => setTimeLeft(time);
+        const onTimerUpdate = (time: number) => {
+            setTimeLeft(time);
+            if (time <= 5 && time > 0) {
+                soundManager.play('tick');
+            }
+        };
 
         const onRevealAnswer = (correctAnswer: string) => {
             setRevealedAnswer(correctAnswer);
             if (selectedAnswer) {
-                setIsCorrect(selectedAnswer === correctAnswer);
+                const isWin = selectedAnswer === correctAnswer;
+                setIsCorrect(isWin);
+                soundManager.play(isWin ? 'correct' : 'wrong');
+                if (!isWin) {
+                    (window as any).Telegram?.WebApp?.HapticFeedback?.notificationOccurred('error');
+                } else {
+                    (window as any).Telegram?.WebApp?.HapticFeedback?.notificationOccurred('success');
+                }
             }
         };
 
@@ -87,6 +100,8 @@ export const QuizRoom: React.FC = () => {
         const onGameOver = (winners: any[]) => {
             setGameStatus('ended');
             setPlayers(winners);
+            const amIWinner = winners[0]?.username === user.username;
+            if (amIWinner) soundManager.play('win');
         };
 
         socket.on('room_update', onRoomUpdate);
@@ -137,6 +152,7 @@ export const QuizRoom: React.FC = () => {
     const handleAnswer = (option: string) => {
         if (selectedAnswer || gameStatus !== 'playing') return;
         (window as any).Telegram?.WebApp?.HapticFeedback?.impactOccurred('light');
+        soundManager.play('click');
         setSelectedAnswer(option);
         socket.emit('submit_answer', option);
     };

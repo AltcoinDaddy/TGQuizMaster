@@ -3,9 +3,11 @@ import { MainLayout } from '../layout/MainLayout';
 import { GlassCard } from '../ui/GlassCard';
 import { Button } from '../ui/Button';
 import { Share2, Users, Receipt, Copy, Gift } from 'lucide-react';
+import { useAppStore } from '../../store/useAppStore';
 
 export const Referral: React.FC = () => {
-    const referralLink = "https://t.me/tgquizmaster_bot?start=r_alex123";
+    const { user } = useAppStore();
+    const referralLink = `https://t.me/tgquizmaster_bot?start=ref_${user.telegramId || 'unknown'}`;
 
     const handleShare = () => {
         const inviteText = `I'm challenging you to a real-time quiz battle on TGQuizMaster! 🏆 Play & win TON. Join here: ${referralLink}`;
