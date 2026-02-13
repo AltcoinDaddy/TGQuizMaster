@@ -62,9 +62,17 @@ io.on('connection', (socket) => {
                     .select()
                     .single();
 
-                if (createError) throw createError;
-                user = newUser;
-                console.log(`[AUTH] Created new user: ${username}`);
+                if (createError) {
+                    if (data.roomType === 'practice') {
+                        console.warn("User creation failed, proceeding for practice mode.");
+                        user = { telegram_id: userId, username, balance_stars: 0, balance_ton: 0 };
+                    } else {
+                        throw createError;
+                    }
+                } else {
+                    user = newUser;
+                    console.log(`[AUTH] Created new user: ${username}`);
+                }
             } else if (fetchError) {
                 throw fetchError;
             }

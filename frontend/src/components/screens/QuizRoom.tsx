@@ -24,74 +24,106 @@ export const QuizRoom: React.FC = () => {
     const { tournamentId, entryFee, currency, type } = location.state || {}; // Fallback if direct access
 
     useEffect(() => {
-        socket.emit('join_room', {
-            username: user.username,
-            telegramId: user.telegramId,
-            avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`,
-            roomType: type || 'tournament',
-            tournamentId,
-            entryFee,
-            currency
-        });
-
-        socket.on('room_update', (room) => {
-            const sortedPlayers = [...room.players].sort((a, b) => b.score - a.score);
+        // 1. Setup Listeners
+        const onRoomUpdate = (room: any) => {
+            const sortedPlayers = [...room.players].sort((a: any, b: any) => b.score - a.score);
             setPlayers(sortedPlayers);
-        });
+        };
 
-        socket.on('game_start', () => {
+        const onGameStart = () => {
+            console.log("Game started!");
             setGameStatus('playing');
-        });
+        };
 
-        socket.on('new_question', (data) => {
+        const onNewQuestion = (data: any) => {
+            // Safety: If we missed game_start, switch to playing
+            setGameStatus(prev => {
+                if (prev === 'waiting') {
+                    console.log("Force switching to playing due to new question");
+                    return 'playing';
+                }
+                return prev;
+            });
             setCurrentQuestion(data.question);
             setSelectedAnswer(null);
             setIsCorrect(null);
-        });
+        };
 
-        socket.on('timer_update', (time) => {
-            setTimeLeft(time);
-        });
+        const onTimerUpdate = (time: number) => setTimeLeft(time);
 
-        socket.on('reveal_answer', (correctAnswer) => {
+        const onRevealAnswer = (correctAnswer: string) => {
             if (selectedAnswer) {
                 setIsCorrect(selectedAnswer === correctAnswer);
             }
-        });
+        };
 
-        socket.on('score_update', (updatedPlayers) => {
+        const onScoreUpdate = (updatedPlayers: any[]) => {
             const sortedPlayers = [...updatedPlayers].sort((a, b) => b.score - a.score);
             setPlayers(sortedPlayers);
-        });
+        };
 
-        socket.on('balance_update', (balance) => {
+        const onBalanceUpdate = (balance: any) => {
             if (balance) {
                 useAppStore.getState().setUser({
                     stars: balance.stars,
                     tonBalance: balance.ton
                 });
             }
-        });
+        };
 
-        socket.on('user_inventory_update', (inventory) => {
+        const onInventoryUpdate = (inventory: any) => {
             if (inventory) {
                 useAppStore.getState().setUser({ inventory });
             }
-        });
+        };
 
-        socket.on('game_over', (winners) => {
+        const onGameOver = (winners: any[]) => {
             setGameStatus('ended');
             setPlayers(winners);
-        });
+        };
+
+        socket.on('room_update', onRoomUpdate);
+        socket.on('game_start', onGameStart);
+        socket.on('new_question', onNewQuestion);
+        socket.on('timer_update', onTimerUpdate);
+        socket.on('reveal_answer', onRevealAnswer);
+        socket.on('score_update', onScoreUpdate);
+        socket.on('balance_update', onBalanceUpdate);
+        socket.on('user_inventory_update', onInventoryUpdate);
+        socket.on('game_over', onGameOver);
+
+        // 2. Join Room
+        const joinRoom = () => {
+            console.log("Joining room...", { type: type || 'tournament' });
+            socket.emit('join_room', {
+                username: user.username,
+                telegramId: user.telegramId,
+                avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`,
+                roomType: type || 'tournament',
+                tournamentId,
+                entryFee,
+                currency
+            });
+        };
+
+        if (socket.connected) {
+            joinRoom();
+        } else {
+            socket.connect();
+            socket.once('connect', joinRoom);
+        }
 
         return () => {
-            socket.off('room_update');
-            socket.off('game_start');
-            socket.off('new_question');
-            socket.off('timer_update');
-            socket.off('reveal_answer');
-            socket.off('score_update');
-            socket.off('game_over');
+            socket.off('room_update', onRoomUpdate);
+            socket.off('game_start', onGameStart);
+            socket.off('new_question', onNewQuestion);
+            socket.off('timer_update', onTimerUpdate);
+            socket.off('reveal_answer', onRevealAnswer);
+            socket.off('score_update', onScoreUpdate);
+            socket.off('balance_update', onBalanceUpdate);
+            socket.off('user_inventory_update', onInventoryUpdate);
+            socket.off('game_over', onGameOver);
+            socket.off('connect', joinRoom);
         };
     }, [user.username, selectedAnswer]);
 
