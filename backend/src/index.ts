@@ -84,12 +84,44 @@ app.get('/api/leaderboard', async (req, res) => {
 app.get('/api/tournaments', (req, res) => {
     try {
         const activeRooms = Array.from(rooms.values()).map(mgr => mgr.getRoomInfo());
-        // Also verify the Host button works by ensuring at least one room exists? 
-        // No, let user create one.
         res.json({ tournaments: activeRooms });
     } catch (error: any) {
         console.error('Tournaments API Error:', error.message);
         res.status(500).json({ error: 'Failed to fetch tournaments' });
+    }
+});
+
+// History API
+app.get('/api/history', async (req, res) => {
+    try {
+        const { telegramId } = req.query;
+        if (!telegramId) return res.status(400).json({ error: 'Missing telegramId' });
+
+        const { data: history, error } = await supabase
+            .from('transactions')
+            .select('*')
+            .eq('user_id', telegramId)
+            .order('created_at', { ascending: false })
+            .limit(20);
+
+        if (error) throw error;
+
+        // Map to frontend HistoryItem format
+        const formattedHistory = history.map(tx => ({
+            id: tx.id,
+            title: tx.metadata?.tournamentId ? `Tournament #${tx.metadata.tournamentId.slice(0, 8)}` : 'Game Transaction',
+            date: new Date(tx.created_at).toLocaleDateString(),
+            rank: tx.type === 'PRIZE' ? 1 : 0, // Placeholder
+            reward: `${tx.amount > 0 ? '+' : ''}${tx.amount} ${tx.currency}`,
+            accuracy: '-', // Not stored yet
+            speed: '-',    // Not stored yet
+            status: tx.type === 'PRIZE' ? 'WINNER' : 'PARTICIPANT'
+        }));
+
+        res.json({ history: formattedHistory });
+    } catch (error: any) {
+        console.error('History API Error:', error.message);
+        res.status(500).json({ error: 'Failed to fetch history' });
     }
 });
 
@@ -302,10 +334,31 @@ io.on('connection', (socket) => {
                 ton: user.balance_ton,
                 xp: user.stats_xp || 0,
                 wins: user.stats_wins || 0,
-                totalGames: user.stats_total_games || 0
+                totalGames: user.stats_total_games || 0,
+                walletConnected: !!user.wallet_address
             });
         } catch (error) {
             console.error('Sync Profile Error:', error);
+        }
+    });
+
+    socket.on('update_wallet', async (data) => {
+        const { telegramId, walletAddress } = data;
+        console.log(`[WALLET] Updating wallet for ${telegramId}: ${walletAddress}`);
+
+        try {
+            const { error } = await supabase
+                .from('users')
+                .update({ wallet_address: walletAddress })
+                .eq('telegram_id', parseInt(telegramId));
+
+            if (error) {
+                console.error('Failed to update wallet:', error);
+            } else {
+                console.log(`[WALLET] Synced successfully for ${telegramId}`);
+            }
+        } catch (e) {
+            console.error('Wallet Sync Exception:', e);
         }
     });
 

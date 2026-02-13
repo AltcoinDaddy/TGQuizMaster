@@ -3,6 +3,7 @@ import { MainLayout } from '../layout/MainLayout';
 import { GlassCard } from '../ui/GlassCard';
 import { ChevronLeft, Trophy, Clock, ChevronDown } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useAppStore } from '../../store/useAppStore';
 
 interface HistoryItem {
     id: string;
@@ -18,38 +19,28 @@ interface HistoryItem {
 export const TournamentHistory: React.FC = () => {
     const navigate = useNavigate();
 
-    const history: HistoryItem[] = [
-        {
-            id: '1',
-            title: 'Weekly Crypto Quiz',
-            date: 'Oct 24, 2023 • 18:30',
-            rank: 2,
-            reward: '+0.15 TON',
-            accuracy: '18/20',
-            speed: '+1.2s',
-            status: 'WINNER'
-        },
-        {
-            id: '2',
-            title: 'The Open Network Trivia',
-            date: 'Oct 22, 2023 • 14:15',
-            rank: 15,
-            reward: '+0.02 TON',
-            accuracy: '14/20',
-            speed: '+0.8s',
-            status: 'PARTICIPANT'
-        },
-        {
-            id: '3',
-            title: 'Elite Master Cup',
-            date: 'Oct 19, 2023 • 21:00',
-            rank: 1,
-            reward: '+1.50 TON',
-            accuracy: '20/20',
-            speed: '+2.1s',
-            status: 'WINNER'
-        }
-    ];
+    const [history, setHistory] = React.useState<HistoryItem[]>([]);
+    const [loading, setLoading] = React.useState(true);
+    const { user } = useAppStore();
+
+    React.useEffect(() => {
+        const fetchHistory = async () => {
+            if (!user.telegramId) return;
+            try {
+                const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api/history?telegramId=${user.telegramId}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    setHistory(data.history);
+                }
+            } catch (error) {
+                console.error('Failed to fetch history:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchHistory();
+    }, [user.telegramId]);
 
     return (
         <MainLayout>
@@ -90,52 +81,57 @@ export const TournamentHistory: React.FC = () => {
                         <h2 className="text-[10px] font-black uppercase tracking-widest text-white/40">Recent Games</h2>
                     </div>
 
-                    {history.map((item) => (
-                        <GlassCard key={item.id} className="p-4 border-white/5">
-                            <div className="flex justify-between items-start mb-4">
-                                <div>
-                                    <h3 className="font-bold text-sm text-white mb-1">{item.title}</h3>
-                                    <div className="flex items-center gap-1.5 text-white/40">
-                                        <Clock size={10} />
-                                        <span className="text-[10px] font-bold uppercase">{item.date}</span>
+                    {loading ? (
+                        <div className="text-center py-10 opacity-50 text-xs font-bold uppercase tracking-widest">Loading history...</div>
+                    ) : history.length === 0 ? (
+                        <div className="text-center py-10 opacity-50 text-xs font-bold uppercase tracking-widest">No games play yet</div>
+                    ) : (
+                        history.map((item) => (
+                            <GlassCard key={item.id} className="p-4 border-white/5">
+                                <div className="flex justify-between items-start mb-4">
+                                    <div>
+                                        <h3 className="font-bold text-sm text-white mb-1">{item.title}</h3>
+                                        <div className="flex items-center gap-1.5 text-white/40">
+                                            <Clock size={10} />
+                                            <span className="text-[10px] font-bold uppercase">{item.date}</span>
+                                        </div>
                                     </div>
+                                    {item.status === 'WINNER' && (
+                                        <div className="bg-primary/10 border border-primary/30 text-primary px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest shadow-[0_0_10px_rgba(13,242,89,0.1)]">
+                                            WINNER
+                                        </div>
+                                    )}
                                 </div>
-                                {item.status === 'WINNER' && (
-                                    <div className="bg-primary/10 border border-primary/30 text-primary px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest shadow-[0_0_10px_rgba(13,242,89,0.1)]">
-                                        WINNER
-                                    </div>
-                                )}
-                            </div>
 
-                            <div className="flex justify-between items-end">
-                                <div className="flex flex-col">
-                                    <span className="text-[10px] font-extrabold uppercase text-white/30 tracking-wider mb-1">Rank</span>
-                                    <span className={`text-xl font-black ${item.rank <= 3 ? 'text-yellow-400' : 'text-white'}`}>#{item.rank}</span>
+                                <div className="flex justify-between items-end">
+                                    <div className="flex flex-col">
+                                        <span className="text-[10px] font-extrabold uppercase text-white/30 tracking-wider mb-1">Rank</span>
+                                        <span className={`text-xl font-black ${item.rank <= 3 ? 'text-yellow-400' : 'text-white'}`}>#{item.rank}</span>
+                                    </div>
+                                    <div className="flex flex-col text-right">
+                                        <span className="text-[10px] font-extrabold uppercase text-white/30 tracking-wider mb-1">Reward</span>
+                                        <span className="text-xl font-black text-primary">{item.reward}</span>
+                                    </div>
                                 </div>
-                                <div className="flex flex-col text-right">
-                                    <span className="text-[10px] font-extrabold uppercase text-white/30 tracking-wider mb-1">Reward</span>
-                                    <span className="text-xl font-black text-primary">{item.reward}</span>
-                                </div>
-                            </div>
 
-                            <div className="mt-4 pt-4 border-t border-white/5 flex justify-between items-center">
-                                <div className="flex gap-4">
-                                    <div className="flex items-center gap-1">
-                                        <span className="text-[10px] font-bold text-white/30 uppercase">ACC:</span>
-                                        <span className="text-[10px] font-black text-white">{item.accuracy}</span>
+                                <div className="mt-4 pt-4 border-t border-white/5 flex justify-between items-center">
+                                    <div className="flex gap-4">
+                                        <div className="flex items-center gap-1">
+                                            <span className="text-[10px] font-bold text-white/30 uppercase">ACC:</span>
+                                            <span className="text-[10px] font-black text-white">{item.accuracy}</span>
+                                        </div>
+                                        <div className="flex items-center gap-1">
+                                            <span className="text-[10px] font-bold text-white/30 uppercase">SPD:</span>
+                                            <span className="text-[10px] font-black text-white">{item.speed}</span>
+                                        </div>
                                     </div>
-                                    <div className="flex items-center gap-1">
-                                        <span className="text-[10px] font-bold text-white/30 uppercase">SPD:</span>
-                                        <span className="text-[10px] font-black text-white">{item.speed}</span>
-                                    </div>
+                                    <button className="text-primary text-[10px] font-black uppercase tracking-widest flex items-center gap-1 active:scale-95">
+                                        STATS
+                                        <ChevronDown size={14} />
+                                    </button>
                                 </div>
-                                <button className="text-primary text-[10px] font-black uppercase tracking-widest flex items-center gap-1 active:scale-95">
-                                    STATS
-                                    <ChevronDown size={14} />
-                                </button>
-                            </div>
-                        </GlassCard>
-                    ))}
+                            </GlassCard>
+                        ))}
                 </div>
             </div>
         </MainLayout>

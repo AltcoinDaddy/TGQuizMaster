@@ -1,4 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { useTonAddress } from '@tonconnect/ui-react';
 import { socket } from './utils/socket';
 import { useState, useEffect } from 'react';
 import { Home } from './components/screens/Home';
@@ -26,8 +27,31 @@ import { AdFreeUpsell } from './components/screens/AdFreeUpsell';
 import { Settings } from './components/screens/Settings';
 import { NavigationController } from './components/layout/NavigationController';
 
+function WalletSyncer() {
+  const userFriendlyAddress = useTonAddress();
+  const { user } = useAppStore();
+
+  useEffect(() => {
+    if (user.telegramId && userFriendlyAddress) {
+      if (user.walletConnected) return; // Already synced? No, address might change.
+      console.log('Syncing wallet address:', userFriendlyAddress);
+      socket.emit('update_wallet', {
+        telegramId: user.telegramId,
+        walletAddress: userFriendlyAddress
+      });
+      useAppStore.getState().setWalletConnected(true);
+    } else if (user.telegramId && !userFriendlyAddress && user.walletConnected) {
+      // Handle disconnect
+      useAppStore.getState().setWalletConnected(false);
+    }
+  }, [userFriendlyAddress, user.telegramId, user.walletConnected]);
+
+  return null;
+}
+
 function App() {
   const [showOnboarding, setShowOnboarding] = useState<boolean | null>(null);
+
 
   useEffect(() => {
     try {
@@ -86,6 +110,7 @@ function App() {
 
   return (
     <Router>
+      <WalletSyncer />
       <NavigationController />
       <Routes>
         <Route path="/onboarding" element={<Onboarding onComplete={() => setShowOnboarding(false)} />} />

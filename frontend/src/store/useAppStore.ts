@@ -52,7 +52,8 @@ export const useAppStore = create<AppStore>((set) => ({
                 tonBalance: data.ton,
                 xp: data.xp,
                 wins: data.wins,
-                totalGames: data.totalGames
+                totalGames: data.totalGames,
+                walletConnected: data.walletConnected ?? state.user.walletConnected
             }
         })),
 }));
