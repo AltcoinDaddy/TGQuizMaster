@@ -66,24 +66,30 @@ export const Header: React.FC = () => {
 
             {/* Balances Grid */}
             <div className="grid grid-cols-2 gap-3 pb-2">
-                <div className="bg-white/5 border border-white/10 p-3 rounded-2xl flex items-center justify-between">
-                    <div className="flex flex-col">
+                <button
+                    onClick={() => navigate('/shop')}
+                    className="bg-white/5 border border-white/10 p-3 rounded-2xl flex items-center justify-between active:scale-95 transition-all hover:bg-white/10"
+                >
+                    <div className="flex flex-col items-start">
                         <span className="text-[10px] uppercase tracking-wider opacity-50 font-black italic">Stars</span>
                         <span className="text-lg font-black italic flex items-center gap-1">{user.stars.toLocaleString()} <span className="text-sm">⭐️</span></span>
                     </div>
                     <div className="w-8 h-8 rounded-full bg-yellow-400/10 flex items-center justify-center">
                         <span className="text-yellow-400 text-lg leading-none">★</span>
                     </div>
-                </div>
-                <div className="bg-white/5 border border-white/10 p-3 rounded-2xl flex items-center justify-between">
-                    <div className="flex flex-col">
+                </button>
+                <button
+                    onClick={() => navigate('/shop')}
+                    className="bg-white/5 border border-white/10 p-3 rounded-2xl flex items-center justify-between active:scale-95 transition-all hover:bg-white/10"
+                >
+                    <div className="flex flex-col items-start">
                         <span className="text-[10px] uppercase tracking-wider opacity-50 font-black italic">TON Balance</span>
                         <span className="text-lg font-black italic flex items-center gap-1">{user.tonBalance.toFixed(2)} <span className="text-sm">💎</span></span>
                     </div>
                     <div className="w-8 h-8 rounded-full bg-blue-400/10 flex items-center justify-center">
                         <span className="text-blue-400 text-lg leading-none">♦</span>
                     </div>
-                </div>
+                </button>
             </div>
         </header>
     );
