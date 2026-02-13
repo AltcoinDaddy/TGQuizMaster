@@ -3,11 +3,9 @@ import { MainLayout } from '../layout/MainLayout';
 import { Trophy, Rocket, Gift, ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { StreakPopup } from '../ui/StreakPopup';
-import { useAppStore } from '../../store/useAppStore';
 
 export const Home: React.FC = () => {
     const navigate = useNavigate();
-    const user = useAppStore(state => state.user);
     const [showStreak, setShowStreak] = useState(false);
 
     useEffect(() => {
