@@ -32,10 +32,46 @@ if (!token) {
 
     console.log('Telegram Bot started and listening for commands.');
 
-    // /start command
-    bot.onText(/\/start/, (msg) => {
+    // /start command with support for deep links (referrals)
+    bot.onText(/\/start(?:\s+(.+))?/, async (msg, match) => {
         const chatId = msg.chat.id;
         const firstName = msg.from?.first_name || 'Champion';
+        const startParam = match ? match[1] : null;
+
+        if (startParam && startParam.startsWith('ref_')) {
+            const referrerId = startParam.replace('ref_', '');
+            console.log(`User ${msg.from?.id} joined via referral from ${referrerId}`);
+
+            try {
+                const { supabase } = await import('./config/supabase');
+                // Check if user exists, if not, create them with referred_by
+                const { data: user, error: fetchError } = await supabase
+                    .from('users')
+                    .select('*')
+                    .eq('telegram_id', msg.from?.id)
+                    .single();
+
+                if (fetchError && fetchError.code === 'PGRST116') {
+                    // New user, set referred_by
+                    await supabase.from('users').insert({
+                        telegram_id: msg.from?.id,
+                        username: msg.from?.username || 'Anon_Player',
+                        referred_by: parseInt(referrerId),
+                        balance_stars: 1000,
+                        balance_ton: 5.0
+                    });
+                    console.log(`[REFERRAL] New user ${msg.from?.id} referred by ${referrerId}`);
+                } else if (user && !user.referred_by) {
+                    // Existing user without referrer, update it
+                    await supabase.from('users')
+                        .update({ referred_by: parseInt(referrerId) })
+                        .eq('telegram_id', msg.from?.id);
+                    console.log(`[REFERRAL] Updated user ${msg.from?.id} with referrer ${referrerId}`);
+                }
+            } catch (e) {
+                console.error('Referral storage failed:', e);
+            }
+        }
 
         bot.sendMessage(chatId, `Welcome to TGQuizMaster, ${firstName}! 🏆\n\nBattle other players in real-time, master trivia, and win real TON rewards.\n\nReady to play?`, {
             reply_markup: {

@@ -131,7 +131,8 @@ export const TournamentHistory: React.FC = () => {
                                     </button>
                                 </div>
                             </GlassCard>
-                        ))}
+                        ))
+                    )}
                 </div>
             </div>
         </MainLayout>

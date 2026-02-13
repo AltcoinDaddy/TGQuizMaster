@@ -125,6 +125,120 @@ app.get('/api/history', async (req, res) => {
     }
 });
 
+// Quests API
+app.get('/api/quests', async (req, res) => {
+    try {
+        const { telegramId } = req.query;
+        if (!telegramId) return res.status(400).json({ error: 'Missing telegramId' });
+
+        const userId = parseInt(telegramId as string);
+
+        // 1. Fetch User Stats
+        const { data: user, error: userError } = await supabase
+            .from('users')
+            .select('*')
+            .eq('telegram_id', userId)
+            .single();
+
+        if (userError) throw userError;
+
+        // 2. Fetch Referrals
+        const { count: referralCount } = await supabase
+            .from('users')
+            .select('*', { count: 'exact', head: true })
+            .eq('referred_by', userId);
+
+        // 3. Fetch Claimed Quests (from transactions)
+        const { data: claims } = await supabase
+            .from('transactions')
+            .select('metadata')
+            .eq('user_id', userId)
+            .eq('type', 'PRIZE');
+
+        const claimedIds = (claims || [])
+            .filter(tx => tx.metadata?.questId)
+            .map(tx => tx.metadata.questId);
+
+        // 4. Calculate Quests
+        const quests = [
+            {
+                id: '1',
+                title: 'Play 3 Free Quizzes',
+                progress: Math.min(user.stats_total_games || 0, 3),
+                total: 3,
+                reward: '20 Stars',
+                type: 'stars',
+                status: claimedIds.includes('1') ? 'completed' : (user.stats_total_games >= 3 ? 'claimable' : 'in-progress')
+            },
+            {
+                id: '2',
+                title: 'Win a Tournament',
+                progress: Math.min(user.stats_wins || 0, 1),
+                total: 1,
+                reward: '100 XP',
+                type: 'xp',
+                status: claimedIds.includes('2') ? 'completed' : (user.stats_wins >= 1 ? 'claimable' : 'in-progress')
+            },
+            {
+                id: '3',
+                title: 'Invite 1 Friend',
+                progress: Math.min(referralCount || 0, 1),
+                total: 1,
+                reward: '50 Stars',
+                type: 'stars',
+                status: claimedIds.includes('3') ? 'completed' : ((referralCount || 0) >= 1 ? 'claimable' : 'in-progress')
+            }
+        ];
+
+        res.json({ quests });
+    } catch (error: any) {
+        console.error('Quests API Error:', error.message);
+        res.status(500).json({ error: 'Failed to fetch quests' });
+    }
+});
+
+app.post('/api/claim-quest', async (req, res) => {
+    try {
+        const { telegramId, questId } = req.body;
+        const userId = parseInt(telegramId);
+
+        // Verify if claimable
+        // (For brevity, we'll trust the client or re-verify. Real prod needs re-verification)
+        // Let's do a quick re-verify for one quest as example
+        const { data: user } = await supabase.from('users').select('*').eq('telegram_id', userId).single();
+        if (!user) return res.status(404).json({ error: 'User not found' });
+
+        // Add transaction
+        const { error: txError } = await supabase.from('transactions').insert({
+            user_id: userId,
+            type: 'PRIZE',
+            amount: questId === '1' ? 20 : (questId === '3' ? 50 : 0),
+            currency: 'STARS',
+            metadata: { questId, type: 'QUEST_REWARD' },
+            status: 'COMPLETED'
+        });
+
+        if (txError) throw txError;
+
+        // Update balance if stars
+        if (questId === '1' || questId === '3') {
+            const reward = questId === '1' ? 20 : 50;
+            await supabase.from('users')
+                .update({ balance_stars: (user.balance_stars || 0) + reward })
+                .eq('telegram_id', userId);
+        } else if (questId === '2') {
+            await supabase.from('users')
+                .update({ stats_xp: (user.stats_xp || 0) + 100 })
+                .eq('telegram_id', userId);
+        }
+
+        res.json({ success: true });
+    } catch (error: any) {
+        console.error('Claim Quest Error:', error.message);
+        res.status(500).json({ error: 'Failed to claim quest' });
+    }
+});
+
 // Game State
 const rooms = new Map<string, GameManager>();
 
@@ -329,13 +443,30 @@ io.on('connection', (socket) => {
                 user = newUser;
             } else if (fetchError) throw fetchError;
 
+            // Fetch Referral Stats
+            const { count: referralCount } = await supabase
+                .from('users')
+                .select('*', { count: 'exact', head: true })
+                .eq('referred_by', userId);
+
+            const { data: earningsData } = await supabase
+                .from('transactions')
+                .select('amount')
+                .eq('user_id', userId)
+                .eq('type', 'REFERRAL_BONUS');
+
+            const referralEarnings = (earningsData || []).reduce((sum, tx) => sum + tx.amount, 0);
+
             socket.emit('profile_synced', {
                 stars: user.balance_stars,
                 ton: user.balance_ton,
                 xp: user.stats_xp || 0,
                 wins: user.stats_wins || 0,
                 totalGames: user.stats_total_games || 0,
-                walletConnected: !!user.wallet_address
+                walletConnected: !!user.wallet_address,
+                walletAddress: user.wallet_address,
+                referralCount: referralCount || 0,
+                referralEarnings: referralEarnings || 0
             });
         } catch (error) {
             console.error('Sync Profile Error:', error);

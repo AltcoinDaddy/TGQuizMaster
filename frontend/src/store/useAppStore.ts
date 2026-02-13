@@ -12,6 +12,9 @@ interface UserState {
     tonBalance: number;
     inventory: string[];
     walletConnected: boolean;
+    walletAddress?: string;
+    referralCount?: number;
+    referralEarnings?: number;
 }
 
 interface AppStore {
@@ -53,7 +56,10 @@ export const useAppStore = create<AppStore>((set) => ({
                 xp: data.xp,
                 wins: data.wins,
                 totalGames: data.totalGames,
-                walletConnected: data.walletConnected ?? state.user.walletConnected
+                walletConnected: data.walletConnected ?? state.user.walletConnected,
+                walletAddress: data.walletAddress ?? state.user.walletAddress,
+                referralCount: data.referralCount ?? state.user.referralCount,
+                referralEarnings: data.referralEarnings ?? state.user.referralEarnings
             }
         })),
 }));

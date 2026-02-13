@@ -7,7 +7,7 @@ import { useAppStore } from '../../store/useAppStore';
 
 export const Referral: React.FC = () => {
     const { user } = useAppStore();
-    const referralLink = `https://t.me/tgquizmaster_bot?start=ref_${user.telegramId || 'unknown'}`;
+    const referralLink = `https://t.me/TGQuizMasters_bot?start=ref_${user.telegramId || 'unknown'}`;
 
     const handleShare = () => {
         const inviteText = `I'm challenging you to a real-time quiz battle on TGQuizMaster! 🏆 Play & win TON. Join here: ${referralLink}`;
@@ -31,12 +31,12 @@ export const Referral: React.FC = () => {
             <div className="grid grid-cols-2 gap-4 mb-6">
                 <GlassCard className="flex flex-col items-center p-6 bg-gradient-to-b from-primary/10 to-transparent">
                     <Users size={28} className="text-primary mb-2" />
-                    <span className="text-2xl font-black">24</span>
+                    <span className="text-2xl font-black">{user.referralCount || 0}</span>
                     <span className="text-[10px] uppercase font-bold opacity-40">Total Referrals</span>
                 </GlassCard>
                 <GlassCard className="flex flex-col items-center p-6 bg-gradient-to-b from-blue-400/10 to-transparent">
                     <Receipt size={28} className="text-blue-400 mb-2" />
-                    <span className="text-2xl font-black">12.50</span>
+                    <span className="text-2xl font-black">{(user.referralEarnings || 0).toFixed(2)}</span>
                     <span className="text-[10px] uppercase font-bold opacity-40">TON Earned</span>
                 </GlassCard>
             </div>

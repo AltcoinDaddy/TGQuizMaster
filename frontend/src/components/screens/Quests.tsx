@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
+import { useAppStore } from '../../store/useAppStore';
 import { MainLayout } from '../layout/MainLayout';
 import { GlassCard } from '../ui/GlassCard';
 import { Button } from '../ui/Button';
-import { Zap, Star, Gift, Lock, Trophy, Sparkles } from 'lucide-react';
+import { Zap, Star, Gift, Lock, Trophy, Sparkles, Loader2 } from 'lucide-react';
 
 interface Quest {
     id: string;
@@ -16,55 +17,60 @@ interface Quest {
 }
 
 export const Quests: React.FC = () => {
+    const { user } = useAppStore();
     const [showReward, setShowReward] = useState(false);
+    const [loading, setLoading] = useState(true);
+    const [quests, setQuests] = useState<Quest[]>([]);
     const [claimingQuest, setClaimingQuest] = useState<Quest | null>(null);
 
-    const quests: Quest[] = [
-        {
-            id: '1',
-            title: 'Play 3 Free Quizzes',
-            progress: 1,
-            total: 3,
-            reward: '+20 Stars',
-            type: 'stars',
-            status: 'in-progress',
-            icon: <Zap size={24} />
-        },
-        {
-            id: '2',
-            title: 'Win a Tournament',
-            progress: 0,
-            total: 1,
-            reward: '+100 XP',
-            type: 'xp',
-            status: 'in-progress',
-            icon: <Trophy size={24} />
-        },
-        {
-            id: '3',
-            title: 'Invite 1 Friend',
-            progress: 1,
-            total: 1,
-            reward: '+50 Stars',
-            type: 'stars',
-            status: 'claimable',
-            icon: <Gift size={24} />
-        },
-        {
-            id: '4',
-            title: 'Premium Daily',
-            progress: 0,
-            total: 1,
-            reward: '+200 Stars',
-            type: 'stars',
-            status: 'locked',
-            icon: <Sparkles size={24} />
+    const fetchQuests = async () => {
+        try {
+            setLoading(true);
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/quests?telegramId=${user.telegramId}`);
+            const data = await res.json();
+            if (data.quests) {
+                // Map API status to UI icons
+                const mappedQuests = data.quests.map((q: any) => ({
+                    ...q,
+                    icon: q.id === '1' ? <Zap size={24} /> : (q.id === '2' ? <Trophy size={24} /> : <Gift size={24} />)
+                }));
+                setQuests(mappedQuests);
+            }
+        } catch (e) {
+            console.error('Failed to fetch quests:', e);
+        } finally {
+            setLoading(false);
         }
-    ];
+    };
 
-    const handleClaim = (quest: Quest) => {
-        setClaimingQuest(quest);
-        setShowReward(true);
+    React.useEffect(() => {
+        if (user.telegramId) {
+            fetchQuests();
+        }
+    }, [user.telegramId]);
+
+    const handleClaim = async (quest: Quest) => {
+        try {
+            setClaimingQuest(quest);
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/claim-quest`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    telegramId: user.telegramId,
+                    questId: quest.id
+                })
+            });
+
+            if (res.ok) {
+                setShowReward(true);
+                // Refresh data
+                fetchQuests();
+                // User balance will be synced via socket/profile_synced eventually, 
+                // but let's assume we want immediate feedback in real apps.
+            }
+        } catch (e) {
+            console.error('Claim failed:', e);
+        }
     };
 
     return (
@@ -81,7 +87,7 @@ export const Quests: React.FC = () => {
                     </div>
                     <div className="bg-white/5 border border-white/10 px-3 py-2 rounded-xl flex items-center gap-2">
                         <Star size={16} className="text-yellow-400 fill-yellow-400" />
-                        <span className="font-bold">1,240</span>
+                        <span className="font-bold">{user.stars.toLocaleString()}</span>
                     </div>
                 </div>
 
@@ -99,53 +105,60 @@ export const Quests: React.FC = () => {
 
                 {/* Quest List */}
                 <div className="space-y-4 mb-24">
-                    {quests.map((quest) => (
-                        <GlassCard
-                            key={quest.id}
-                            className={`p-4 flex items-center gap-4 border-white/5 ${quest.status === 'locked' ? 'opacity-50 grayscale' : ''} ${quest.status === 'claimable' ? 'border-primary/40 shadow-[0_0_20px_rgba(13,242,89,0.1)]' : ''}`}
-                        >
-                            <div className={`w-14 h-14 rounded-xl flex items-center justify-center border ${quest.status === 'claimable' ? 'bg-primary/20 text-primary border-primary/30' : 'bg-background-dark text-white/60 border-white/10'}`}>
-                                {quest.icon}
-                            </div>
-
-                            <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2 mb-1">
-                                    <h3 className="font-bold text-sm truncate">{quest.title}</h3>
-                                    {quest.status === 'locked' && <Lock size={12} className="text-white/40" />}
+                    {loading ? (
+                        <div className="flex flex-col items-center justify-center py-20 opacity-50">
+                            <Loader2 className="animate-spin mb-4" size={32} />
+                            <p className="text-xs font-black uppercase tracking-widest">Syncing Quests...</p>
+                        </div>
+                    ) : (
+                        quests.map((quest) => (
+                            <GlassCard
+                                key={quest.id}
+                                className={`p-4 flex items-center gap-4 border-white/5 ${quest.status === 'locked' ? 'opacity-50 grayscale' : ''} ${quest.status === 'claimable' ? 'border-primary/40 shadow-[0_0_20px_rgba(13,242,89,0.1)]' : ''}`}
+                            >
+                                <div className={`w-14 h-14 rounded-xl flex items-center justify-center border ${quest.status === 'claimable' ? 'bg-primary/20 text-primary border-primary/30' : 'bg-background-dark text-white/60 border-white/10'}`}>
+                                    {quest.icon}
                                 </div>
 
-                                <div className="w-full bg-background-dark h-2 rounded-full overflow-hidden border border-white/5 mb-1">
-                                    <div
-                                        className="h-full bg-primary"
-                                        style={{ width: `${(quest.progress / quest.total) * 100}%` }}
-                                    ></div>
+                                <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2 mb-1">
+                                        <h3 className="font-bold text-sm truncate">{quest.title}</h3>
+                                        {quest.status === 'locked' && <Lock size={12} className="text-white/40" />}
+                                    </div>
+
+                                    <div className="w-full bg-background-dark h-2 rounded-full overflow-hidden border border-white/5 mb-1">
+                                        <div
+                                            className="h-full bg-primary"
+                                            style={{ width: `${(quest.progress / quest.total) * 100}%` }}
+                                        ></div>
+                                    </div>
+
+                                    <div className="flex justify-between items-center">
+                                        <span className={`text-[10px] font-black uppercase tracking-wider ${quest.status === 'claimable' ? 'text-primary' : 'text-white/40'}`}>
+                                            {quest.status === 'claimable' ? 'COMPLETED' : `${quest.progress} / ${quest.total}`}
+                                        </span>
+                                        <span className="text-[10px] font-black text-primary">{quest.reward}</span>
+                                    </div>
                                 </div>
 
-                                <div className="flex justify-between items-center">
-                                    <span className={`text-[10px] font-black uppercase tracking-wider ${quest.status === 'claimable' ? 'text-primary' : 'text-white/40'}`}>
-                                        {quest.status === 'claimable' ? 'COMPLETED' : `${quest.progress} / ${quest.total}`}
-                                    </span>
-                                    <span className="text-[10px] font-black text-primary">{quest.reward}</span>
-                                </div>
-                            </div>
-
-                            {quest.status === 'claimable' ? (
-                                <button
-                                    onClick={() => handleClaim(quest)}
-                                    className="bg-primary hover:bg-primary/90 text-background-dark font-black py-2 px-4 rounded-full text-[10px] uppercase shadow-lg shadow-primary/20 active:scale-95 transition-all"
-                                >
-                                    CLAIM
-                                </button>
-                            ) : (
-                                <button
-                                    disabled={quest.status === 'locked'}
-                                    className={`py-2 px-4 rounded-full text-[10px] font-black uppercase transition-all ${quest.status === 'locked' ? 'bg-white/5 text-white/20' : 'bg-white/10 hover:bg-white/20 text-white'}`}
-                                >
-                                    {quest.status === 'locked' ? 'LOCKED' : 'GO'}
-                                </button>
-                            )}
-                        </GlassCard>
-                    ))}
+                                {quest.status === 'claimable' ? (
+                                    <button
+                                        onClick={() => handleClaim(quest)}
+                                        className="bg-primary hover:bg-primary/90 text-background-dark font-black py-2 px-4 rounded-full text-[10px] uppercase shadow-lg shadow-primary/20 active:scale-95 transition-all"
+                                    >
+                                        CLAIM
+                                    </button>
+                                ) : (
+                                    <button
+                                        disabled={quest.status === 'locked' || quest.status === 'completed'}
+                                        className={`py-2 px-4 rounded-full text-[10px] font-black uppercase transition-all ${quest.status === 'locked' ? 'bg-white/5 text-white/20' : (quest.status === 'completed' ? 'bg-white/5 text-primary opacity-50' : 'bg-white/10 hover:bg-white/20 text-white')}`}
+                                    >
+                                        {quest.status === 'locked' ? 'LOCKED' : (quest.status === 'completed' ? 'CLAIMED' : 'GO')}
+                                    </button>
+                                )}
+                            </GlassCard>
+                        ))
+                    )}
                 </div>
             </div>
 

@@ -33,18 +33,26 @@ function WalletSyncer() {
 
   useEffect(() => {
     if (user.telegramId && userFriendlyAddress) {
-      if (user.walletConnected) return; // Already synced? No, address might change.
-      console.log('Syncing wallet address:', userFriendlyAddress);
-      socket.emit('update_wallet', {
-        telegramId: user.telegramId,
-        walletAddress: userFriendlyAddress
-      });
-      useAppStore.getState().setWalletConnected(true);
+      // Sync if not connected OR if the address has changed
+      if (!user.walletConnected || user.walletAddress !== userFriendlyAddress) {
+        console.log('Syncing wallet address:', userFriendlyAddress);
+        socket.emit('update_wallet', {
+          telegramId: user.telegramId,
+          walletAddress: userFriendlyAddress
+        });
+        useAppStore.getState().setUser({
+          walletConnected: true,
+          walletAddress: userFriendlyAddress
+        });
+      }
     } else if (user.telegramId && !userFriendlyAddress && user.walletConnected) {
       // Handle disconnect
-      useAppStore.getState().setWalletConnected(false);
+      useAppStore.getState().setUser({
+        walletConnected: false,
+        walletAddress: undefined
+      });
     }
-  }, [userFriendlyAddress, user.telegramId, user.walletConnected]);
+  }, [userFriendlyAddress, user.telegramId, user.walletConnected, user.walletAddress]);
 
   return null;
 }

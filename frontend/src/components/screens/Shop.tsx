@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useAppStore } from '../../store/useAppStore';
 import { MainLayout } from '../layout/MainLayout';
 import { GlassCard } from '../ui/GlassCard';
 import { Star, Zap, Shield, ShoppingBag, Loader2 } from 'lucide-react';
@@ -17,7 +18,9 @@ interface ShopItem {
 }
 
 export const Shop: React.FC = () => {
+    const { user } = useAppStore();
     const [category, setCategory] = useState<'stars' | 'powerups' | 'avatars' | 'pro'>('stars');
+
     const [isPurchasing, setIsPurchasing] = useState<string | null>(null);
 
     const handlePurchase = async (item: ShopItem) => {
@@ -99,7 +102,7 @@ export const Shop: React.FC = () => {
                     </div>
                     <div className="flex items-center bg-primary/10 rounded-full pl-3 pr-1 py-1 border border-primary/20">
                         <span className="text-primary font-black mr-2 text-xs uppercase tracking-wider flex items-center gap-1">
-                            <Star size={12} className="fill-primary" /> 1,250
+                            <Star size={12} className="fill-primary" /> {user.stars.toLocaleString()}
                         </span>
                         <button className="bg-primary text-background-dark h-8 w-8 rounded-full flex items-center justify-center hover:scale-105 active:scale-95 transition-transform shadow-lg shadow-primary/20">
                             <i className="material-icons text-lg">add</i>
