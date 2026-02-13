@@ -18,11 +18,11 @@ export const BottomNav: React.FC = () => {
                 </button>
 
                 <button
-                    onClick={() => navigate('/quests')}
-                    className={`flex flex-col items-center gap-1 transition-all ${isActive('/quests') ? 'text-primary' : 'opacity-40 hover:opacity-100'}`}
+                    onClick={() => navigate('/shop')}
+                    className={`flex flex-col items-center gap-1 transition-all ${isActive('/shop') ? 'text-primary' : 'opacity-40 hover:opacity-100'}`}
                 >
-                    <span className="material-icons">bolt</span>
-                    <span className="text-[9px] font-black uppercase tracking-widest italic leading-none">Quests</span>
+                    <span className="material-icons">shopping_bag</span>
+                    <span className="text-[9px] font-black uppercase tracking-widest italic leading-none">Shop</span>
                 </button>
 
                 <div className="relative -mt-10">

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { MainLayout } from '../layout/MainLayout';
-import { Trophy, Rocket, Gift, ArrowRight } from 'lucide-react';
+import { Trophy, Rocket, ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { StreakPopup } from '../ui/StreakPopup';
 
@@ -80,17 +80,20 @@ export const Home: React.FC = () => {
                         </div>
                     </div>
 
-                    {/* Sponsored Quiz */}
-                    <div className="bg-white/5 border border-white/10 p-5 rounded-3xl active:scale-[0.98] transition-all flex flex-col justify-between aspect-square">
-                        <div className="w-12 h-12 bg-blue-400/10 rounded-2xl flex items-center justify-center mb-4">
-                            <Gift size={24} className="text-blue-400" />
+                    {/* Daily Quests */}
+                    <div
+                        onClick={() => navigate('/quests')}
+                        className="bg-white/5 border border-white/10 p-5 rounded-3xl active:scale-[0.98] transition-all flex flex-col justify-between aspect-square cursor-pointer hover:border-primary/30"
+                    >
+                        <div className="w-12 h-12 bg-yellow-400/10 rounded-2xl flex items-center justify-center mb-4">
+                            <Rocket size={24} className="text-yellow-400" />
                         </div>
                         <div>
-                            <h3 className="font-black text-lg uppercase italic tracking-tighter leading-none mb-1">Brand Quiz</h3>
-                            <p className="text-[10px] opacity-60 font-bold leading-tight uppercase tracking-tighter">Win exclusive NFTs and tokens from partners.</p>
+                            <h3 className="font-black text-lg uppercase italic tracking-tighter leading-none mb-1">Daily Quests</h3>
+                            <p className="text-[10px] opacity-60 font-bold leading-tight uppercase tracking-tighter">Complete tasks to earn huge rewards.</p>
                         </div>
-                        <div className="mt-4 flex items-center text-blue-400 text-[10px] font-black uppercase tracking-widest gap-2 italic">
-                            Explore <ArrowRight size={14} />
+                        <div className="mt-4 flex items-center text-yellow-400 text-[10px] font-black uppercase tracking-widest gap-2 italic">
+                            View Quests <ArrowRight size={14} />
                         </div>
                     </div>
                 </div>
