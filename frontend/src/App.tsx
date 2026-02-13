@@ -23,6 +23,7 @@ import { BugReport } from './components/screens/BugReport';
 import { WaitingLobby } from './components/screens/WaitingLobby';
 import { PurchaseConfirmation } from './components/screens/PurchaseConfirmation';
 import { AdFreeUpsell } from './components/screens/AdFreeUpsell';
+import { Settings } from './components/screens/Settings';
 
 function App() {
   const [showOnboarding, setShowOnboarding] = useState<boolean | null>(null);
@@ -106,6 +107,7 @@ function App() {
         <Route path="/waiting-lobby" element={<WaitingLobby />} />
         <Route path="/purchase-confirmation" element={<PurchaseConfirmation />} />
         <Route path="/ad-free" element={<AdFreeUpsell />} />
+        <Route path="/settings" element={<Settings />} />
       </Routes>
     </Router>
   );

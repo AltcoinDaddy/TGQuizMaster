@@ -21,14 +21,14 @@ export const QuizRoom: React.FC = () => {
     const strokeDashoffset = circumference - (timeLeft / 15) * circumference;
 
     const location = useLocation();
-    const { tournamentId, entryFee, currency } = location.state || {}; // Fallback if direct access
+    const { tournamentId, entryFee, currency, type } = location.state || {}; // Fallback if direct access
 
     useEffect(() => {
         socket.emit('join_room', {
             username: user.username,
             telegramId: user.telegramId,
             avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`,
-            roomType: 'tournament',
+            roomType: type || 'tournament',
             tournamentId,
             entryFee,
             currency

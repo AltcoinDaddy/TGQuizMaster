@@ -4,10 +4,16 @@ import { GlassCard } from '../ui/GlassCard';
 import { Wallet, Settings, ChevronRight, LogOut, Award, PlayCircle, Zap, HelpCircle, ExternalLink, ShieldCheck } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../../store/useAppStore';
+import { useTonConnectUI } from '@tonconnect/ui-react';
 
 export const Profile: React.FC = () => {
     const navigate = useNavigate();
     const user = useAppStore(state => state.user);
+
+    const [tonConnectUI] = useTonConnectUI();
+    const handleDisconnect = () => {
+        tonConnectUI.disconnect();
+    };
 
     const transactions = [
         { id: 1, title: 'Trivia Win: Weekly Pro', date: '24 Oct, 14:20', amount: '+15.0 TON', type: 'win' },
@@ -133,7 +139,10 @@ export const Profile: React.FC = () => {
                         <ChevronRight size={14} className="text-white/20" />
                     </button>
 
-                    <button className="w-full flex items-center justify-center gap-3 p-5 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-400 active:scale-[0.98] transition-all">
+                    <button
+                        onClick={handleDisconnect}
+                        className="w-full flex items-center justify-center gap-3 p-5 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-400 active:scale-[0.98] transition-all"
+                    >
                         <LogOut size={16} />
                         <span className="text-[10px] font-black uppercase tracking-[0.2em] italic">Disconnect Wallet</span>
                     </button>

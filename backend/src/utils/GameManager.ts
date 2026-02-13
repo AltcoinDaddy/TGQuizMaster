@@ -22,10 +22,10 @@ export class GameManager {
     private currentIndex = 0;
     private timer = 15;
     private io: any;
-    private tournamentType: 'free' | 'stars' | 'ton' = 'free';
+    private tournamentType: 'free' | 'stars' | 'ton' | 'practice' = 'free';
     private prizePool = 0;
 
-    constructor(roomId: string, io: any, type: 'free' | 'stars' | 'ton' = 'free', prize = 0) {
+    constructor(roomId: string, io: any, type: 'free' | 'stars' | 'ton' | 'practice' = 'free', prize = 0) {
         this.roomId = roomId;
         this.players = [];
         this.io = io;
@@ -136,10 +136,20 @@ export class GameManager {
         const prizes = [distribution.first, distribution.second, distribution.third];
         const currency = this.tournamentType === 'stars' ? 'STARS' : 'TON';
 
+        // Skip DB recording for practice
+        if (this.tournamentType === 'practice') {
+            this.io.to(this.roomId).emit('game_over', {
+                winners,
+                prizes: { first: 0, second: 0, third: 0 },
+                currency: 'XP'
+            });
+            console.log(`Practice game over in ${this.roomId}`);
+            return;
+        }
+
         // 1. Create Tournament Record
         try {
-            const { supabase } = await import('../config/supabase'); // Dynamic import to avoid circular dep issues in some setups
-
+            const { supabase } = await import('../config/supabase');
             const { data: tournamentRecord, error: tourError } = await supabase
                 .from('tournaments')
                 .insert({

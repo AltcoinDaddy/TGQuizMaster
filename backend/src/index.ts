@@ -119,8 +119,28 @@ io.on('connection', (socket) => {
             }
 
             // 3. Matchmaking
+            let roomId: string | undefined;
+
+            if (data.roomType === 'practice') {
+                roomId = crypto.randomUUID();
+                const mgr = new GameManager(roomId, io, 'practice', 0);
+                rooms.set(roomId, mgr);
+
+                mgr.addPlayer({
+                    id: userId.toString(),
+                    username,
+                    avatar,
+                    score: 0
+                });
+
+                socket.join(roomId);
+                socket.emit('game_start'); // Instant start for practice
+                mgr.start(); // Start questions
+                return;
+            }
+
             // Find a room matching the currency/type or create new
-            let roomId = Array.from(rooms.keys()).find(id => {
+            roomId = Array.from(rooms.keys()).find(id => {
                 const mgr = rooms.get(id);
                 // Check if room is open AND matches the currency type (simplified logic)
                 return mgr && mgr.getPlayers().length < 5;

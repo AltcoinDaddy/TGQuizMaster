@@ -64,7 +64,10 @@ export const Home: React.FC = () => {
                 {/* Action Cards Grid */}
                 <div className="grid grid-cols-2 gap-4 mt-6">
                     {/* Free Quiz */}
-                    <div className="bg-white/5 border border-white/10 p-5 rounded-3xl active:scale-[0.98] transition-all flex flex-col justify-between aspect-square">
+                    <div
+                        onClick={() => navigate('/quiz', { state: { type: 'practice', entryFee: 'Free' } })}
+                        className="bg-white/5 border border-white/10 p-5 rounded-3xl active:scale-[0.98] transition-all flex flex-col justify-between aspect-square cursor-pointer hover:border-primary/30"
+                    >
                         <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center mb-4">
                             <Rocket size={24} className="text-primary" />
                         </div>
