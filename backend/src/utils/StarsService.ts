@@ -23,6 +23,30 @@ export class StarsService {
         );
     }
 
+    // New method for Mini Apps
+    async getInvoiceLink(title: string, description: string, payload: string, amount: number) {
+        const prices = [{ label: 'Stars', amount: Math.floor(amount) }]; // Amount must be integer
+
+        // Use raw API call if method not available in type definition, or rely on bot instance
+        console.log(`Generating Invoice Link: ${title} (${amount} XTR)`);
+
+        try {
+            // node-telegram-bot-api might not have createInvoiceLink typed yet, casting to any
+            const link = await (this.bot as any).createInvoiceLink(
+                title,
+                description,
+                payload,
+                "", // provider_token is empty for Stars
+                "XTR",
+                prices
+            );
+            return link;
+        } catch (error: any) {
+            console.error('Failed to create invoice link:', error.message);
+            throw error;
+        }
+    }
+
     // Verification logic for successful payments
     async verifyPayment(userId: string, payload: string, amount: number) {
         console.log(`[PAYMENT] Verifying: User=${userId} | Amount=${amount} | Type=${payload}`);

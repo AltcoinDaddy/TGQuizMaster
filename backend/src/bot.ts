@@ -5,11 +5,13 @@ import { StarsService } from './utils/StarsService';
 dotenv.config();
 
 const token = process.env.TELEGRAM_BOT_TOKEN;
+export let starsService: StarsService;
+
 if (!token) {
     console.error('TELEGRAM_BOT_TOKEN is missing! Bot will not start.');
 } else {
     const bot = new TelegramBot(token, { polling: true });
-    const starsService = new StarsService(bot);
+    starsService = new StarsService(bot);
 
     // WebApp URL for the Menu Button (uses env or hardcoded fallback)
     const webAppUrl = process.env.VITE_API_URL || 'https://tg-quiz-master.vercel.app';

@@ -8,6 +8,7 @@ import { supabase } from './config/supabase';
 
 import { GameManager } from './utils/GameManager';
 import './bot'; // Initialize Bot
+import { starsService } from './bot';
 
 dotenv.config();
 
@@ -26,6 +27,28 @@ app.use(express.json());
 // Health Check
 app.get('/health', (req, res) => {
     res.status(200).send('OK');
+});
+
+// Payment API
+app.post('/api/create-payment-link', async (req, res) => {
+    try {
+        const { title, description, payload, amount } = req.body;
+
+        if (!title || !amount) {
+            return res.status(400).json({ error: 'Missing title or amount' });
+        }
+
+        if (!starsService) {
+            return res.status(503).json({ error: 'Bot service not initialized' });
+        }
+
+        const invoiceLink = await starsService.getInvoiceLink(title, description, payload, parseFloat(amount));
+        res.json({ invoiceLink });
+
+    } catch (error: any) {
+        console.error('Payment Link Error:', error.message);
+        res.status(500).json({ error: 'Failed to create link' });
+    }
 });
 
 // Game State

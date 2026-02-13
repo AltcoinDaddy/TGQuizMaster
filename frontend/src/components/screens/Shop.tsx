@@ -24,11 +24,51 @@ export const Shop: React.FC = () => {
         setIsPurchasing(item.id);
         console.log(`[SHOP] Initiating purchase for ${item.title} (${item.price} ${item.currency})`);
 
-        // Simulate API call to backend StarsService.createInvoice
-        setTimeout(() => {
+        try {
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/create-payment-link`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    title: item.title,
+                    description: item.description,
+                    payload: item.id, // Payload to identify item in webhook
+                    amount: item.price
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.invoiceLink) {
+                // Open Invoice in Telegram
+                const tg = (window as any).Telegram?.WebApp;
+                if (tg && tg.openInvoice) {
+                    tg.openInvoice(data.invoiceLink, (status: string) => {
+                        if (status === 'paid') {
+                            setIsPurchasing(null);
+                            tg.showAlert('Payment Successful! Item delivered. 🌟');
+                        } else if (status === 'failed') {
+                            setIsPurchasing(null);
+                            tg.showAlert('Payment Failed. Please try again.');
+                        } else {
+                            // Cancelled or pending
+                            setIsPurchasing(null);
+                        }
+                    });
+                } else {
+                    // Fallback for non-Telegram env (dev)
+                    console.log('Would open invoice:', data.invoiceLink);
+                    alert(`[DEV] Invoice Link Generated:\n${data.invoiceLink}`);
+                    setIsPurchasing(null);
+                }
+            } else {
+                throw new Error('No invoice link returned');
+            }
+
+        } catch (error) {
+            console.error('Purchase failed:', error);
             setIsPurchasing(null);
-            alert(`Premium Flow Initiated!\n\nThis would now trigger a Telegram Stars Invoice for ${item.price} Stars.\n\nPayload: ${item.id}`);
-        }, 1200);
+            alert('Failed to initiate payment. Please try again.');
+        }
     };
 
     const starsItems: ShopItem[] = [
