@@ -1,7 +1,7 @@
 import React from 'react';
 import { MainLayout } from '../layout/MainLayout';
 import { GlassCard } from '../ui/GlassCard';
-import { Wallet, Settings, ChevronRight, LogOut, Award, PlayCircle, Zap, HelpCircle, ExternalLink, ShieldCheck } from 'lucide-react';
+import { Wallet, Settings, ChevronRight, LogOut, Award, PlayCircle, Zap, HelpCircle, ExternalLink, ShieldCheck, Users } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../../store/useAppStore';
 import { useTonConnectUI } from '@tonconnect/ui-react';
@@ -145,6 +145,17 @@ export const Profile: React.FC = () => {
 
                 {/* Security & Support Actions */}
                 <div className="space-y-3">
+                    <button
+                        onClick={() => navigate('/referral')}
+                        className="w-full flex items-center justify-between p-5 rounded-2xl bg-gradient-to-r from-primary/10 to-transparent border border-primary/20 active:bg-primary/20 transition-all"
+                    >
+                        <div className="flex items-center gap-3">
+                            <Users size={18} className="text-primary" />
+                            <span className="text-[10px] font-black text-primary uppercase tracking-widest italic">Refer & Earn</span>
+                        </div>
+                        <ChevronRight size={14} className="text-primary/50" />
+                    </button>
+
                     <button className="w-full flex items-center justify-between p-5 rounded-2xl bg-white/5 border border-white/5 active:bg-white/10 transition-all">
                         <div className="flex items-center gap-3">
                             <HelpCircle size={18} className="text-white/40" />
