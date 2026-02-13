@@ -1,6 +1,5 @@
 export class SoundManager {
     private static instance: SoundManager;
-    private audioContext: AudioContext | null = null;
     private sounds: Map<string, HTMLAudioElement> = new Map();
     private enabled: boolean = true;
 
