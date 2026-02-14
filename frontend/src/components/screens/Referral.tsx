@@ -7,7 +7,8 @@ import { useAppStore } from '../../store/useAppStore';
 
 export const Referral: React.FC = () => {
     const { user } = useAppStore();
-    const referralLink = `https://t.me/TGQuizMasters_bot?start=ref_${user.telegramId || 'unknown'}`;
+    const botUsername = import.meta.env.VITE_BOT_USERNAME || 'TGQuizMasters_bot';
+    const referralLink = `https://t.me/${botUsername}?start=ref_${user.telegramId || 'unknown'}`;
 
     const handleShare = () => {
         const inviteText = `I'm challenging you to a real-time quiz battle on TGQuizMaster! 🏆 Play & win TON. Join here: ${referralLink}`;
