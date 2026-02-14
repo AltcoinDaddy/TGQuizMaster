@@ -77,6 +77,8 @@ function App() {
         tg.expand();
 
         const user = tg.initDataUnsafe?.user;
+        console.log('Telegram User Data:', user);
+
         if (user?.id) {
           const telegramId = user.id.toString();
           const username = user.username || 'Anon_Player';
@@ -88,9 +90,17 @@ function App() {
           });
 
           // Connect Socket and Sync Profile
+          console.log('Connecting socket and syncing profile for:', telegramId);
           socket.connect();
           socket.emit('sync_profile', { telegramId, username });
+        } else {
+          console.warn('No Telegram User found - using fallback for local testing');
+          const testId = "123456789";
+          socket.connect();
+          socket.emit('sync_profile', { telegramId: testId, username: "@Alex_Quiz" });
         }
+      } else {
+        console.error('Telegram WebApp script not found!');
       }
 
       // Socket Listeners

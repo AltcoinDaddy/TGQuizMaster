@@ -29,6 +29,34 @@ app.get('/health', (req, res) => {
     res.status(200).send('OK');
 });
 
+// Verify Supabase Schema on startup
+const verifySchema = async () => {
+    console.log('[DB] Verifying Supabase schema...');
+    try {
+        const { data, error } = await supabase.from('users').select('*').limit(1);
+        if (error) {
+            console.error('[DB] Schema Error:', error.message);
+            if (error.message.includes('column "wallet_address" does not exist')) {
+                console.error('CRITICAL: MISSING COLUMN "wallet_address". Please run the SQL migration!');
+            }
+            if (error.message.includes('column "referred_by" does not exist')) {
+                console.error('CRITICAL: MISSING COLUMN "referred_by". Please run the SQL migration!');
+            }
+        } else {
+            console.log('[DB] Users table verified. Columns found.');
+            // Test if wallet_address is actually in the columns
+            if (data && data.length > 0) {
+                const cols = Object.keys(data[0]);
+                if (!cols.includes('wallet_address')) console.error('[DB] WARNING: wallet_address missing from keys!');
+                if (!cols.includes('referred_by')) console.error('[DB] WARNING: referred_by missing from keys!');
+            }
+        }
+    } catch (e) {
+        console.error('[DB] Verification failed:', e);
+    }
+};
+verifySchema();
+
 // Payment API
 app.post('/api/create-payment-link', async (req, res) => {
     try {
@@ -417,6 +445,7 @@ io.on('connection', (socket) => {
 
     socket.on('sync_profile', async (data) => {
         const { telegramId, username } = data;
+        console.log(`[SYNC] Profile request for ${telegramId} (${username})`);
         const userId = telegramId ? parseInt(telegramId) : 0;
         if (!userId) return;
 
@@ -428,6 +457,7 @@ io.on('connection', (socket) => {
                 .single();
 
             if (fetchError && fetchError.code === 'PGRST116') {
+                console.log(`[SYNC] User ${userId} not found, creating...`);
                 // Not found, create with defaults
                 const { data: newUser, error: createError } = await supabase
                     .from('users')
@@ -442,6 +472,8 @@ io.on('connection', (socket) => {
                 if (createError) throw createError;
                 user = newUser;
             } else if (fetchError) throw fetchError;
+
+            console.log(`[SYNC] User ${userId} data: wallet=${user.wallet_address}, stars=${user.balance_stars}, xp=${user.stats_xp}`);
 
             // Fetch Referral Stats
             const { count: referralCount } = await supabase
@@ -469,13 +501,13 @@ io.on('connection', (socket) => {
                 referralEarnings: referralEarnings || 0
             });
         } catch (error) {
-            console.error('Sync Profile Error:', error);
+            console.error('[SYNC] Profile Sync Error:', error);
         }
     });
 
     socket.on('update_wallet', async (data) => {
         const { telegramId, walletAddress } = data;
-        console.log(`[WALLET] Updating wallet for ${telegramId}: ${walletAddress}`);
+        console.log(`[WALLET] Received update_wallet for ${telegramId}: ${walletAddress}`);
 
         try {
             const { error } = await supabase
@@ -484,12 +516,12 @@ io.on('connection', (socket) => {
                 .eq('telegram_id', parseInt(telegramId));
 
             if (error) {
-                console.error('Failed to update wallet:', error);
+                console.error('[WALLET] Supabase Update Error:', error);
             } else {
-                console.log(`[WALLET] Synced successfully for ${telegramId}`);
+                console.log(`[WALLET] Successfully updated wallet_address in DB for ${telegramId}`);
             }
         } catch (e) {
-            console.error('Wallet Sync Exception:', e);
+            console.error('[WALLET] Sync Exception:', e);
         }
     });
 
