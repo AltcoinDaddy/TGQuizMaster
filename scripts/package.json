@@ -1,0 +1,22 @@
+{
+    "name": "scripts",
+    "version": "1.0.0",
+    "description": "Utility scripts for TG Quiz App",
+    "main": "verify_db_referral.ts",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "verify-referral": "ts-node verify_db_referral.ts"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "dependencies": {
+        "@supabase/supabase-js": "^2.95.3",
+        "dotenv": "^16.4.5"
+    },
+    "devDependencies": {
+        "ts-node": "^10.9.2",
+        "typescript": "^5.3.3",
+        "@types/node": "^20.11.24"
+    }
+}
