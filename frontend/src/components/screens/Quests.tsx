@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAppStore } from '../../store/useAppStore';
 import { MainLayout } from '../layout/MainLayout';
 import { GlassCard } from '../ui/GlassCard';
 import { Button } from '../ui/Button';
-import { Zap, Star, Gift, Lock, Trophy, Sparkles, Loader2 } from 'lucide-react';
+import { Zap, Star, Gift, Lock, Trophy, Sparkles, Loader2, ChevronLeft } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 interface Quest {
     id: string;
@@ -18,89 +19,122 @@ interface Quest {
 
 export const Quests: React.FC = () => {
     const { user } = useAppStore();
-    const [showReward, setShowReward] = useState(false);
-    const [loading, setLoading] = useState(true);
+    const navigate = useNavigate();
     const [quests, setQuests] = useState<Quest[]>([]);
+    const [weeklyMilestone, setWeeklyMilestone] = useState({ current: 0, target: 15, reward: 'Epic Chest' });
+    const [loading, setLoading] = useState(true);
+    const [claiming, setClaiming] = useState<string | null>(null);
+    const [showReward, setShowReward] = useState(false);
     const [claimingQuest, setClaimingQuest] = useState<Quest | null>(null);
 
-    const fetchQuests = async () => {
-        try {
-            setLoading(true);
-            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/quests?telegramId=${user.telegramId}`);
-            const data = await res.json();
-            if (data.quests) {
-                // Map API status to UI icons
-                const mappedQuests = data.quests.map((q: any) => ({
-                    ...q,
-                    icon: q.id === '1' ? <Zap size={24} /> : (q.id === '2' ? <Trophy size={24} /> : <Gift size={24} />)
-                }));
-                setQuests(mappedQuests);
+    useEffect(() => {
+        const fetchQuests = async () => {
+            if (!user.telegramId) return;
+            try {
+                setLoading(true); // Moved setLoading(true) here
+                const res = await fetch(`${import.meta.env.VITE_API_URL}/api/quests?telegramId=${user.telegramId}`);
+                const data = await res.json();
+                if (data.quests) {
+                    // Map API status to UI icons (re-added this logic as it was removed in the snippet but needed for Quest interface)
+                    const mappedQuests = data.quests.map((q: any) => ({
+                        ...q,
+                        icon: q.id === '1' ? <Zap size={24} /> : (q.id === '2' ? <Trophy size={24} /> : <Gift size={24} />)
+                    }));
+                    setQuests(mappedQuests);
+                }
+                if (data.weeklyMilestone) {
+                    setWeeklyMilestone(data.weeklyMilestone);
+                }
+            } catch (e) {
+                console.error('Failed to fetch quests:', e);
+            } finally {
+                setLoading(false);
             }
-        } catch (e) {
-            console.error('Failed to fetch quests:', e);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    React.useEffect(() => {
-        if (user.telegramId) {
-            fetchQuests();
-        }
+        };
+        fetchQuests();
     }, [user.telegramId]);
 
-    const handleClaim = async (quest: Quest) => {
+    const handleClaim = async (quest: Quest) => { // Changed back to Quest object for reward modal
+        setClaiming(quest.id); // Use quest.id for claiming state
         try {
-            setClaimingQuest(quest);
             const res = await fetch(`${import.meta.env.VITE_API_URL}/api/claim-quest`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    telegramId: user.telegramId,
-                    questId: quest.id
-                })
+                body: JSON.stringify({ telegramId: user.telegramId, questId: quest.id })
             });
+            const data = await res.json();
 
-            if (res.ok) {
+            if (res.ok && data.success) { // Check res.ok and data.success
+                // Update local state
+                setQuests(prev => prev.map(q => q.id === quest.id ? { ...q, status: 'completed' } : q));
+                // Update milestone if applicable
+                setWeeklyMilestone(prev => ({ ...prev, current: prev.current + 1 }));
+
+                // Show reward modal
+                setClaimingQuest(quest); // Set the quest being claimed for the modal
                 setShowReward(true);
-                // Refresh data
-                fetchQuests();
                 // User balance will be synced via socket/profile_synced eventually, 
                 // but let's assume we want immediate feedback in real apps.
+            } else {
+                console.error('Failed to claim quest:', data.message || 'Unknown error');
+                alert('Failed to claim quest');
             }
         } catch (e) {
-            console.error('Claim failed:', e);
+            console.error('Claim error:', e);
+            alert('Claim failed due to network error.');
+        } finally {
+            setClaiming(null);
         }
     };
 
     return (
         <MainLayout>
-            <div className="p-6 pt-4">
+            <div className="p-6 pt-4 pb-32">
                 {/* Header */}
-                <div className="flex items-center justify-between mb-6">
-                    <div>
-                        <h1 className="text-3xl font-black text-white">Quests</h1>
-                        <div className="flex items-center mt-1 gap-2 text-primary">
-                            <Zap size={14} />
-                            <span className="text-xs font-bold uppercase tracking-wider">Resets in 18h 45m</span>
-                        </div>
-                    </div>
-                    <div className="bg-white/5 border border-white/10 px-3 py-2 rounded-xl flex items-center gap-2">
-                        <Star size={16} className="text-yellow-400 fill-yellow-400" />
-                        <span className="font-bold">{user.stars.toLocaleString()}</span>
-                    </div>
+                <div className="flex items-center gap-4 mb-8">
+                    <button
+                        onClick={() => navigate(-1)}
+                        className="w-10 h-10 flex items-center justify-center rounded-full bg-white/5 text-primary active:scale-95 transition-all"
+                    >
+                        <ChevronLeft size={20} />
+                    </button>
+                    <h1 className="text-xl font-black text-white">Quests</h1>
                 </div>
 
                 {/* Weekly Milestone */}
-                <GlassCard className="p-4 mb-6 bg-gradient-to-br from-primary/10 to-transparent border-primary/20">
-                    <div className="flex justify-between items-center mb-3">
-                        <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-white/50">Weekly Milestone</h2>
-                        <span className="text-xs font-black text-primary">12/15 Quests</span>
+                <GlassCard className="p-6 mb-8 bg-gradient-to-br from-primary/20 to-transparent border-primary/30 relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 p-32 bg-primary/20 blur-[100px] rounded-full group-hover:bg-primary/30 transition-colors duration-1000"></div>
+
+                    <div className="relative z-10">
+                        <div className="flex justify-between items-start mb-4">
+                            <div>
+                                <p className="text-[10px] font-black uppercase tracking-widest text-primary mb-1">Weekly Milestone</p>
+                                <h2 className="text-2xl font-black text-white italic tracking-tighter">Complete {weeklyMilestone.target} Quests</h2>
+                            </div>
+                            <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-background-dark shadow-lg shadow-primary/20 animate-bounce-slow">
+                                <Gift size={20} />
+                            </div>
+                        </div>
+
+                        <div className="mb-2">
+                            <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest mb-2">
+                                <span className="text-white/40">{weeklyMilestone.current}/{weeklyMilestone.target} Quests</span>
+                                <span className="text-primary">{Math.round((weeklyMilestone.current / weeklyMilestone.target) * 100)}%</span>
+                            </div>
+                            <div className="h-3 bg-black/20 rounded-full overflow-hidden backdrop-blur-sm border border-white/5">
+                                <div
+                                    className="h-full bg-gradient-to-r from-primary to-accent-gold transition-all duration-1000 ease-out relative"
+                                    style={{ width: `${Math.min(100, (weeklyMilestone.current / weeklyMilestone.target) * 100)}%` }}
+                                >
+                                    <div className="absolute inset-0 bg-white/20 animate-pulse"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="text-right">
+                            <span className="text-[9px] font-bold text-white/40 uppercase tracking-widest">Reward: <span className="text-white">{weeklyMilestone.reward}</span></span>
+                        </div>
                     </div>
-                    <div className="relative h-6 bg-background-dark rounded-full overflow-hidden flex items-center p-1 border border-white/5">
-                        <div className="h-full bg-primary rounded-full shadow-[0_0_15px_rgba(13,242,89,0.5)]" style={{ width: '80%' }}></div>
-                    </div>
-                    <p className="mt-3 text-[10px] text-center text-white/40 font-medium italic">Complete 3 more to unlock the Epic Mystery Chest!</p>
                 </GlassCard>
 
                 {/* Quest List */}
@@ -144,9 +178,10 @@ export const Quests: React.FC = () => {
                                 {quest.status === 'claimable' ? (
                                     <button
                                         onClick={() => handleClaim(quest)}
-                                        className="bg-primary hover:bg-primary/90 text-background-dark font-black py-2 px-4 rounded-full text-[10px] uppercase shadow-lg shadow-primary/20 active:scale-95 transition-all"
+                                        disabled={claiming === quest.id}
+                                        className="bg-primary hover:bg-primary/90 text-background-dark font-black py-2 px-4 rounded-full text-[10px] uppercase shadow-lg shadow-primary/20 active:scale-95 transition-all flex items-center gap-1 disabled:opacity-70 disabled:active:scale-100"
                                     >
-                                        CLAIM
+                                        {claiming === quest.id ? <Loader2 size={12} className="animate-spin" /> : 'CLAIM'}
                                     </button>
                                 ) : (
                                     <button

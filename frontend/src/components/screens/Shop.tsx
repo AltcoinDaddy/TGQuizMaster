@@ -20,8 +20,41 @@ interface ShopItem {
 export const Shop: React.FC = () => {
     const { user } = useAppStore();
     const [category, setCategory] = useState<'stars' | 'powerups' | 'avatars' | 'pro'>('stars');
+    const [shopData, setShopData] = useState<{ stars: ShopItem[], powerups: ShopItem[], avatars: ShopItem[] }>({
+        stars: [],
+        powerups: [],
+        avatars: []
+    });
+    const [loading, setLoading] = useState(true);
 
     const [isPurchasing, setIsPurchasing] = useState<string | null>(null);
+
+    React.useEffect(() => {
+        const fetchShop = async () => {
+            try {
+                const res = await fetch(`${import.meta.env.VITE_API_URL}/api/shop`);
+                const data = await res.json();
+                if (data.shopItems) {
+                    // Map icons back to components (API sends just strings/data)
+                    const mapIcons = (items: any[]) => items.map(item => ({
+                        ...item,
+                        icon: item.id.startsWith('s') ? Star : (item.id.startsWith('p') ? (item.title.includes('Shield') ? Shield : Zap) : undefined)
+                    }));
+
+                    setShopData({
+                        stars: mapIcons(data.shopItems.stars),
+                        powerups: mapIcons(data.shopItems.powerups),
+                        avatars: data.shopItems.avatars
+                    });
+                }
+            } catch (e) {
+                console.error('Failed to fetch shop items:', e);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchShop();
+    }, []);
 
     const handlePurchase = async (item: ShopItem) => {
         setIsPurchasing(item.id);
@@ -42,7 +75,6 @@ export const Shop: React.FC = () => {
             const data = await response.json();
 
             if (data.invoiceLink) {
-                // Open Invoice in Telegram
                 const tg = (window as any).Telegram?.WebApp;
                 if (tg && tg.openInvoice) {
                     tg.openInvoice(data.invoiceLink, (status: string) => {
@@ -53,12 +85,10 @@ export const Shop: React.FC = () => {
                             setIsPurchasing(null);
                             tg.showAlert('Payment Failed. Please try again.');
                         } else {
-                            // Cancelled or pending
                             setIsPurchasing(null);
                         }
                     });
                 } else {
-                    // Fallback for non-Telegram env (dev)
                     console.log('Would open invoice:', data.invoiceLink);
                     alert(`[DEV] Invoice Link Generated:\n${data.invoiceLink}`);
                     setIsPurchasing(null);
@@ -74,22 +104,9 @@ export const Shop: React.FC = () => {
         }
     };
 
-    const starsItems: ShopItem[] = [
-        { id: 's1', title: 'Star Bundle', description: 'Start your journey', price: 50, currency: 'Stars', reward: '1,000 Stars', icon: Star, color: 'yellow-400' },
-        { id: 's2', title: 'Star Chest', description: 'Most popular choice', price: 250, currency: 'Stars', reward: '6,000 Stars', icon: Star, tag: 'BEST VALUE', color: 'yellow-400' },
-        { id: 's3', title: 'Star Vault', description: 'For the ultimate masters', price: 1000, currency: 'Stars', reward: '30,000 Stars', icon: Star, color: 'yellow-400' }
-    ];
-
-    const powerupItems: ShopItem[] = [
-        { id: 'p1', title: '50/50 Pack', description: 'Eliminate 2 wrong answers', price: 100, currency: 'Stars', reward: 'x10 50/50', icon: Zap, color: 'primary' },
-        { id: 'p2', title: 'Shield Pack', description: 'Protect your streak', price: 150, currency: 'Stars', reward: 'x5 Shields', icon: Shield, color: 'blue-400' }
-    ];
-
-    const avatarItems: ShopItem[] = [
-        { id: 'a1', title: 'Neon Glitch', description: 'Animated Frame', price: 500, currency: 'Stars', reward: 'NFT Avatar', image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAJoJylJGktSTFhUfJdOVEmw1ozWpc8h-K9YKXlf-076p2a28wUyRQsSP-KmOgeizOi6c0O-cwUscuyxcYta4Qzlvxpf3V28xTSdGezOsojgY8VIEGye61sAR2uLYZvYQRXKNYUIkMP-JJCz1Iml2rnlQo7abJGIeqgTvXexQxF8IgBOdVmztnQ1YZNckUP7xpHFv-FF4x94DyKxks98fDY6W2GefcpXnOCPdrIuz5gOaNscs3KJwpb48g4CYV-IPAUfYVhvWTh2OA', color: 'primary' },
-        { id: 'a2', title: 'Cyber Master', description: 'Premium Identity', price: 750, currency: 'Stars', reward: 'Legendary', image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCPahSwwA2M4HVR_vLV-lILzXC7xQf0Nox1bVuLcsHHMHaNB0P3tMJvfGAQhR8bjUciAoIGO6E9seaasLxRgULaniBkCmuWpyaweimfuakUNq2fAldQAcHIaImzziiR_16iI4yzrB3lav7O12FjqznvenQ2Bh7I-6f8ZAbJDvQTpblSoiTPnuFmX11iPLcMbsHgsUBjNOm9xx_-uuFtqiOjfUgtxs_MXfi_1w781LIrxGzYltnxrPtJ3k1O_f0P1B8qBuyrWzvlPWs', color: 'accent-purple' },
-        { id: 'a3', title: 'Quiz Crown', description: 'Legendary Icon', price: 1200, currency: 'Stars', reward: 'Mythic', image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCpxvQnPLgvRsdJag0ER3UXSPs0e4Hs_EXeQMs10qLZI63j4W69n5WSnHjbC2ZFM6SZUF6DEuscPqqvkdw6MGkdyMA1xGOT4FNal-D6FHvTJCZEwLNitNulAPX8nU76wCAuwGHfauWHdN3PFV_IQF_AGlus2_ahpCsfr1mYYcjDaN4BAWV9ciFrZnHSG9UyhQ9-jhGkmCVbisnuWHtUDYGpB3VhlaVf6onab2vnMA3l9Llngng8mUcB2hNgkxZcSfDn6ZMit_xobvc', color: 'accent-gold' }
-    ];
+    const starsItems = shopData.stars;
+    const powerupItems = shopData.powerups;
+    const avatarItems = shopData.avatars;
 
     return (
         <MainLayout>
@@ -131,53 +148,62 @@ export const Shop: React.FC = () => {
                     </span>
                 </div>
 
-                {/* Exclusive Avatars Horizontal Scroll */}
-                {category === 'avatars' ? (
-                    <div className="flex gap-4 overflow-x-auto hide-scrollbar -mx-6 px-6 pb-6">
-                        {avatarItems.map((item) => (
-                            <GlassCard key={item.id} className="flex-shrink-0 w-48 p-3 rounded-[2rem] border-white/5 space-y-3">
-                                <div className="relative aspect-square rounded-[1.5rem] overflow-hidden group">
-                                    <img src={item.image} alt={item.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
-                                    <div className={`absolute inset-0 ring-4 ring-inset rounded-[1.5rem] ${item.color === 'primary' ? 'ring-primary/40' : item.color === 'accent-purple' ? 'ring-accent-purple/40' : 'ring-accent-gold/40'}`}></div>
-                                </div>
-                                <div>
-                                    <h4 className="font-black text-sm uppercase italic tracking-tighter">{item.title}</h4>
-                                    <p className="text-[9px] text-white/40 font-bold uppercase tracking-widest">{item.description}</p>
-                                </div>
-                                <button
-                                    onClick={() => handlePurchase(item)}
-                                    disabled={isPurchasing !== null}
-                                    className="w-full bg-white/5 border border-primary text-primary font-black py-2.5 rounded-full text-[10px] flex items-center justify-center gap-1 italic uppercase tracking-widest active:scale-95 transition-all disabled:opacity-50"
-                                >
-                                    {isPurchasing === item.id ? <Loader2 size={12} className="animate-spin" /> : <Star size={10} className="fill-primary" />}
-                                    {item.price}
-                                </button>
-                            </GlassCard>
-                        ))}
+                {loading ? (
+                    <div className="flex flex-col items-center justify-center py-20 opacity-50">
+                        <Loader2 className="animate-spin mb-4" size={32} />
+                        <p className="text-xs font-black uppercase tracking-widest">Loading Shop...</p>
                     </div>
                 ) : (
-                    <div className="space-y-4">
-                        {(category === 'stars' ? starsItems : category === 'powerups' ? powerupItems : []).map((item) => (
-                            <GlassCard key={item.id} className="p-5 flex items-center gap-4 border-white/5 relative overflow-hidden group">
-                                <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center border border-primary/20 group-hover:bg-primary/20 transition-colors">
-                                    {item.icon && <item.icon size={28} className="text-primary" />}
-                                </div>
-                                <div className="flex-1">
-                                    <h4 className="font-black text-sm uppercase italic tracking-tighter leading-none mb-1">{item.title}</h4>
-                                    <p className="text-[10px] text-white/40 font-bold uppercase tracking-widest">{item.description}</p>
-                                    <p className="mt-2 text-primary font-black italic tracking-tighter">+{item.reward}</p>
-                                </div>
-                                <button
-                                    onClick={() => handlePurchase(item)}
-                                    disabled={isPurchasing !== null}
-                                    className="bg-primary text-background-dark font-black px-6 py-2.5 rounded-full text-[10px] flex items-center gap-1 italic uppercase tracking-widest shadow-lg shadow-primary/20 active:scale-95 transition-all disabled:opacity-50"
-                                >
-                                    {isPurchasing === item.id ? <Loader2 size={12} className="animate-spin" /> : <Star size={10} className="fill-background-dark" />}
-                                    {item.price}
-                                </button>
-                            </GlassCard>
-                        ))}
-                    </div>
+                    <>
+                        {/* Exclusive Avatars Horizontal Scroll */}
+                        {category === 'avatars' ? (
+                            <div className="flex gap-4 overflow-x-auto hide-scrollbar -mx-6 px-6 pb-6">
+                                {avatarItems.map((item) => (
+                                    <GlassCard key={item.id} className="flex-shrink-0 w-48 p-3 rounded-[2rem] border-white/5 space-y-3">
+                                        <div className="relative aspect-square rounded-[1.5rem] overflow-hidden group">
+                                            <img src={item.image} alt={item.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
+                                            <div className={`absolute inset-0 ring-4 ring-inset rounded-[1.5rem] ${item.color === 'primary' ? 'ring-primary/40' : item.color === 'accent-purple' ? 'ring-accent-purple/40' : 'ring-accent-gold/40'}`}></div>
+                                        </div>
+                                        <div>
+                                            <h4 className="font-black text-sm uppercase italic tracking-tighter">{item.title}</h4>
+                                            <p className="text-[9px] text-white/40 font-bold uppercase tracking-widest">{item.description}</p>
+                                        </div>
+                                        <button
+                                            onClick={() => handlePurchase(item)}
+                                            disabled={isPurchasing !== null}
+                                            className="w-full bg-white/5 border border-primary text-primary font-black py-2.5 rounded-full text-[10px] flex items-center justify-center gap-1 italic uppercase tracking-widest active:scale-95 transition-all disabled:opacity-50"
+                                        >
+                                            {isPurchasing === item.id ? <Loader2 size={12} className="animate-spin" /> : <Star size={10} className="fill-primary" />}
+                                            {item.price}
+                                        </button>
+                                    </GlassCard>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="space-y-4">
+                                {(category === 'stars' ? starsItems : category === 'powerups' ? powerupItems : []).map((item) => (
+                                    <GlassCard key={item.id} className="p-5 flex items-center gap-4 border-white/5 relative overflow-hidden group">
+                                        <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center border border-primary/20 group-hover:bg-primary/20 transition-colors">
+                                            {item.icon && <item.icon size={28} className="text-primary" />}
+                                        </div>
+                                        <div className="flex-1">
+                                            <h4 className="font-black text-sm uppercase italic tracking-tighter leading-none mb-1">{item.title}</h4>
+                                            <p className="text-[10px] text-white/40 font-bold uppercase tracking-widest">{item.description}</p>
+                                            <p className="mt-2 text-primary font-black italic tracking-tighter">+{item.reward}</p>
+                                        </div>
+                                        <button
+                                            onClick={() => handlePurchase(item)}
+                                            disabled={isPurchasing !== null}
+                                            className="bg-primary text-background-dark font-black px-6 py-2.5 rounded-full text-[10px] flex items-center gap-1 italic uppercase tracking-widest shadow-lg shadow-primary/20 active:scale-95 transition-all disabled:opacity-50"
+                                        >
+                                            {isPurchasing === item.id ? <Loader2 size={12} className="animate-spin" /> : <Star size={10} className="fill-background-dark" />}
+                                            {item.price}
+                                        </button>
+                                    </GlassCard>
+                                ))}
+                            </div>
+                        )}
+                    </>
                 )}
 
                 {/* Pro Upsell */}

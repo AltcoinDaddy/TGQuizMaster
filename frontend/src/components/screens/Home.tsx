@@ -7,6 +7,7 @@ import { StreakPopup } from '../ui/StreakPopup';
 export const Home: React.FC = () => {
     const navigate = useNavigate();
     const [showStreak, setShowStreak] = useState(false);
+    const [leaderboardPreview, setLeaderboardPreview] = useState<any[]>([]);
 
     useEffect(() => {
         const claimed = localStorage.getItem('streak_claimed_today');
@@ -14,6 +15,21 @@ export const Home: React.FC = () => {
             const timer = setTimeout(() => setShowStreak(true), 1500);
             return () => clearTimeout(timer);
         }
+    }, []);
+
+    useEffect(() => {
+        const fetchPreview = async () => {
+            try {
+                const res = await fetch(`${import.meta.env.VITE_API_URL}/api/leaderboard?limit=2`);
+                const data = await res.json();
+                if (data.leaderboard) {
+                    setLeaderboardPreview(data.leaderboard.slice(0, 2));
+                }
+            } catch (e) {
+                console.error('Failed to fetch leaderboard preview:', e);
+            }
+        };
+        fetchPreview();
     }, []);
 
     const handleClaim = () => {
@@ -102,11 +118,23 @@ export const Home: React.FC = () => {
                 <div className="space-y-4 mt-8">
                     <div className="flex items-center justify-between px-2">
                         <h3 className="font-black text-lg uppercase italic tracking-tighter">Top Players Today</h3>
-                        <button className="text-primary text-[10px] font-black uppercase tracking-widest italic">See All</button>
+                        <button onClick={() => navigate('/leaderboard')} className="text-primary text-[10px] font-black uppercase tracking-widest italic">See All</button>
                     </div>
                     <div className="space-y-3">
-                        <LeaderboardItem rank={1} name="@CryptoWizard" winCount={842} reward="124.5 TON" isTop />
-                        <LeaderboardItem rank={2} name="@SatoshiVibes" winCount={712} reward="98.2 TON" />
+                        {leaderboardPreview.length > 0 ? (
+                            leaderboardPreview.map((player) => (
+                                <LeaderboardItem
+                                    key={player.rank}
+                                    rank={player.rank}
+                                    name={player.name}
+                                    winCount={parseInt(player.score) || 0}
+                                    reward={player.reward}
+                                    isTop={player.rank === 1}
+                                />
+                            ))
+                        ) : (
+                            <div className="p-4 text-center text-white/30 text-xs font-black italic">Loading...</div>
+                        )}
                     </div>
                 </div>
             </div>
@@ -121,7 +149,7 @@ export const Home: React.FC = () => {
             )}
         </MainLayout>
     );
-}
+};
 
 const LeaderboardItem = ({ rank, name, winCount, reward, isTop = false }: any) => (
     <div className="bg-white/5 border border-white/10 px-5 py-4 rounded-3xl flex items-center justify-between shadow-xl">

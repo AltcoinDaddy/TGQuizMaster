@@ -20,6 +20,7 @@ export const TournamentHistory: React.FC = () => {
     const navigate = useNavigate();
 
     const [history, setHistory] = React.useState<HistoryItem[]>([]);
+    const [stats, setStats] = React.useState({ totalEarnings: 0, winRate: 0 });
     const [loading, setLoading] = React.useState(true);
     const { user } = useAppStore();
 
@@ -31,6 +32,9 @@ export const TournamentHistory: React.FC = () => {
                 if (response.ok) {
                     const data = await response.json();
                     setHistory(data.history);
+                    if (data.stats) {
+                        setStats(data.stats);
+                    }
                 }
             } catch (error) {
                 console.error('Failed to fetch history:', error);
@@ -65,12 +69,12 @@ export const TournamentHistory: React.FC = () => {
                                 <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary">
                                     <Trophy size={18} />
                                 </div>
-                                <span className="text-3xl font-black text-white italic">12.45 <span className="text-sm not-italic opacity-50 ml-1">TON</span></span>
+                                <span className="text-3xl font-black text-white italic">{stats.totalEarnings.toFixed(2)} <span className="text-sm not-italic opacity-50 ml-1">TON</span></span>
                             </div>
                         </div>
                         <div className="text-right">
                             <p className="text-[10px] font-black uppercase tracking-widest text-white/40 mb-2">Win Rate</p>
-                            <span className="text-2xl font-black text-primary italic">68%</span>
+                            <span className="text-2xl font-black text-primary italic">{stats.winRate}%</span>
                         </div>
                     </div>
                 </GlassCard>

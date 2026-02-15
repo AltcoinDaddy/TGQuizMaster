@@ -119,38 +119,93 @@ app.get('/api/tournaments', (req, res) => {
     }
 });
 
-// History API
+// History Endpoint
 app.get('/api/history', async (req, res) => {
+    const { telegramId } = req.query;
+
+    if (!telegramId) {
+        return res.status(400).json({ error: 'Missing telegramId' });
+    }
+
     try {
-        const { telegramId } = req.query;
-        if (!telegramId) return res.status(400).json({ error: 'Missing telegramId' });
+        const { data: user, error: userError } = await supabase
+            .from('users')
+            .select('id, stats_wins, stats_total_games')
+            .eq('telegram_id', telegramId)
+            .single();
+
+        if (userError || !user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
 
         const { data: history, error } = await supabase
-            .from('transactions')
+            .from('game_history')
             .select('*')
-            .eq('user_id', telegramId)
+            .eq('user_id', user.id)
             .order('created_at', { ascending: false })
-            .limit(20);
+            .limit(20); // Limit to recent 20 games
 
-        if (error) throw error;
+        if (error) {
+            console.error('Error fetching history:', error);
+            return res.status(500).json({ error: 'Failed to fetch history' });
+        }
 
-        // Map to frontend HistoryItem format
-        const formattedHistory = history.map(tx => ({
-            id: tx.id,
-            title: tx.metadata?.tournamentId ? `Tournament #${tx.metadata.tournamentId.slice(0, 8)}` : 'Game Transaction',
-            date: new Date(tx.created_at).toLocaleDateString(),
-            rank: tx.type === 'PRIZE' ? 1 : 0, // Placeholder
-            reward: `${tx.amount > 0 ? '+' : ''}${tx.amount} ${tx.currency}`,
-            accuracy: '-', // Not stored yet
-            speed: '-',    // Not stored yet
-            status: tx.type === 'PRIZE' ? 'WINNER' : 'PARTICIPANT'
+        // Calculate Stats
+        const { data: transactions } = await supabase
+            .from('transactions')
+            .select('amount')
+            .eq('user_id', user.id)
+            .eq('type', 'PRIZE');
+
+        const totalEarnings = (transactions || []).reduce((sum, tx) => sum + tx.amount, 0);
+        const winRate = user.stats_total_games > 0
+            ? Math.round((user.stats_wins / user.stats_total_games) * 100)
+            : 0;
+
+        const formattedHistory = history.map((game, index) => ({
+            id: game.id,
+            title: game.mode === 'tournament' ? 'Tournament Match' : 'Ranked Duel',
+            date: new Date(game.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }), // e.g., 12 Oct
+            rank: game.rank || 0,
+            reward: game.reward_amount > 0 ? `+${game.reward_amount} ${game.reward_currency}` : '---',
+            accuracy: `${game.accuracy || 0}%`,
+            speed: `${game.avg_speed || 0}s`,
+            status: game.rank === 1 ? 'WINNER' : 'PARTICIPANT'
         }));
 
-        res.json({ history: formattedHistory });
-    } catch (error: any) {
-        console.error('History API Error:', error.message);
-        res.status(500).json({ error: 'Failed to fetch history' });
+        res.json({
+            history: formattedHistory,
+            stats: {
+                totalEarnings,
+                winRate
+            }
+        });
+    } catch (err) {
+        console.error('Server error:', err);
+        res.status(500).json({ error: 'Internal server error' });
     }
+});
+
+// Shop Endpoint
+app.get('/api/shop', async (req, res) => {
+    // In the future this can come from the DB
+    const shopItems = {
+        stars: [
+            { id: 's1', title: 'Star Bundle', description: 'Start your journey', price: 50, currency: 'Stars', reward: '1,000 Stars', color: 'yellow-400' },
+            { id: 's2', title: 'Star Chest', description: 'Most popular choice', price: 250, currency: 'Stars', reward: '6,000 Stars', tag: 'BEST VALUE', color: 'yellow-400' },
+            { id: 's3', title: 'Star Vault', description: 'For the ultimate masters', price: 1000, currency: 'Stars', reward: '30,000 Stars', color: 'yellow-400' }
+        ],
+        powerups: [
+            { id: 'p1', title: '50/50 Pack', description: 'Eliminate 2 wrong answers', price: 100, currency: 'Stars', reward: 'x10 50/50', color: 'primary' },
+            { id: 'p2', title: 'Shield Pack', description: 'Protect your streak', price: 150, currency: 'Stars', reward: 'x5 Shields', color: 'blue-400' }
+        ],
+        avatars: [
+            { id: 'a1', title: 'Neon Glitch', description: 'Animated Frame', price: 500, currency: 'Stars', reward: 'NFT Avatar', image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAJoJylJGktSTFhUfJdOVEmw1ozWpc8h-K9YKXlf-076p2a28wUyRQsSP-KmOgeizOi6c0O-cwUscuyxcYta4Qzlvxpf3V28xTSdGezOsojgY8VIEGye61sAR2uLYZvYQRXKNYUIkMP-JJCz1Iml2rnlQo7abJGIeqgTvXexQxF8IgBOdVmztnQ1YZNckUP7xpHFv-FF4x94DyKxks98fDY6W2GefcpXnOCPdrIuz5gOaNscs3KJwpb48g4CYV-IPAUfYVhvWTh2OA', color: 'primary' },
+            { id: 'a2', title: 'Cyber Master', description: 'Premium Identity', price: 750, currency: 'Stars', reward: 'Legendary', image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCPahSwwA2M4HVR_vLV-lILzXC7xQf0Nox1bVuLcsHHMHaNB0P3tMJvfGAQhR8bjUciAoIGO6E9seaasLxRgULaniBkCmuWpyaweimfuakUNq2fAldQAcHIaImzziiR_16iI4yzrB3lav7O12FjqznvenQ2Bh7I-6f8ZAbJDvQTpblSoiTPnuFmX11iPLcMbsHgsUBjNOm9xx_-uuFtqiOjfUgtxs_MXfi_1w781LIrxGzYltnxrPtJ3k1O_f0P1B8qBuyrWzvlPWs', color: 'accent-purple' },
+            { id: 'a3', title: 'Quiz Crown', description: 'Legendary Icon', price: 1200, currency: 'Stars', reward: 'Mythic', image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCpxvQnPLgvRsdJag0ER3UXSPs0e4Hs_EXeQMs10qLZI63j4W69n5WSnHjbC2ZFM6SZUF6DEuscPqqvkdw6MGkdyMA1xGOT4FNal-D6FHvTJCZEwLNitNulAPX8nU76wCAuwGHfauWHdN3PFV_IQF_AGlus2_ahPcsfr1mYYcjDaN4BAWV9ciFrZnHSG9UyhQ9-jhGkmCVbisnuWHtUDYGpB3VhlaVf6onab2vnMA3l9Llngng8mUcB2hNgkxZcSfDn6ZMit_xobvc', color: 'accent-gold' }
+        ]
+    };
+    res.json({ shopItems });
 });
 
 // Quests API
@@ -179,12 +234,12 @@ app.get('/api/quests', async (req, res) => {
         // 3. Fetch Claimed Quests (from transactions)
         const { data: claims } = await supabase
             .from('transactions')
-            .select('metadata')
+            .select('metadata, created_at')
             .eq('user_id', userId)
-            .eq('type', 'PRIZE');
+            .eq('type', 'PRIZE'); // Assuming PRIZE is used for quest rewards as per claim-quest
 
         const claimedIds = (claims || [])
-            .filter(tx => tx.metadata?.questId)
+            .filter(tx => tx.metadata?.questId && tx.metadata?.type === 'QUEST_REWARD')
             .map(tx => tx.metadata.questId);
 
         // 4. Calculate Quests
@@ -218,10 +273,117 @@ app.get('/api/quests', async (req, res) => {
             }
         ];
 
-        res.json({ quests });
+        // 5. Calculate Weekly Milestone
+        const oneWeekAgo = new Date();
+        oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+
+        const weeklyClaims = (claims || []).filter(tx =>
+            tx.metadata?.type === 'QUEST_REWARD' &&
+            new Date(tx.created_at) > oneWeekAgo
+        ).length;
+
+        const weeklyMilestone = {
+            current: weeklyClaims,
+            target: 15, // Arbitrary target
+            reward: 'Epic Mystery Chest'
+        };
+
+        res.json({ quests, weeklyMilestone });
     } catch (error: any) {
         console.error('Quests API Error:', error.message);
         res.status(500).json({ error: 'Failed to fetch quests' });
+    }
+});
+
+// Achievements API
+app.get('/api/achievements', async (req, res) => {
+    try {
+        const { telegramId } = req.query;
+        if (!telegramId) return res.status(400).json({ error: 'Missing telegramId' });
+
+        const userId = parseInt(telegramId as string);
+
+        const { data: user, error } = await supabase
+            .from('users')
+            .select('*')
+            .eq('telegram_id', userId)
+            .single();
+
+        if (error) throw error;
+
+        // Define Achievements Logic
+        // In a real app, 'unlocked_at' would be stored in a user_achievements table
+        // Here we calculate status on the fly based on stats
+        const definitions = [
+            {
+                id: '1',
+                title: '10 Day Streak',
+                description: "You've maintained perfect daily activity for 10 consecutive days.",
+                requirement: (u: any) => false, // TODO: Implement streak tracking in DB
+                reward: 'Legendary',
+                color: 'primary',
+                icon: 'Zap' // String identifier for frontend mapping
+            },
+            {
+                id: '2',
+                title: 'Crypto King',
+                description: 'Win 5 tournaments.',
+                requirement: (u: any) => (u.stats_wins || 0) >= 5,
+                reward: 'Rare',
+                color: 'yellow-400',
+                icon: 'Star'
+            },
+            {
+                id: '3',
+                title: 'Mind Reader',
+                description: 'Answer 10 questions correctly in under 1 second.',
+                requirement: (u: any) => false, // Hard to track without granular stats, mock for now
+                reward: 'Legendary',
+                color: 'purple-400',
+                icon: 'Sparkles'
+            },
+            {
+                id: '4',
+                title: 'Guardian',
+                description: 'Play 50 games.',
+                requirement: (u: any) => (u.stats_total_games || 0) >= 50,
+                reward: 'Rare',
+                color: 'blue-400',
+                icon: 'Shield'
+            }
+        ];
+
+        const achievements = definitions.map(def => {
+            const isUnlocked = def.requirement(user);
+            return {
+                id: def.id,
+                title: def.title,
+                description: def.description,
+                status: isUnlocked ? 'unlocked' : 'locked',
+                date: isUnlocked ? 'Unlocked' : undefined, // real date implies DB storage
+                rarity: def.reward,
+                color: def.color,
+                icon: def.icon
+            };
+        });
+
+        // Calculate Total Score/XP for Achievements screen
+        // In this design, it seems independent of the main 'xp'? 
+        // Let's use the main stats_xp for consistency.
+        const score = {
+            total: user.stats_xp || 0,
+            rank: (user.stats_xp || 0) > 1000 ? 'Quiz Master' : 'Quiz Novice',
+            nextRank: (user.stats_xp || 0) > 1000 ? 'Quiz God' : 'Quiz Master',
+            progress: ((user.stats_xp || 0) % 1000) / 10 // Mock progress %
+        };
+
+        const unlockedCount = achievements.filter(a => a.status === 'unlocked').length;
+
+        res.json({ achievements, score, totalCount: definitions.length, unlockedCount });
+
+    } catch (error: any) {
+        console.error('Achievements API Error:', error.message);
+        res.status(500).json({ error: 'Failed to fetch achievements' });
     }
 });
 
