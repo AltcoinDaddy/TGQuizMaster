@@ -295,8 +295,8 @@ io.on('connection', (socket) => {
                     .insert({
                         telegram_id: userId,
                         username,
-                        balance_stars: 1000,
-                        balance_ton: 5.0
+                        balance_stars: 0,
+                        balance_ton: 0.0
                     })
                     .select()
                     .single();
@@ -464,8 +464,8 @@ io.on('connection', (socket) => {
                     .insert({
                         telegram_id: userId,
                         username: username || 'Anon_Player',
-                        balance_stars: 1000,
-                        balance_ton: 5.0
+                        balance_stars: 0,
+                        balance_ton: 0.0
                     })
                     .select()
                     .single();
