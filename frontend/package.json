@@ -11,7 +11,6 @@
   },
   "dependencies": {
     "@tailwindcss/postcss": "^4.1.18",
-    "@telegram-apps/sdk-react": "^3.3.9",
     "@tonconnect/ui-react": "^2.4.1",
     "lucide-react": "^0.563.0",
     "react": "^19.2.0",

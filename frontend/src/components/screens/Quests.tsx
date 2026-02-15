@@ -3,7 +3,7 @@ import { useAppStore } from '../../store/useAppStore';
 import { MainLayout } from '../layout/MainLayout';
 import { GlassCard } from '../ui/GlassCard';
 import { Button } from '../ui/Button';
-import { Zap, Star, Gift, Lock, Trophy, Sparkles, Loader2, ChevronLeft } from 'lucide-react';
+import { Zap, Gift, Lock, Trophy, Sparkles, Loader2, ChevronLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 interface Quest {
