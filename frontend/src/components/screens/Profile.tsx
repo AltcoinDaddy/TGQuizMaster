@@ -29,11 +29,13 @@ export const Profile: React.FC = () => {
         navigate('/');
     };
 
-    const transactions = [
-        { id: 1, title: 'Trivia Win: Weekly Pro', date: '24 Oct, 14:20', amount: '+15.0 TON', type: 'win' },
-        { id: 2, title: 'Tournament Entry Fee', date: '23 Oct, 10:15', amount: '-500 Stars', type: 'entry' },
-        { id: 3, title: 'Referral Bonus', date: '22 Oct, 18:45', amount: '+2.5 TON', type: 'referral' },
-    ];
+    const transactions = (user.transactions || []).map((tx: any) => ({
+        id: tx.id,
+        title: tx.metadata?.title || (tx.type === 'PRIZE' ? 'Prize Won' : tx.type === 'ENTRY_FEE' ? 'Tournament Entry' : 'Referral Bonus'),
+        date: new Date(tx.created_at).toLocaleDateString(undefined, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }),
+        amount: `${tx.amount > 0 ? '+' : ''}${tx.amount} ${tx.currency}`,
+        type: tx.type === 'PRIZE' ? 'win' : tx.type === 'ENTRY_FEE' ? 'entry' : 'referral'
+    }));
 
     return (
         <MainLayout>
@@ -97,10 +99,10 @@ export const Profile: React.FC = () => {
 
                     <div className="space-y-1 mb-8">
                         <div className="flex items-baseline gap-2">
-                            <span className="text-4xl font-black text-white italic tracking-tighter">124.50</span>
+                            <span className="text-4xl font-black text-white italic tracking-tighter">{user.tonBalance?.toFixed(2) || '0.00'}</span>
                             <span className="text-lg font-black text-primary italic">TON</span>
                         </div>
-                        <p className="text-xs font-bold text-white/40 uppercase tracking-widest italic animate-pulse">≈ $642.12 USD</p>
+                        <p className="text-xs font-bold text-white/40 uppercase tracking-widest italic animate-pulse">≈ ${(user.tonBalance * 5.15).toFixed(2)} USD</p>
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
@@ -181,7 +183,7 @@ export const Profile: React.FC = () => {
                         <div className="w-1.5 h-1.5 rounded-full bg-primary/20"></div>
                     </div>
                 </div>
-            </div>
-        </MainLayout>
+            </div >
+        </MainLayout >
     );
 };

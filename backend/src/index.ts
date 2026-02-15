@@ -476,18 +476,44 @@ io.on('connection', (socket) => {
             console.log(`[SYNC] User ${userId} data: wallet=${user.wallet_address}, stars=${user.balance_stars}, xp=${user.stats_xp}`);
 
             // Fetch Referral Stats
-            const { count: referralCount } = await supabase
+            const { count: referralCount, data: referrals } = await supabase
                 .from('users')
-                .select('*', { count: 'exact', head: true })
-                .eq('referred_by', userId);
+                .select('username, created_at, telegram_id', { count: 'exact' }) // Select fields needed for display
+                .eq('referred_by', userId)
+                .order('created_at', { ascending: false })
+                .limit(10); // Limit to recent 10
 
             const { data: earningsData } = await supabase
                 .from('transactions')
-                .select('amount')
+                .select('amount, metadata, created_at')
                 .eq('user_id', userId)
                 .eq('type', 'REFERRAL_BONUS');
 
             const referralEarnings = (earningsData || []).reduce((sum, tx) => sum + tx.amount, 0);
+
+            // Map referrals to include earnings (if trackable per user, otherwise just list)
+            // For now, we'll just list them. Ideally we'd join with transactions to see how much each earned.
+            // Simplified:
+            const recentReferrals = (referrals || []).map(ref => {
+                // Try to find earnings from this specific user? 
+                // Metadata might have { sourceUserId: ... }
+                // For now, mock specific earnings or match if possible.
+                // Let's just return basic info
+                return {
+                    username: ref.username,
+                    date: ref.created_at,
+                    // earned: "..." // complex to calculate efficiently without aggregation query, leaving for now or simple mock based on average/total
+                    earned: "+0.00 TON" // Placeholder until we have better tracking
+                };
+            });
+
+            // Fetch Recent Transactions
+            const { data: recentTransactions } = await supabase
+                .from('transactions')
+                .select('*')
+                .eq('user_id', userId)
+                .order('created_at', { ascending: false })
+                .limit(5);
 
             socket.emit('profile_synced', {
                 stars: user.balance_stars,
@@ -498,7 +524,9 @@ io.on('connection', (socket) => {
                 walletConnected: !!user.wallet_address,
                 walletAddress: user.wallet_address,
                 referralCount: referralCount || 0,
-                referralEarnings: referralEarnings || 0
+                referralEarnings: referralEarnings || 0,
+                recentReferrals,
+                recentTransactions: recentTransactions || []
             });
         } catch (error) {
             console.error('[SYNC] Profile Sync Error:', error);

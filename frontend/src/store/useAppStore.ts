@@ -15,6 +15,8 @@ interface UserState {
     walletAddress?: string;
     referralCount?: number;
     referralEarnings?: number;
+    referrals?: any[]; // { username, date, earned }
+    transactions?: any[]; // { id, title, date, amount, type }
 }
 
 interface AppStore {
@@ -38,6 +40,8 @@ export const useAppStore = create<AppStore>((set) => ({
         tonBalance: 0,
         inventory: [],
         walletConnected: false,
+        referrals: [],
+        transactions: []
     },
     setUser: (userData) =>
         set((state) => ({ user: { ...state.user, ...userData } })),
@@ -59,7 +63,9 @@ export const useAppStore = create<AppStore>((set) => ({
                 walletConnected: data.walletConnected ?? state.user.walletConnected,
                 walletAddress: data.walletAddress ?? state.user.walletAddress,
                 referralCount: data.referralCount ?? state.user.referralCount,
-                referralEarnings: data.referralEarnings ?? state.user.referralEarnings
+                referralEarnings: data.referralEarnings ?? state.user.referralEarnings,
+                referrals: data.recentReferrals ?? state.user.referrals,
+                transactions: data.recentTransactions ?? state.user.transactions
             }
         })),
 }));

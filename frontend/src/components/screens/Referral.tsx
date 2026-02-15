@@ -75,9 +75,21 @@ export const Referral: React.FC = () => {
             <div className="space-y-4">
                 <h3 className="font-black text-lg">Recent Referrals</h3>
                 <div className="space-y-3">
-                    <ReferralItem name="@Jon_Web3" date="2 hours ago" earned="+0.45 TON" />
-                    <ReferralItem name="@Sarah_Crypto" date="Yesterday" earned="+1.20 TON" />
-                    <ReferralItem name="@Mike_Bits" date="3 days ago" earned="+0.15 TON" />
+                    {user.referrals && user.referrals.length > 0 ? (
+                        user.referrals.map((ref: any, index: number) => (
+                            <ReferralItem
+                                key={index}
+                                name={ref.username || 'Unknown'}
+                                date={new Date(ref.date).toLocaleDateString()}
+                                earned={ref.earned || '+0.00 TON'}
+                            />
+                        ))
+                    ) : (
+                        <div className="text-center p-8 bg-white/5 rounded-2xl border border-white/5">
+                            <p className="text-xs opacity-50 uppercase tracking-widest font-black italic">No referrals yet</p>
+                            <p className="text-[10px] opacity-30 mt-1">Share your link to start earning!</p>
+                        </div>
+                    )}
                 </div>
             </div>
         </MainLayout>
