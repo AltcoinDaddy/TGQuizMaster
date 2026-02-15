@@ -429,6 +429,67 @@ app.post('/api/claim-quest', async (req, res) => {
     }
 });
 
+app.post('/api/withdraw', async (req, res) => {
+    try {
+        const { telegramId, amount, address } = req.body;
+        const userId = parseInt(telegramId);
+        const withdrawAmount = parseFloat(amount);
+
+        if (!telegramId || !amount || !address) {
+            return res.status(400).json({ error: 'Missing required fields' });
+        }
+
+        // 1. Check Balance
+        const { data: user, error: userError } = await supabase
+            .from('users')
+            .select('*')
+            .eq('telegram_id', userId)
+            .single();
+
+        if (userError || !user) return res.status(404).json({ error: 'User not found' });
+
+        if ((user.balance_ton || 0) < withdrawAmount) {
+            return res.status(400).json({ error: 'Insufficient balance' });
+        }
+
+        // 2. Create Pending Transaction
+        const { error: txError } = await supabase
+            .from('transactions')
+            .insert({
+                user_id: userId,
+                type: 'WITHDRAWAL',
+                amount: -withdrawAmount,
+                currency: 'TON',
+                metadata: { destination: address },
+                status: 'PENDING'
+            });
+
+        if (txError) throw txError;
+
+        // 3. Deduct Balance immediately (optimistic)
+        const { error: updateError } = await supabase
+            .from('users')
+            .update({ balance_ton: user.balance_ton - withdrawAmount })
+            .eq('telegram_id', userId);
+
+        if (updateError) {
+            // Rollback transaction if deduction fails? 
+            // Ideally use a DB transaction or function
+            console.error('Failed to deduct balance, potential inconsistency for user:', userId);
+            return res.status(500).json({ error: 'Withdrawal failed during balance update' });
+        }
+
+        // 4. Notify Admin / Process on Blockchain (Mock for now)
+        console.log(`[WITHDRAW] User ${userId} requested ${withdrawAmount} TON to ${address}`);
+
+        res.json({ success: true, newBalance: user.balance_ton - withdrawAmount });
+
+    } catch (error: any) {
+        console.error('Withdrawals API Error:', error.message);
+        res.status(500).json({ error: 'Failed to process withdrawal' });
+    }
+});
+
 // Game State
 const rooms = new Map<string, GameManager>();
 
@@ -700,15 +761,25 @@ io.on('connection', (socket) => {
         console.log(`[WALLET] Received update_wallet for ${telegramId}: ${walletAddress}`);
 
         try {
-            const { error } = await supabase
+            const { data: updatedUser, error } = await supabase
                 .from('users')
                 .update({ wallet_address: walletAddress })
-                .eq('telegram_id', parseInt(telegramId));
+                .eq('telegram_id', parseInt(telegramId))
+                .select()
+                .single();
 
             if (error) {
                 console.error('[WALLET] Supabase Update Error:', error);
             } else {
                 console.log(`[WALLET] Successfully updated wallet_address in DB for ${telegramId}`);
+
+                // Emit sync to update frontend immediately
+                // We reuse the same logic as sync_profile, or just send partial update
+                // Sending partial for efficiency
+                socket.emit('profile_synced', {
+                    walletConnected: !!updatedUser.wallet_address,
+                    walletAddress: updatedUser.wallet_address
+                });
             }
         } catch (e) {
             console.error('[WALLET] Sync Exception:', e);

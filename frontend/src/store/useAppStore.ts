@@ -35,7 +35,7 @@ export const useAppStore = create<AppStore>((set) => ({
         xp: 0,
         wins: 0,
         totalGames: 0,
-        isPro: true,
+        isPro: false,
         stars: 0,
         tonBalance: 0,
         inventory: [],

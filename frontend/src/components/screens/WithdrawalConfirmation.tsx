@@ -2,11 +2,56 @@ import React from 'react';
 import { MainLayout } from '../layout/MainLayout';
 import { GlassCard } from '../ui/GlassCard';
 import { Button } from '../ui/Button';
-import { ChevronLeft, Zap, ShieldAlert, Wallet, CheckCircle2 } from 'lucide-react';
+import { ChevronLeft, ShieldAlert, Wallet, CheckCircle2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useAppStore } from '../../store/useAppStore';
 
 export const WithdrawalConfirmation: React.FC = () => {
     const navigate = useNavigate();
+    const { user, setUser } = useAppStore();
+    const [loading, setLoading] = React.useState(false);
+
+    // Fee logic
+    const networkFee = 0.05;
+    const withdrawableAmount = Math.max(0, user.tonBalance - networkFee);
+
+    const handleWithdraw = async () => {
+        if (withdrawableAmount <= 0) {
+            alert("Insufficient balance to cover fees.");
+            return;
+        }
+        if (!user.walletAddress) {
+            alert("Please connect a wallet first.");
+            return;
+        }
+
+        setLoading(true);
+        try {
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/withdraw`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    telegramId: user.telegramId,
+                    amount: withdrawableAmount,
+                    address: user.walletAddress
+                })
+            });
+
+            const data = await res.json();
+            if (res.ok && data.success) {
+                // Update local state
+                setUser({ tonBalance: data.newBalance });
+                navigate('/withdrawal-success');
+            } else {
+                alert(data.error || 'Withdrawal failed');
+            }
+        } catch (e) {
+            console.error('Withdraw error:', e);
+            alert('Network error during withdrawal');
+        } finally {
+            setLoading(false);
+        }
+    };
 
     return (
         <MainLayout>
@@ -31,12 +76,12 @@ export const WithdrawalConfirmation: React.FC = () => {
                             className="w-12 h-12"
                         />
                     </div>
-                    <p className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em] mb-2">Amount to Withdraw</p>
+                    <p className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em] mb-2">Total Balance</p>
                     <div className="flex items-center justify-center gap-3 mb-1">
-                        <span className="text-5xl font-black text-white italic italic">5.40</span>
-                        <span className="text-2xl font-black text-primary italic italic">TON</span>
+                        <span className="text-5xl font-black text-white italic">{user.tonBalance.toFixed(2)}</span>
+                        <span className="text-2xl font-black text-primary italic">TON</span>
                     </div>
-                    <p className="text-sm font-bold text-white/30 uppercase tracking-widest">≈ $28.50 USD</p>
+                    <p className="text-sm font-bold text-white/30 uppercase tracking-widest">≈ ${(user.tonBalance * 5.15).toFixed(2)} USD</p>
                 </div>
 
                 {/* Details */}
@@ -46,21 +91,31 @@ export const WithdrawalConfirmation: React.FC = () => {
                         <GlassCard className="p-5 flex items-center justify-between border-white/5 bg-white/5">
                             <div className="flex items-center gap-3">
                                 <Wallet size={18} className="text-white/40" />
-                                <span className="font-mono text-xs font-bold text-white/80">EQB1...4z9p</span>
+                                <span className="font-mono text-xs font-bold text-white/80">
+                                    {user.walletAddress
+                                        ? `${user.walletAddress.slice(0, 6)}...${user.walletAddress.slice(-6)}`
+                                        : 'No Wallet Linked'}
+                                </span>
                             </div>
-                            <CheckCircle2 size={16} className="text-primary" />
+                            {user.walletAddress ? (
+                                <CheckCircle2 size={16} className="text-primary" />
+                            ) : (
+                                <ShieldAlert size={16} className="text-red-400" />
+                            )}
                         </GlassCard>
                     </div>
 
                     <div className="bg-white/5 border border-white/10 rounded-[2rem] p-6 space-y-4">
                         <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest">
                             <span className="text-white/30">Network Fee</span>
-                            <span className="text-white/80">0.05 TON</span>
+                            <span className="text-white/80">{networkFee} TON</span>
                         </div>
                         <div className="h-[1px] bg-white/5"></div>
-                        <div className="flex justify-between items-center italic italic">
+                        <div className="flex justify-between items-center italic">
                             <span className="text-[10px] font-black uppercase tracking-widest text-white/30">Net Amount to Receive</span>
-                            <span className="text-2xl font-black text-primary italic">5.35 TON</span>
+                            <span className={`text-2xl font-black italic ${withdrawableAmount > 0 ? 'text-primary' : 'text-white/20'}`}>
+                                {withdrawableAmount.toFixed(2)} TON
+                            </span>
                         </div>
                     </div>
                 </div>
@@ -77,11 +132,11 @@ export const WithdrawalConfirmation: React.FC = () => {
                 <div className="space-y-4">
                     <Button
                         fullWidth
-                        onClick={() => navigate('/withdrawal-success')}
-                        className="py-5 text-xl gap-3 shadow-[0_10px_30px_rgba(13,242,89,0.3)] font-black italic tracking-widest"
+                        onClick={handleWithdraw}
+                        disabled={loading || withdrawableAmount <= 0 || !user.walletAddress}
+                        className="py-5 text-xl gap-3 shadow-[0_10px_30px_rgba(13,242,89,0.3)] font-black italic tracking-widest disabled:opacity-50 disabled:shadow-none"
                     >
-                        <Zap size={20} />
-                        CONFIRM & WITHDRAW
+                        {loading ? 'PROCESSING...' : (user.walletAddress ? 'CONFIRM & WITHDRAW' : 'CONNECT WALLET FIRST')}
                     </Button>
                     <button
                         onClick={() => navigate(-1)}

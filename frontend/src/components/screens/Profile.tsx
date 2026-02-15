@@ -39,7 +39,7 @@ export const Profile: React.FC = () => {
 
     return (
         <MainLayout>
-            <div className="p-6 pt-4 pb-32">
+            <div className="relative p-6 pt-4 pb-32">
                 {/* V2 Header with Settings */}
                 <header className="flex items-center justify-between mb-10">
                     <h1 className="text-xl font-black italic tracking-tighter uppercase">My Profile</h1>
@@ -106,7 +106,18 @@ export const Profile: React.FC = () => {
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
-                        <button className="bg-primary text-background-dark font-black py-4 rounded-2xl text-[10px] uppercase tracking-[0.2em] italic shadow-lg shadow-primary/20 active:scale-95 transition-all">
+                        <button
+                            onClick={() => {
+                                // Simplified Deposit Alert/Modal
+                                const tg = (window as any).Telegram?.WebApp;
+                                tg?.showPopup({
+                                    title: 'Deposit TON',
+                                    message: `Send TON to your wallet address:\n\n${user.walletAddress || 'Please connect wallet first'}\n\n(Copy feature coming soon)`,
+                                    buttons: [{ type: 'ok' }]
+                                });
+                            }}
+                            className="bg-primary text-background-dark font-black py-4 rounded-2xl text-[10px] uppercase tracking-[0.2em] italic shadow-lg shadow-primary/20 active:scale-95 transition-all"
+                        >
                             DEPOSIT TON
                         </button>
                         <button
