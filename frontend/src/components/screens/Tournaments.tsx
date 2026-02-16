@@ -65,11 +65,6 @@ export const Tournaments: React.FC = () => {
     const starsTournaments = tournaments.filter(t => t.type === 'stars');
     const tonTournaments = tournaments.filter(t => t.type === 'ton');
 
-    const tabs: { key: TabType; label: string; icon: React.ReactNode; count?: number }[] = [
-        { key: 'free', label: 'Free', icon: <Gamepad2 size={14} /> },
-        { key: 'stars', label: 'Stars', icon: <Star size={14} />, count: starsTournaments.length },
-        { key: 'ton', label: 'TON', icon: <Trophy size={14} />, count: tonTournaments.length }
-    ];
 
     return (
         <MainLayout>
@@ -82,25 +77,45 @@ export const Tournaments: React.FC = () => {
                     </div>
                 </header>
 
-                {/* Tab Bar */}
-                <div className="bg-white/5 p-1 rounded-2xl flex mb-8 border border-white/5">
-                    {tabs.map(t => (
-                        <button
-                            key={t.key}
-                            onClick={() => setTab(t.key)}
-                            className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all italic flex items-center justify-center gap-1.5 ${tab === t.key
-                                ? 'bg-primary text-background-dark shadow-lg shadow-primary/20'
-                                : 'text-white/40'
-                                }`}
-                        >
-                            {t.icon}
-                            {t.label}
-                            {t.count !== undefined && t.count > 0 && (
-                                <span className={`text-[8px] px-1.5 py-0.5 rounded-full ${tab === t.key ? 'bg-background-dark/20' : 'bg-white/10'
-                                    }`}>{t.count}</span>
-                            )}
-                        </button>
-                    ))}
+                {/* Mode Selection - Big Visible Cards */}
+                <div className="grid grid-cols-3 gap-3 mb-8">
+                    <button
+                        onClick={() => setTab('free')}
+                        className={`relative py-5 rounded-2xl flex flex-col items-center gap-2 transition-all active:scale-95 border-2 ${tab === 'free'
+                            ? 'bg-green-500/15 border-green-400 shadow-lg shadow-green-500/20'
+                            : 'bg-white/5 border-white/10'
+                            }`}
+                    >
+                        <span className="text-3xl">🎮</span>
+                        <span className={`text-xs font-black uppercase tracking-wider ${tab === 'free' ? 'text-green-400' : 'text-white/50'}`}>Free</span>
+                        {tab === 'free' && <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-400 rounded-full animate-pulse" />}
+                    </button>
+
+                    <button
+                        onClick={() => setTab('stars')}
+                        className={`relative py-5 rounded-2xl flex flex-col items-center gap-2 transition-all active:scale-95 border-2 ${tab === 'stars'
+                            ? 'bg-yellow-500/15 border-yellow-400 shadow-lg shadow-yellow-500/20'
+                            : 'bg-white/5 border-white/10'
+                            }`}
+                    >
+                        <span className="text-3xl">⭐</span>
+                        <span className={`text-xs font-black uppercase tracking-wider ${tab === 'stars' ? 'text-yellow-400' : 'text-white/50'}`}>Stars</span>
+                        {starsTournaments.length > 0 && (
+                            <span className="absolute -top-1 -right-1 bg-yellow-400 text-background-dark text-[9px] font-black px-1.5 py-0.5 rounded-full">{starsTournaments.length}</span>
+                        )}
+                    </button>
+
+                    <button
+                        onClick={() => setTab('ton')}
+                        className={`relative py-5 rounded-2xl flex flex-col items-center gap-2 transition-all active:scale-95 border-2 ${tab === 'ton'
+                            ? 'bg-blue-500/15 border-blue-400 shadow-lg shadow-blue-500/20'
+                            : 'bg-white/5 border-white/10'
+                            }`}
+                    >
+                        <span className="text-3xl">💎</span>
+                        <span className={`text-xs font-black uppercase tracking-wider ${tab === 'ton' ? 'text-blue-400' : 'text-white/50'}`}>TON</span>
+                        <span className="absolute -top-1 -right-1 bg-blue-400/20 text-blue-300 text-[7px] font-black px-1.5 py-0.5 rounded-full">SOON</span>
+                    </button>
                 </div>
 
                 {/* FREE Tab */}
