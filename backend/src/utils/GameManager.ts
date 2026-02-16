@@ -25,6 +25,7 @@ export class GameManager {
     private tournamentType: 'free' | 'stars' | 'ton' | 'practice' = 'free';
     private prizePool = 0;
     private entryFee = 0;
+    private questionCount = 10;
 
     constructor(roomId: string, io: any, type: 'free' | 'stars' | 'ton' | 'practice' = 'free', prize = 0, fee = 0) {
         this.roomId = roomId;
@@ -33,6 +34,7 @@ export class GameManager {
         this.tournamentType = type;
         this.prizePool = prize;
         this.entryFee = fee;
+        this.questionCount = type === 'practice' ? 5 : 10;
     }
 
     addPlayer(player: Player) {
@@ -64,7 +66,7 @@ export class GameManager {
 
     private async fetchQuestions() {
         try {
-            const resp = await axios.get('https://opentdb.com/api.php?amount=10&type=multiple');
+            const resp = await axios.get(`https://opentdb.com/api.php?amount=${this.questionCount}&type=multiple`);
             this.questions = resp.data.results.map((q: any, i: number) => ({
                 id: i.toString(),
                 text: decode(q.question),
@@ -151,14 +153,46 @@ export class GameManager {
         const prizes = [distribution.first, distribution.second, distribution.third];
         const currency = this.tournamentType === 'stars' ? 'STARS' : 'TON';
 
-        // Skip DB recording for practice
+        // Practice mode — give small rewards + update daily counters
         if (this.tournamentType === 'practice') {
+            try {
+                const { supabase } = await import('../config/supabase');
+
+                for (const [index, player] of winners.entries()) {
+                    if (!player.id) continue;
+                    const userId = parseInt(player.id);
+
+                    const { data: user } = await supabase
+                        .from('users')
+                        .select('balance_stars, stats_total_games, stats_wins, stats_xp, daily_games_today, daily_wins_today')
+                        .eq('telegram_id', userId)
+                        .single();
+
+                    if (user) {
+                        const isWinner = index === 0;
+                        const starReward = isWinner ? 5 : 0;
+                        const xpReward = isWinner ? 10 : 5;
+
+                        await supabase.from('users').update({
+                            balance_stars: (user.balance_stars || 0) + starReward,
+                            stats_total_games: (user.stats_total_games || 0) + 1,
+                            stats_wins: (user.stats_wins || 0) + (isWinner ? 1 : 0),
+                            stats_xp: (user.stats_xp || 0) + xpReward,
+                            daily_games_today: (user.daily_games_today || 0) + 1,
+                            daily_wins_today: (user.daily_wins_today || 0) + (isWinner ? 1 : 0)
+                        }).eq('telegram_id', userId);
+                    }
+                }
+            } catch (e) {
+                console.error('Failed to save practice results:', e);
+            }
+
             this.io.to(this.roomId).emit('game_over', {
                 winners,
-                prizes: { first: 0, second: 0, third: 0 },
-                currency: 'XP'
+                prizes: { first: 5, second: 0, third: 0 },
+                currency: 'Stars'
             });
-            console.log(`Practice game over in ${this.roomId}`);
+            console.log(`Practice game over in ${this.roomId}. Winner: ${winners[0]?.username} (+5 Stars, +10 XP)`);
             return;
         }
 
@@ -204,9 +238,13 @@ export class GameManager {
                     // Prepare updates
                     const updates: any = {
                         stats_total_games: (user.stats_total_games || 0) + 1,
-                        stats_xp: (user.stats_xp || 0) + player.score
+                        stats_xp: (user.stats_xp || 0) + player.score,
+                        daily_games_today: (user.daily_games_today || 0) + 1
                     };
-                    if (index === 0) updates.stats_wins = (user.stats_wins || 0) + 1;
+                    if (index === 0) {
+                        updates.stats_wins = (user.stats_wins || 0) + 1;
+                        updates.daily_wins_today = (user.daily_wins_today || 0) + 1;
+                    }
 
                     if (prize > 0) {
                         if (currency === 'STARS') updates.balance_stars = (user.balance_stars || 0) + prize;

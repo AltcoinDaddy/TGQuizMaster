@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { MainLayout } from '../layout/MainLayout';
 import { GlassCard } from '../ui/GlassCard';
-import { Timer, Star, Plus, ArrowRight } from 'lucide-react';
+import { Timer, Star, Plus, ArrowRight, Zap, Trophy, Lock, Gamepad2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 interface Tournament {
@@ -16,10 +16,13 @@ interface Tournament {
     tag: string;
     status: 'live' | 'upcoming' | 'finished';
     color: string;
+    type: string;
 }
 
+type TabType = 'free' | 'stars' | 'ton';
+
 export const Tournaments: React.FC = () => {
-    const [tab, setTab] = useState<'live' | 'upcoming'>('live');
+    const [tab, setTab] = useState<TabType>('free');
     const navigate = useNavigate();
 
     const [tournaments, setTournaments] = useState<Tournament[]>([]);
@@ -42,7 +45,8 @@ export const Tournaments: React.FC = () => {
                         timeLeft: t.status === 'live' ? 'Live' : 'Waiting...',
                         tag: t.type.toUpperCase(),
                         status: t.status === 'live' ? 'live' : 'upcoming',
-                        color: t.currency === 'Stars' ? 'accent-gold' : 'primary'
+                        color: t.currency === 'Stars' ? 'accent-gold' : 'primary',
+                        type: t.type
                     }));
                     setTournaments(formatted);
                 }
@@ -54,127 +58,246 @@ export const Tournaments: React.FC = () => {
         };
 
         fetchTournaments();
-        // Poll for updates every 5s
         const interval = setInterval(fetchTournaments, 5000);
         return () => clearInterval(interval);
     }, []);
 
-    const filteredTournaments = tournaments.filter(t => tab === 'live' ? t.status === 'live' : t.status === 'upcoming');
+    const starsTournaments = tournaments.filter(t => t.type === 'stars');
+    const tonTournaments = tournaments.filter(t => t.type === 'ton');
+
+    const tabs: { key: TabType; label: string; icon: React.ReactNode; count?: number }[] = [
+        { key: 'free', label: 'Free', icon: <Gamepad2 size={14} /> },
+        { key: 'stars', label: 'Stars', icon: <Star size={14} />, count: starsTournaments.length },
+        { key: 'ton', label: 'TON', icon: <Trophy size={14} />, count: tonTournaments.length }
+    ];
 
     return (
         <MainLayout>
             <div className="p-6 pt-4 pb-32">
-                {/* Premium Header */}
-                <header className="flex justify-between items-center mb-8">
+                {/* Header */}
+                <header className="flex justify-between items-center mb-6">
                     <div className="flex flex-col">
-                        <span className="text-[10px] font-black uppercase tracking-[0.3em] text-primary italic">Live Arena</span>
-                        <h1 className="text-2xl font-black italic tracking-tighter uppercase">Tournaments</h1>
+                        <span className="text-[10px] font-black uppercase tracking-[0.3em] text-primary italic">Play Arena</span>
+                        <h1 className="text-2xl font-black italic tracking-tighter uppercase">Play</h1>
                     </div>
-                    <button
-                        onClick={() => navigate('/create-tournament')}
-                        className="flex items-center gap-2 bg-primary/10 px-4 py-2 rounded-2xl border border-primary/20 text-primary active:scale-95 transition-all"
-                    >
-                        <Plus size={18} />
-                        <span className="text-[10px] font-black uppercase tracking-widest italic">Host</span>
-                    </button>
                 </header>
 
-                {/* Segmented Control */}
-                <div className="bg-white/5 p-1 rounded-2xl flex mb-10 border border-white/5">
-                    <button
-                        onClick={() => setTab('live')}
-                        className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all italic ${tab === 'live' ? 'bg-primary text-background-dark shadow-lg shadow-primary/20' : 'text-white/40'}`}
-                    >
-                        Live Now ({tournaments.filter(t => t.status === 'live').length})
-                    </button>
-                    <button
-                        onClick={() => setTab('upcoming')}
-                        className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all italic ${tab === 'upcoming' ? 'bg-primary text-background-dark shadow-lg shadow-primary/20' : 'text-white/40'}`}
-                    >
-                        Upcoming ({tournaments.filter(t => t.status === 'upcoming').length})
-                    </button>
+                {/* Tab Bar */}
+                <div className="bg-white/5 p-1 rounded-2xl flex mb-8 border border-white/5">
+                    {tabs.map(t => (
+                        <button
+                            key={t.key}
+                            onClick={() => setTab(t.key)}
+                            className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all italic flex items-center justify-center gap-1.5 ${tab === t.key
+                                    ? 'bg-primary text-background-dark shadow-lg shadow-primary/20'
+                                    : 'text-white/40'
+                                }`}
+                        >
+                            {t.icon}
+                            {t.label}
+                            {t.count !== undefined && t.count > 0 && (
+                                <span className={`text-[8px] px-1.5 py-0.5 rounded-full ${tab === t.key ? 'bg-background-dark/20' : 'bg-white/10'
+                                    }`}>{t.count}</span>
+                            )}
+                        </button>
+                    ))}
                 </div>
 
-                {/* Tournament List */}
-                <div className="space-y-6">
-                    {loading ? (
-                        <div className="text-center py-10 opacity-50 font-black italic">LOADING ARENA...</div>
-                    ) : filteredTournaments.length === 0 ? (
-                        <div className="text-center py-10 opacity-50 font-black italic flex flex-col items-center gap-4">
-                            <p>NO ACTIVE TOURNAMENTS</p>
-                            <button onClick={() => navigate('/create-tournament')} className="text-primary underline">Create One</button>
+                {/* FREE Tab */}
+                {tab === 'free' && (
+                    <div className="space-y-6">
+                        {/* Quick Practice Card */}
+                        <GlassCard
+                            onClick={() => navigate('/quiz', { state: { roomType: 'practice', entryFee: 'Free' } })}
+                            className="group p-6 relative overflow-hidden active:scale-[0.98] transition-all cursor-pointer border-primary/20"
+                        >
+                            <div className="absolute top-0 right-0 bg-primary px-4 py-1.5 rounded-bl-2xl">
+                                <span className="text-[8px] font-black uppercase tracking-widest text-background-dark">Free</span>
+                            </div>
+
+                            <div className="flex items-start gap-4">
+                                <div className="bg-primary/10 p-4 rounded-2xl">
+                                    <Gamepad2 size={28} className="text-primary" />
+                                </div>
+                                <div className="flex-1">
+                                    <h3 className="text-lg font-black italic tracking-tighter uppercase">Practice Arena</h3>
+                                    <p className="text-xs text-white/50 font-bold mt-1">5 questions • 15 sec each • ~2 min game</p>
+                                </div>
+                            </div>
+
+                            <div className="flex items-center justify-between mt-6 pt-4 border-t border-white/5">
+                                <div className="flex gap-4">
+                                    <div className="flex flex-col">
+                                        <span className="text-[8px] font-black uppercase tracking-widest opacity-40">Winner</span>
+                                        <span className="text-sm font-black italic text-primary">+5 ⭐</span>
+                                    </div>
+                                    <div className="flex flex-col">
+                                        <span className="text-[8px] font-black uppercase tracking-widest opacity-40">All Players</span>
+                                        <span className="text-sm font-black italic text-accent-purple">+5 XP</span>
+                                    </div>
+                                    <div className="flex flex-col">
+                                        <span className="text-[8px] font-black uppercase tracking-widest opacity-40">Quests</span>
+                                        <span className="text-sm font-black italic text-accent-gold">✓ Counts</span>
+                                    </div>
+                                </div>
+                                <div className="bg-primary p-3 rounded-xl text-background-dark group-hover:translate-x-1 transition-transform">
+                                    <Zap size={20} />
+                                </div>
+                            </div>
+                        </GlassCard>
+
+                        {/* Practice Tips */}
+                        <div className="p-5 rounded-2xl bg-white/5 border border-white/5">
+                            <h4 className="text-[10px] font-black uppercase tracking-widest opacity-40 mb-3">Why Practice?</h4>
+                            <div className="space-y-2">
+                                <p className="text-xs text-white/60 flex items-center gap-2">
+                                    <span className="text-primary">⚡</span> Earn XP and Stars for free
+                                </p>
+                                <p className="text-xs text-white/60 flex items-center gap-2">
+                                    <span className="text-primary">📊</span> Progress your daily quests
+                                </p>
+                                <p className="text-xs text-white/60 flex items-center gap-2">
+                                    <span className="text-primary">🏋️</span> Train before entering tournaments
+                                </p>
+                            </div>
                         </div>
-                    ) : (
-                        filteredTournaments.map((t) => (
-                            <GlassCard
-                                key={t.id}
-                                onClick={() => navigate('/quiz', { state: { tournamentId: t.id, entryFee: t.entryFee, currency: t.currency } })}
-                                className={`group p-6 relative overflow-hidden active:scale-[0.98] transition-all cursor-pointer border-white/5 ${t.status === 'live' ? 'border-primary/20 bonus-glow' : ''}`}
-                            >
-                                {/* Status Badge */}
-                                <div className="absolute top-0 right-0">
-                                    <div className={`flex items-center gap-1.5 px-4 py-1.5 rounded-bl-2xl text-[8px] font-black uppercase tracking-widest border-l border-b border-white/5 ${t.status === 'live' ? 'bg-primary text-background-dark' : 'bg-white/10 text-white/40'
-                                        }`}>
-                                        {t.status === 'live' && <span className="w-1.5 h-1.5 bg-background-dark rounded-full animate-pulse"></span>}
-                                        {t.tag}
+                    </div>
+                )}
+
+                {/* STARS Tab */}
+                {tab === 'stars' && (
+                    <div className="space-y-6">
+                        {loading ? (
+                            <div className="text-center py-10 opacity-50 font-black italic">LOADING ROOMS...</div>
+                        ) : starsTournaments.length === 0 ? (
+                            <div className="text-center py-16 opacity-50 flex flex-col items-center gap-4">
+                                <Star size={40} className="text-accent-gold opacity-30" />
+                                <p className="font-black italic text-sm">NO STAR ROOMS ACTIVE</p>
+                                <p className="text-xs text-white/30">Create one or wait for others to host</p>
+                                <button
+                                    onClick={() => navigate('/create-tournament')}
+                                    className="mt-2 bg-accent-gold text-background-dark font-black px-6 py-3 rounded-full text-[10px] uppercase tracking-widest italic active:scale-95 transition-all"
+                                >
+                                    Create Room
+                                </button>
+                            </div>
+                        ) : (
+                            starsTournaments.map((t) => (
+                                <TournamentCard key={t.id} tournament={t} navigate={navigate} />
+                            ))
+                        )}
+                    </div>
+                )}
+
+                {/* TON Tab */}
+                {tab === 'ton' && (
+                    <div className="space-y-6">
+                        {/* Coming Soon Hero */}
+                        <div className="relative p-8 rounded-[2rem] bg-gradient-to-br from-primary/20 to-transparent border border-primary/20 overflow-hidden text-center">
+                            <div className="absolute inset-0 bg-primary/5 backdrop-blur-sm"></div>
+                            <div className="relative z-10">
+                                <Lock size={40} className="text-primary mx-auto mb-4 opacity-60" />
+                                <h3 className="text-xl font-black italic tracking-tighter uppercase text-primary mb-2">TON Tournaments</h3>
+                                <p className="text-xs text-white/50 font-bold mb-1">Coming in Phase 2</p>
+                                <p className="text-[10px] text-white/30 leading-relaxed max-w-xs mx-auto mt-3">
+                                    Compete for real TON prizes, host your own rooms, and climb the leaderboard.
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* Preview of What's Coming */}
+                        <div className="p-5 rounded-2xl bg-white/5 border border-white/5">
+                            <h4 className="text-[10px] font-black uppercase tracking-widest opacity-40 mb-3">What's Coming</h4>
+                            <div className="space-y-3">
+                                <div className="flex items-center gap-3 p-3 rounded-xl bg-white/5">
+                                    <Trophy size={16} className="text-primary" />
+                                    <div>
+                                        <p className="text-xs font-black italic text-white">Platform Tournaments</p>
+                                        <p className="text-[10px] text-white/40">Free entry, TON prizes funded by us</p>
                                     </div>
                                 </div>
-
-                                <div className="flex flex-col mb-8">
-                                    <span className="text-[10px] uppercase font-black tracking-[0.2em] opacity-40 italic mb-2">Grand Prize Pool</span>
-                                    <div className="flex items-center gap-2">
-                                        <h4 className={`text-4xl font-black italic tracking-tighter ${t.color === 'primary' ? 'text-primary' : t.color === 'accent-purple' ? 'text-accent-purple' : 'text-accent-gold'
-                                            }`}>{t.prizePool}</h4>
-                                        <span className="text-xl font-black opacity-20 italic">TON</span>
-                                    </div>
-                                    <p className="text-sm font-black text-white italic mt-1 uppercase tracking-tighter">{t.title}</p>
-                                </div>
-
-                                <div className="flex items-center justify-between">
-                                    <div className="flex -space-x-3">
-                                        {[1, 2, 3].map(i => (
-                                            <img key={i} src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${t.id}${i}`} className="w-8 h-8 rounded-full border-2 border-background-dark" alt="player" />
-                                        ))}
-                                        <div className="w-8 h-8 rounded-full bg-white/5 border-2 border-background-dark flex items-center justify-center text-[8px] font-black opacity-40">
-                                            +{t.joined}
-                                        </div>
-                                    </div>
-                                    <div className="flex items-center gap-4">
-                                        <div className="flex flex-col items-end">
-                                            <span className="text-[8px] font-black uppercase tracking-widest opacity-40 leading-none">Entry Fee</span>
-                                            <span className="text-xs font-black italic text-white">{t.entryFee}</span>
-                                        </div>
-                                        <div className="bg-primary p-2 rounded-xl text-background-dark group-hover:translate-x-1 transition-transform">
-                                            <ArrowRight size={18} />
-                                        </div>
+                                <div className="flex items-center gap-3 p-3 rounded-xl bg-white/5">
+                                    <Plus size={16} className="text-accent-gold" />
+                                    <div>
+                                        <p className="text-xs font-black italic text-white">Host Your Own</p>
+                                        <p className="text-[10px] text-white/40">Set entry fee, max players, and category</p>
                                     </div>
                                 </div>
-
-                                {/* Dynamic Countdown Ribbon */}
-                                {t.status === 'live' && (
-                                    <div className="mt-6 flex items-center justify-between bg-primary/10 -mx-6 px-6 py-2 border-t border-primary/20">
-                                        <div className="flex items-center gap-2">
-                                            <Timer size={12} className="text-primary animate-spin-slow" />
-                                            <span className="text-[10px] font-black text-primary uppercase italic tracking-widest">Ending in 01h 42m</span>
-                                        </div>
-                                        <span className="text-[px] font-black text-primary/40 uppercase tracking-tighter">Round 3/10</span>
+                                <div className="flex items-center gap-3 p-3 rounded-xl bg-white/5">
+                                    <Zap size={16} className="text-accent-purple" />
+                                    <div>
+                                        <p className="text-xs font-black italic text-white">Smart Contract Prizes</p>
+                                        <p className="text-[10px] text-white/40">Secure, instant payouts via TON blockchain</p>
                                     </div>
-                                )}
-                            </GlassCard>
-                        ))
-                    )}
-                </div>
+                                </div>
+                            </div>
+                        </div>
 
-                {/* Promotions */}
-                <div className="mt-12 p-8 rounded-[2rem] bg-gradient-to-br from-accent-gold/20 to-transparent border border-accent-gold/20 relative overflow-hidden">
-                    <Star className="absolute top-4 right-4 text-accent-gold opacity-20 h-24 w-24 -rotate-12" />
-                    <h3 className="text-xl font-black italic tracking-tighter uppercase text-accent-gold mb-2">Weekly Grand Slam</h3>
-                    <p className="text-xs font-bold text-white/50 uppercase tracking-widest leading-relaxed mb-6">Enter for a chance to win 5,000 TON and an exclusive NFT avatar frame.</p>
-                    <button className="bg-accent-gold text-background-dark font-black px-8 py-3 rounded-full text-[10px] uppercase tracking-widest italic shadow-lg shadow-accent-gold/20 active:scale-95 transition-all">
-                        PRE-REGISTER
-                    </button>
-                </div>
+                        {/* Show existing TON tournaments if any */}
+                        {tonTournaments.length > 0 && tonTournaments.map((t) => (
+                            <TournamentCard key={t.id} tournament={t} navigate={navigate} />
+                        ))}
+                    </div>
+                )}
             </div>
         </MainLayout>
     );
 };
+
+// Reusable tournament card component
+const TournamentCard: React.FC<{ tournament: Tournament; navigate: any }> = ({ tournament: t, navigate }) => (
+    <GlassCard
+        onClick={() => navigate('/quiz', { state: { tournamentId: t.id, entryFee: t.entryFee, currency: t.currency } })}
+        className={`group p-6 relative overflow-hidden active:scale-[0.98] transition-all cursor-pointer border-white/5 ${t.status === 'live' ? 'border-primary/20 bonus-glow' : ''}`}
+    >
+        {/* Status Badge */}
+        <div className="absolute top-0 right-0">
+            <div className={`flex items-center gap-1.5 px-4 py-1.5 rounded-bl-2xl text-[8px] font-black uppercase tracking-widest border-l border-b border-white/5 ${t.status === 'live' ? 'bg-primary text-background-dark' : 'bg-white/10 text-white/40'
+                }`}>
+                {t.status === 'live' && <span className="w-1.5 h-1.5 bg-background-dark rounded-full animate-pulse"></span>}
+                {t.tag}
+            </div>
+        </div>
+
+        <div className="flex flex-col mb-8">
+            <span className="text-[10px] uppercase font-black tracking-[0.2em] opacity-40 italic mb-2">Prize Pool</span>
+            <div className="flex items-center gap-2">
+                <h4 className={`text-4xl font-black italic tracking-tighter ${t.color === 'primary' ? 'text-primary' : 'text-accent-gold'
+                    }`}>{t.prizePool}</h4>
+                <span className="text-xl font-black opacity-20 italic">{t.currency}</span>
+            </div>
+            <p className="text-sm font-black text-white italic mt-1 uppercase tracking-tighter">{t.title}</p>
+        </div>
+
+        <div className="flex items-center justify-between">
+            <div className="flex -space-x-3">
+                {[1, 2, 3].map(i => (
+                    <img key={i} src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${t.id}${i}`} className="w-8 h-8 rounded-full border-2 border-background-dark" alt="player" />
+                ))}
+                <div className="w-8 h-8 rounded-full bg-white/5 border-2 border-background-dark flex items-center justify-center text-[8px] font-black opacity-40">
+                    +{t.joined}
+                </div>
+            </div>
+            <div className="flex items-center gap-4">
+                <div className="flex flex-col items-end">
+                    <span className="text-[8px] font-black uppercase tracking-widest opacity-40 leading-none">Entry Fee</span>
+                    <span className="text-xs font-black italic text-white">{t.entryFee}</span>
+                </div>
+                <div className="bg-primary p-2 rounded-xl text-background-dark group-hover:translate-x-1 transition-transform">
+                    <ArrowRight size={18} />
+                </div>
+            </div>
+        </div>
+
+        {/* Live Ribbon */}
+        {t.status === 'live' && (
+            <div className="mt-6 flex items-center justify-between bg-primary/10 -mx-6 px-6 py-2 border-t border-primary/20">
+                <div className="flex items-center gap-2">
+                    <Timer size={12} className="text-primary animate-spin-slow" />
+                    <span className="text-[10px] font-black text-primary uppercase italic tracking-widest">In Progress</span>
+                </div>
+                <span className="text-[10px] font-black text-primary/40 uppercase tracking-tighter">{t.joined}/{t.maxPlayers} players</span>
+            </div>
+        )}
+    </GlassCard>
+);
