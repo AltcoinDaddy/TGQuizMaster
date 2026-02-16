@@ -672,12 +672,15 @@ io.on('connection', (socket) => {
         const userId = telegramId ? parseInt(telegramId) : 0;
         if (!userId) return;
 
+        let user;
         try {
-            let { data: user, error: fetchError } = await supabase
+            let { data: userData, error: fetchError } = await supabase
                 .from('users')
                 .select('*')
                 .eq('telegram_id', userId)
                 .single();
+
+            user = userData;
 
             if (fetchError && fetchError.code === 'PGRST116') {
                 console.log(`[SYNC] User ${userId} not found, creating...`);
@@ -696,64 +699,80 @@ io.on('connection', (socket) => {
                 user = newUser;
             } else if (fetchError) throw fetchError;
 
-            console.log(`[SYNC] User ${userId} data: wallet=${user.wallet_address}, stars=${user.balance_stars}, xp=${user.stats_xp}`);
 
+
+        } catch (error) {
+            console.error('[SYNC] Profile Sync Initial Fetch Error:', error);
+            return;
+        }
+
+        console.log(`[SYNC] User ${userId} data: wallet=${user.wallet_address}, stars=${user.balance_stars}, xp=${user.stats_xp}`);
+
+        let referralCount = 0;
+        let referrals: any[] | null = [];
+        let referralEarnings = 0;
+        let recentTransactions: any[] = [];
+
+        try {
             // Fetch Referral Stats
-            const { count: referralCount, data: referrals } = await supabase
+            const { count, data } = await supabase
                 .from('users')
-                .select('username, created_at, telegram_id', { count: 'exact' }) // Select fields needed for display
+                .select('username, created_at, telegram_id', { count: 'exact' })
                 .eq('referred_by', userId)
                 .order('created_at', { ascending: false })
-                .limit(10); // Limit to recent 10
+                .limit(10);
+            referralCount = count || 0;
+            referrals = data;
+        } catch (e) {
+            console.error('[SYNC] Failed to fetch referrals:', e);
+        }
 
+        try {
+            // Fetch Earnings
             const { data: earningsData } = await supabase
                 .from('transactions')
                 .select('amount, metadata, created_at')
                 .eq('user_id', userId)
                 .eq('type', 'REFERRAL_BONUS');
+            referralEarnings = (earningsData || []).reduce((sum, tx) => sum + tx.amount, 0);
+        } catch (e) {
+            console.error('[SYNC] Failed to fetch referral earnings:', e);
+        }
 
-            const referralEarnings = (earningsData || []).reduce((sum, tx) => sum + tx.amount, 0);
+        // Map referrals
+        const recentReferrals = (referrals || []).map(ref => ({
+            username: ref.username,
+            date: ref.created_at,
+            earned: "+0.00 TON"
+        }));
 
-            // Map referrals to include earnings (if trackable per user, otherwise just list)
-            // For now, we'll just list them. Ideally we'd join with transactions to see how much each earned.
-            // Simplified:
-            const recentReferrals = (referrals || []).map(ref => {
-                // Try to find earnings from this specific user? 
-                // Metadata might have { sourceUserId: ... }
-                // For now, mock specific earnings or match if possible.
-                // Let's just return basic info
-                return {
-                    username: ref.username,
-                    date: ref.created_at,
-                    // earned: "..." // complex to calculate efficiently without aggregation query, leaving for now or simple mock based on average/total
-                    earned: "+0.00 TON" // Placeholder until we have better tracking
-                };
-            });
-
+        try {
             // Fetch Recent Transactions
-            const { data: recentTransactions } = await supabase
+            const { data: txs } = await supabase
                 .from('transactions')
                 .select('*')
                 .eq('user_id', userId)
                 .order('created_at', { ascending: false })
                 .limit(5);
-
-            socket.emit('profile_synced', {
-                stars: user.balance_stars,
-                ton: user.balance_ton,
-                xp: user.stats_xp || 0,
-                wins: user.stats_wins || 0,
-                totalGames: user.stats_total_games || 0,
-                walletConnected: !!user.wallet_address,
-                walletAddress: user.wallet_address,
-                referralCount: referralCount || 0,
-                referralEarnings: referralEarnings || 0,
-                recentReferrals,
-                recentTransactions: recentTransactions || []
-            });
-        } catch (error) {
-            console.error('[SYNC] Profile Sync Error:', error);
+            recentTransactions = txs || [];
+        } catch (e) {
+            console.error('[SYNC] Failed to fetch transactions:', e);
         }
+
+        socket.emit('profile_synced', {
+            stars: user.balance_stars,
+            ton: user.balance_ton,
+            xp: user.stats_xp || 0,
+            wins: user.stats_wins || 0,
+            totalGames: user.stats_total_games || 0,
+            walletConnected: !!user.wallet_address,
+            walletAddress: user.wallet_address,
+            referralCount: referralCount,
+            referralEarnings: referralEarnings,
+            recentReferrals,
+            recentTransactions
+        });
+
     });
 
     socket.on('update_wallet', async (data) => {
