@@ -4,6 +4,13 @@ import { Server } from 'socket.io';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import crypto from 'crypto';
+import dns from 'dns';
+
+// Force usage of IPv4 for DNS resolution to avoid timeouts on some networks
+if (dns.setDefaultResultOrder) {
+    dns.setDefaultResultOrder('ipv4first');
+}
+
 import { supabase } from './config/supabase';
 
 import { GameManager } from './utils/GameManager';
