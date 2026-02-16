@@ -500,8 +500,55 @@ app.post('/api/withdraw', async (req, res) => {
 // Game State
 const rooms = new Map<string, GameManager>();
 
-// Cache to prevent spamming sync_profile (Map<userId, number>)
-const profileSyncCache = new Map<number, number>();
+// In-flight request cache: stores the promise of an ongoing sync so duplicates share it
+const profileSyncInFlight = new Map<number, { promise: Promise<any>; timestamp: number }>();
+
+// Helper: Fetch user from Supabase with retry
+async function fetchUserWithRetry(userId: number, username: string, maxRetries = 3): Promise<any> {
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+            let { data: userData, error: fetchError } = await supabase
+                .from('users')
+                .select('*')
+                .eq('telegram_id', userId)
+                .single();
+
+            if (fetchError && fetchError.code === 'PGRST116') {
+                console.log(`[SYNC] User ${userId} not found, creating...`);
+                const { data: newUser, error: createError } = await supabase
+                    .from('users')
+                    .insert({
+                        telegram_id: userId,
+                        username: username || 'Anon_Player',
+                        balance_stars: 0,
+                        balance_ton: 0.0
+                    })
+                    .select()
+                    .single();
+                if (createError) throw createError;
+                return newUser;
+            } else if (fetchError) {
+                throw fetchError;
+            }
+            return userData;
+        } catch (error: any) {
+            const isRetryable = error.message?.includes('socket hang up') ||
+                error.message?.includes('ECONNRESET') ||
+                error.message?.includes('ETIMEDOUT') ||
+                error.message?.includes('522') ||
+                error.message?.includes('520') ||
+                error.message?.includes('502');
+
+            if (isRetryable && attempt < maxRetries) {
+                const delay = Math.min(1000 * Math.pow(2, attempt - 1), 5000); // 1s, 2s, 4s (capped at 5s)
+                console.warn(`[SYNC-RETRY] Attempt ${attempt}/${maxRetries} failed for user ${userId}. Retrying in ${delay}ms...`);
+                await new Promise(resolve => setTimeout(resolve, delay));
+                continue;
+            }
+            throw error;
+        }
+    }
+}
 
 io.on('connection', (socket) => {
     console.log('User connected:', socket.id);
@@ -681,56 +728,59 @@ io.on('connection', (socket) => {
         const userId = telegramId ? parseInt(telegramId) : 0;
         if (!userId) return;
 
-        // Deduplication: Check if we synced this user recently (within 2 seconds)
-        const lastSync = profileSyncCache.get(userId);
+        // In-flight deduplication: If a request for this user is already running or was completed recently, reuse it
+        const existing = profileSyncInFlight.get(userId);
         const now = Date.now();
-        if (lastSync && (now - lastSync) < 2000) {
-            console.log(`[SYNC] Skipping duplicate request for ${userId} from ${socket.id} (throttled)`);
+        if (existing && (now - existing.timestamp) < 5000) {
+            // Reuse the existing promise result
+            try {
+                const user = await existing.promise;
+                if (user) {
+                    console.log(`[SYNC] Reusing cached result for ${userId} from ${socket.id}`);
+                    // Still emit the result to THIS socket
+                    socket.emit('profile_synced', {
+                        stars: user.balance_stars,
+                        ton: user.balance_ton,
+                        xp: user.stats_xp || 0,
+                        wins: user.stats_wins || 0,
+                        totalGames: user.stats_total_games || 0,
+                        walletConnected: !!user.wallet_address,
+                        walletAddress: user.wallet_address,
+                        referralCount: 0,
+                        referralEarnings: 0,
+                        recentReferrals: [],
+                        recentTransactions: []
+                    });
+                }
+            } catch (e) {
+                // The cached request also failed, just skip
+                console.warn(`[SYNC] Cached request failed for ${userId}, skipping`);
+            }
             return;
         }
 
-        // Update cache timestamp immediately
-        profileSyncCache.set(userId, now);
-
+        // First request for this user: create the promise and cache it
         console.log(`[SYNC] Profile request for ${telegramId} (${username}) from ${socket.id}`);
+        const fetchPromise = fetchUserWithRetry(userId, username);
+        profileSyncInFlight.set(userId, { promise: fetchPromise, timestamp: now });
+
+        // Clean up cache after 5 seconds
+        setTimeout(() => {
+            const cached = profileSyncInFlight.get(userId);
+            if (cached && cached.timestamp === now) {
+                profileSyncInFlight.delete(userId);
+            }
+        }, 5000);
 
         let user;
         try {
-            let { data: userData, error: fetchError } = await supabase
-                .from('users')
-                .select('*')
-                .eq('telegram_id', userId)
-                .single();
-
-            user = userData;
-
-            if (fetchError && fetchError.code === 'PGRST116') {
-                console.log(`[SYNC] User ${userId} not found, creating...`);
-                // Not found, create with defaults
-                const { data: newUser, error: createError } = await supabase
-                    .from('users')
-                    .insert({
-                        telegram_id: userId,
-                        username: username || 'Anon_Player',
-                        balance_stars: 0,
-                        balance_ton: 0.0
-                    })
-                    .select()
-                    .single();
-                if (createError) throw createError;
-                user = newUser;
-            } else if (fetchError) throw fetchError;
-
-
-
-        } catch (error: any) {
-            // Enhanced Error Handling for Connection Issues
-            if (error.code === 'ECONNRESET' || error.message?.includes('socket hung up') || error.message?.includes('522') || error.message?.includes('520') || error.message?.includes('502')) {
-                console.warn(`[SYNC-WARN] Supabase connection unstable for user ${userId}: ${error.message}`);
-                // Optional: Emit a 'sync_error' to frontend so it doesn't wait forever?
+            user = await fetchPromise;
+            if (!user) {
+                console.error(`[SYNC] No user data returned for ${userId}`);
                 return;
             }
-            console.error('[SYNC] Profile Sync Initial Fetch Error:', error);
+        } catch (error: any) {
+            console.warn(`[SYNC-WARN] All retries failed for user ${userId}: ${error.message?.substring(0, 100)}`);
             return;
         }
 
