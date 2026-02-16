@@ -681,13 +681,11 @@ io.on('connection', (socket) => {
 
         let user;
         try {
-            console.log(`[DEBUG] fetching user ${userId}...`);
             let { data: userData, error: fetchError } = await supabase
                 .from('users')
                 .select('*')
                 .eq('telegram_id', userId)
                 .single();
-            console.log(`[DEBUG] fetch complete. Error: ${fetchError?.message}`);
 
             user = userData;
 
