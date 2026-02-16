@@ -216,6 +216,146 @@ app.get('/api/shop', async (req, res) => {
     res.json({ shopItems });
 });
 
+// Daily Reward Streak Rewards Map
+const STREAK_REWARDS = [0, 50, 75, 100, 150, 200, 300, 500]; // index 0 unused, day 1-7
+
+function getTodayDate(): string {
+    return new Date().toISOString().split('T')[0]; // YYYY-MM-DD in UTC
+}
+
+function getYesterdayDate(): string {
+    const d = new Date();
+    d.setDate(d.getDate() - 1);
+    return d.toISOString().split('T')[0];
+}
+
+// GET /api/daily-reward - Check streak status
+app.get('/api/daily-reward', async (req, res) => {
+    try {
+        const { telegramId } = req.query;
+        if (!telegramId) return res.status(400).json({ error: 'Missing telegramId' });
+
+        const userId = parseInt(telegramId as string);
+        const today = getTodayDate();
+
+        const { data: user, error } = await supabase
+            .from('users')
+            .select('streak_current, streak_last_claim, balance_stars')
+            .eq('telegram_id', userId)
+            .single();
+
+        if (error || !user) return res.status(404).json({ error: 'User not found' });
+
+        const lastClaim = user.streak_last_claim; // DATE string or null
+        const alreadyClaimed = lastClaim === today;
+
+        // Calculate current streak day to display
+        let streakDay = user.streak_current || 0;
+
+        if (!alreadyClaimed) {
+            // If last claim was yesterday, streak continues (next day)
+            if (lastClaim === getYesterdayDate()) {
+                streakDay = Math.min((user.streak_current || 0) + 1, 7);
+            } else if (!lastClaim) {
+                // First ever login
+                streakDay = 1;
+            } else {
+                // Missed a day, streak resets
+                streakDay = 1;
+            }
+        }
+
+        const reward = STREAK_REWARDS[streakDay] || 50;
+
+        res.json({
+            streakDay,
+            reward,
+            claimable: !alreadyClaimed,
+            alreadyClaimed,
+            nextResetHours: alreadyClaimed ? Math.max(0, 24 - new Date().getUTCHours()) : 0
+        });
+    } catch (error: any) {
+        console.error('Daily Reward API Error:', error.message);
+        res.status(500).json({ error: 'Failed to fetch daily reward' });
+    }
+});
+
+// POST /api/claim-daily - Claim today's streak reward
+app.post('/api/claim-daily', async (req, res) => {
+    try {
+        const { telegramId } = req.body;
+        if (!telegramId) return res.status(400).json({ error: 'Missing telegramId' });
+
+        const userId = parseInt(telegramId);
+        const today = getTodayDate();
+
+        const { data: user, error } = await supabase
+            .from('users')
+            .select('streak_current, streak_last_claim, balance_stars')
+            .eq('telegram_id', userId)
+            .single();
+
+        if (error || !user) return res.status(404).json({ error: 'User not found' });
+
+        // Already claimed today?
+        if (user.streak_last_claim === today) {
+            return res.status(400).json({ error: 'Already claimed today', alreadyClaimed: true });
+        }
+
+        // Calculate new streak
+        let newStreak: number;
+        if (user.streak_last_claim === getYesterdayDate()) {
+            // Consecutive day
+            newStreak = Math.min((user.streak_current || 0) + 1, 7);
+        } else {
+            // First claim or missed a day — start at 1
+            newStreak = 1;
+        }
+
+        // After day 7, cycle back to day 1
+        if ((user.streak_current || 0) >= 7 && user.streak_last_claim === getYesterdayDate()) {
+            newStreak = 1;
+        }
+
+        const reward = STREAK_REWARDS[newStreak] || 50;
+        const newBalance = (user.balance_stars || 0) + reward;
+
+        // Update user
+        const { error: updateError } = await supabase
+            .from('users')
+            .update({
+                streak_current: newStreak,
+                streak_last_claim: today,
+                balance_stars: newBalance
+            })
+            .eq('telegram_id', userId);
+
+        if (updateError) throw updateError;
+
+        // Log transaction
+        await supabase.from('transactions').insert({
+            user_id: userId,
+            type: 'DAILY_REWARD',
+            amount: reward,
+            currency: 'STARS',
+            metadata: { day: newStreak, type: 'DAILY_STREAK' },
+            status: 'COMPLETED'
+        });
+
+        console.log(`[DAILY] User ${userId} claimed Day ${newStreak} reward: ${reward} Stars`);
+
+        res.json({
+            success: true,
+            streakDay: newStreak,
+            reward,
+            newBalance
+        });
+    } catch (error: any) {
+        console.error('Claim Daily Error:', error.message);
+        res.status(500).json({ error: 'Failed to claim daily reward' });
+    }
+});
+
 // Quests API
 app.get('/api/quests', async (req, res) => {
     try {
@@ -223,6 +363,7 @@ app.get('/api/quests', async (req, res) => {
         if (!telegramId) return res.status(400).json({ error: 'Missing telegramId' });
 
         const userId = parseInt(telegramId as string);
+        const today = getTodayDate();
 
         // 1. Fetch User Stats
         const { data: user, error: userError } = await supabase
@@ -233,42 +374,59 @@ app.get('/api/quests', async (req, res) => {
 
         if (userError) throw userError;
 
-        // 2. Fetch Referrals
+        // 2. Daily reset check — if it's a new day, reset daily counters
+        if (user.daily_reset_date !== today) {
+            await supabase.from('users').update({
+                daily_games_today: 0,
+                daily_wins_today: 0,
+                daily_reset_date: today
+            }).eq('telegram_id', userId);
+            user.daily_games_today = 0;
+            user.daily_wins_today = 0;
+            user.daily_reset_date = today;
+        }
+
+        // 3. Fetch Referrals (all-time, doesn't reset)
         const { count: referralCount } = await supabase
             .from('users')
             .select('*', { count: 'exact', head: true })
             .eq('referred_by', userId);
 
-        // 3. Fetch Claimed Quests (from transactions)
+        // 4. Fetch today's claimed quests
+        const todayStart = new Date(today + 'T00:00:00Z').toISOString();
         const { data: claims } = await supabase
             .from('transactions')
             .select('metadata, created_at')
             .eq('user_id', userId)
-            .eq('type', 'PRIZE'); // Assuming PRIZE is used for quest rewards as per claim-quest
+            .eq('type', 'PRIZE')
+            .gte('created_at', todayStart);
 
         const claimedIds = (claims || [])
             .filter(tx => tx.metadata?.questId && tx.metadata?.type === 'QUEST_REWARD')
             .map(tx => tx.metadata.questId);
 
-        // 4. Calculate Quests
+        // 5. Calculate Daily Quests (reset each day)
+        const dailyGames = user.daily_games_today || 0;
+        const dailyWins = user.daily_wins_today || 0;
+
         const quests = [
             {
                 id: '1',
-                title: 'Play 3 Free Quizzes',
-                progress: Math.min(user.stats_total_games || 0, 3),
+                title: 'Play 3 Quizzes Today',
+                progress: Math.min(dailyGames, 3),
                 total: 3,
                 reward: '20 Stars',
                 type: 'stars',
-                status: claimedIds.includes('1') ? 'completed' : (user.stats_total_games >= 3 ? 'claimable' : 'in-progress')
+                status: claimedIds.includes('1') ? 'completed' : (dailyGames >= 3 ? 'claimable' : 'in-progress')
             },
             {
                 id: '2',
-                title: 'Win a Tournament',
-                progress: Math.min(user.stats_wins || 0, 1),
+                title: 'Win a Game Today',
+                progress: Math.min(dailyWins, 1),
                 total: 1,
                 reward: '100 XP',
                 type: 'xp',
-                status: claimedIds.includes('2') ? 'completed' : (user.stats_wins >= 1 ? 'claimable' : 'in-progress')
+                status: claimedIds.includes('2') ? 'completed' : (dailyWins >= 1 ? 'claimable' : 'in-progress')
             },
             {
                 id: '3',
@@ -281,18 +439,20 @@ app.get('/api/quests', async (req, res) => {
             }
         ];
 
-        // 5. Calculate Weekly Milestone
+        // 6. Calculate Weekly Milestone
         const oneWeekAgo = new Date();
         oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
 
-        const weeklyClaims = (claims || []).filter(tx =>
-            tx.metadata?.type === 'QUEST_REWARD' &&
-            new Date(tx.created_at) > oneWeekAgo
-        ).length;
+        const { count: weeklyClaimCount } = await supabase
+            .from('transactions')
+            .select('*', { count: 'exact', head: true })
+            .eq('user_id', userId)
+            .eq('type', 'PRIZE')
+            .gte('created_at', oneWeekAgo.toISOString());
 
         const weeklyMilestone = {
-            current: weeklyClaims,
-            target: 15, // Arbitrary target
+            current: weeklyClaimCount || 0,
+            target: 15,
             reward: 'Epic Mystery Chest'
         };
 

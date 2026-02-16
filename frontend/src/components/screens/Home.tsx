@@ -3,19 +3,63 @@ import { MainLayout } from '../layout/MainLayout';
 import { Trophy, Rocket, ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { StreakPopup } from '../ui/StreakPopup';
+import { useAppStore } from '../../store/useAppStore';
 
 export const Home: React.FC = () => {
     const navigate = useNavigate();
     const [showStreak, setShowStreak] = useState(false);
+    const [streakDay, setStreakDay] = useState(1);
+    const [streakReward, setStreakReward] = useState('50');
     const [leaderboardPreview, setLeaderboardPreview] = useState<any[]>([]);
+    const { user } = useAppStore();
 
     useEffect(() => {
-        const claimed = localStorage.getItem('streak_claimed_today');
-        if (!claimed) {
-            const timer = setTimeout(() => setShowStreak(true), 1500);
-            return () => clearTimeout(timer);
+        if (!user.telegramId) return;
+
+        const checkDailyReward = async () => {
+            try {
+                const res = await fetch(`${import.meta.env.VITE_API_URL}/api/daily-reward?telegramId=${user.telegramId}`);
+                const data = await res.json();
+
+                if (data.claimable) {
+                    setStreakDay(data.streakDay);
+                    setStreakReward(String(data.reward));
+                    setTimeout(() => setShowStreak(true), 1500);
+                }
+            } catch (e) {
+                console.error('Failed to check daily reward:', e);
+            }
+        };
+        checkDailyReward();
+    }, [user.telegramId]);
+
+    const handleClaim = async () => {
+        try {
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/claim-daily`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ telegramId: user.telegramId })
+            });
+            const data = await res.json();
+
+            if (data.success) {
+                // Update local Stars balance
+                useAppStore.getState().setUser({ stars: data.newBalance });
+                setShowStreak(false);
+
+                const tg = (window as any).Telegram?.WebApp;
+                if (tg?.showAlert) {
+                    tg.showAlert(`Day ${data.streakDay} reward claimed! +${data.reward} ⭐`);
+                }
+            } else {
+                console.warn('Daily claim failed:', data.error);
+                setShowStreak(false);
+            }
+        } catch (e) {
+            console.error('Claim error:', e);
+            setShowStreak(false);
         }
-    }, []);
+    };
 
     useEffect(() => {
         const fetchPreview = async () => {
@@ -31,11 +75,6 @@ export const Home: React.FC = () => {
         };
         fetchPreview();
     }, []);
-
-    const handleClaim = () => {
-        localStorage.setItem('streak_claimed_today', 'true');
-        setShowStreak(false);
-    };
 
     return (
         <MainLayout>
@@ -141,8 +180,8 @@ export const Home: React.FC = () => {
 
             {showStreak && (
                 <StreakPopup
-                    day={5}
-                    reward="500"
+                    day={streakDay}
+                    reward={streakReward}
                     onClaim={handleClaim}
                     onClose={() => setShowStreak(false)}
                 />
