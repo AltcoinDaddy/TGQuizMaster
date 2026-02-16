@@ -673,11 +673,26 @@ io.on('connection', (socket) => {
         }
     });
 
+    // Cache to prevent spamming sync_profile (Map<userId, number>)
+    const profileSyncCache = new Map<number, number>();
+
     socket.on('sync_profile', async (data) => {
         const { telegramId, username } = data;
-        console.log(`[SYNC] Profile request for ${telegramId} (${username})`);
         const userId = telegramId ? parseInt(telegramId) : 0;
         if (!userId) return;
+
+        // Deduplication: Check if we synced this user recently (within 2 seconds)
+        const lastSync = profileSyncCache.get(userId);
+        const now = Date.now();
+        if (lastSync && (now - lastSync) < 2000) {
+            console.log(`[SYNC] Skipping duplicate request for ${userId} (throttled)`);
+            return;
+        }
+
+        // Update cache timestamp immediately
+        profileSyncCache.set(userId, now);
+
+        console.log(`[SYNC] Profile request for ${telegramId} (${username})`);
 
         let user;
         try {
@@ -708,7 +723,13 @@ io.on('connection', (socket) => {
 
 
 
-        } catch (error) {
+        } catch (error: any) {
+            // Enhanced Error Handling for Connection Issues
+            if (error.code === 'ECONNRESET' || error.message?.includes('socket hung up') || error.message?.includes('522') || error.message?.includes('520') || error.message?.includes('502')) {
+                console.warn(`[SYNC-WARN] Supabase connection unstable for user ${userId}: ${error.message}`);
+                // Optional: Emit a 'sync_error' to frontend so it doesn't wait forever?
+                return;
+            }
             console.error('[SYNC] Profile Sync Initial Fetch Error:', error);
             return;
         }
