@@ -662,7 +662,7 @@ async function fetchUserWithRetry(userId: number, username: string, maxRetries =
                     .insert({
                         telegram_id: userId,
                         username: username || 'Anon_Player',
-                        balance_stars: 0
+                        balance_stars: 100
                     })
                     .select()
                     .single();

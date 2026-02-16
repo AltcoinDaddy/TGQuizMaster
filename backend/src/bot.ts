@@ -52,14 +52,49 @@ if (!token) {
                     .single();
 
                 if (fetchError && fetchError.code === 'PGRST116') {
-                    // New user, set referred_by
+                    // New user via referral — gets 200 Stars welcome bonus
                     await supabase.from('users').insert({
                         telegram_id: msg.from?.id,
                         username: msg.from?.username || 'Anon_Player',
                         referred_by: parseInt(referrerId),
-                        balance_stars: 0
+                        balance_stars: 200
                     });
-                    console.log(`[REFERRAL] New user ${msg.from?.id} referred by ${referrerId}`);
+
+                    // Log welcome bonus transaction
+                    await supabase.from('transactions').insert({
+                        user_id: msg.from?.id,
+                        type: 'PRIZE',
+                        amount: 200,
+                        currency: 'STARS',
+                        metadata: { type: 'WELCOME_BONUS_REFERRAL' },
+                        status: 'COMPLETED'
+                    });
+
+                    // Reward the referrer with 50 Stars
+                    const { data: referrer } = await supabase
+                        .from('users')
+                        .select('balance_stars')
+                        .eq('telegram_id', parseInt(referrerId))
+                        .single();
+
+                    if (referrer) {
+                        await supabase.from('users')
+                            .update({ balance_stars: (referrer.balance_stars || 0) + 50 })
+                            .eq('telegram_id', parseInt(referrerId));
+
+                        await supabase.from('transactions').insert({
+                            user_id: parseInt(referrerId),
+                            type: 'PRIZE',
+                            amount: 50,
+                            currency: 'STARS',
+                            metadata: { type: 'REFERRAL_REWARD', referredUser: msg.from?.id },
+                            status: 'COMPLETED'
+                        });
+
+                        console.log(`[REFERRAL] Referrer ${referrerId} earned 50 Stars`);
+                    }
+
+                    console.log(`[REFERRAL] New user ${msg.from?.id} got 200 Stars welcome bonus`);
                 } else if (user && !user.referred_by) {
                     // Existing user without referrer, update it
                     await supabase.from('users')
