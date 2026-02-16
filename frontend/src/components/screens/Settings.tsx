@@ -4,6 +4,7 @@ import { ChevronLeft, Volume2, VolumeX, Smartphone, Shield, LogOut } from 'lucid
 import { useNavigate } from 'react-router-dom';
 import { useTonConnectUI } from '@tonconnect/ui-react';
 
+
 export const Settings: React.FC = () => {
     const navigate = useNavigate();
     const [soundEnabled, setSoundEnabled] = useState(true);
@@ -121,6 +122,8 @@ export const Settings: React.FC = () => {
                         </div>
                     </div>
                 </div>
+
+
 
                 <div className="mt-12 text-center opacity-20">
                     <p className="text-[8px] font-black uppercase tracking-[0.4em]">TGQuizMaster Settings</p>
