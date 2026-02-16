@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { MainLayout } from '../layout/MainLayout';
-import { Trophy, Rocket, ArrowRight } from 'lucide-react';
+import { Rocket, ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { StreakPopup } from '../ui/StreakPopup';
 import { useAppStore } from '../../store/useAppStore';
@@ -79,40 +79,46 @@ export const Home: React.FC = () => {
     return (
         <MainLayout>
             <div className="bg-mesh min-h-full">
-                {/* Tournament Card (Hero) */}
-                <div
-                    onClick={() => navigate('/quiz')}
-                    className="relative group cursor-pointer active:scale-[0.98] transition-all"
-                >
-                    <div className="absolute inset-0 bg-primary/20 blur-2xl rounded-xl -z-10 group-hover:bg-primary/30"></div>
-                    <div className="bg-gradient-to-br from-primary to-emerald-600 rounded-xl p-6 text-background-dark shadow-xl overflow-hidden relative">
-                        <div className="relative z-10">
-                            <div className="flex justify-between items-start mb-4">
-                                <span className="bg-background-dark text-primary text-[10px] font-black px-3 py-1 rounded-full uppercase italic tracking-tighter">Live Now ⚡️</span>
-                                <div className="flex -space-x-2">
-                                    <img className="w-6 h-6 rounded-full border-2 border-primary" src="https://api.dicebear.com/7.x/avataaars/svg?seed=1" alt="participant" />
-                                    <img className="w-6 h-6 rounded-full border-2 border-primary" src="https://api.dicebear.com/7.x/avataaars/svg?seed=2" alt="participant" />
-                                    <div className="w-6 h-6 rounded-full bg-background-dark flex items-center justify-center border-2 border-primary">
-                                        <span className="text-[8px] font-black text-white">+84</span>
-                                    </div>
-                                </div>
-                            </div>
-                            <h2 className="text-2xl font-black mb-1 leading-tight uppercase italic tracking-tighter">Elite Tournament</h2>
-                            <p className="text-sm font-bold opacity-80 mb-6 font-display italic">Battle for the massive 500 TON prize pool!</p>
-                            <div className="flex items-center justify-between">
-                                <div className="flex flex-col">
-                                    <span className="text-[10px] font-black opacity-60 uppercase italic tracking-tighter">Entry Fee</span>
-                                    <span className="text-lg font-black italic">10 TON</span>
-                                </div>
-                                <button className="bg-background-dark text-white px-8 py-3 rounded-full font-black text-xs uppercase tracking-widest italic flex items-center gap-2">
-                                    Enter Now 🏆
-                                </button>
-                            </div>
+                {/* Play Modes */}
+                <div className="space-y-3">
+                    <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-white/40 px-1">Play Now</h2>
+
+                    {/* Free Practice */}
+                    <div
+                        onClick={() => navigate('/quiz', { state: { roomType: 'practice', entryFee: 'Free' } })}
+                        className="bg-gradient-to-r from-green-500/15 to-green-600/5 border border-green-500/20 rounded-2xl p-5 flex items-center gap-4 active:scale-[0.98] transition-all cursor-pointer"
+                    >
+                        <div className="text-4xl">🎮</div>
+                        <div className="flex-1">
+                            <h3 className="font-black text-base uppercase italic tracking-tighter text-green-400">Free Practice</h3>
+                            <p className="text-[10px] text-white/40 font-bold mt-0.5">5 questions • Win 5⭐ + XP</p>
                         </div>
-                        {/* Abstract Design Element */}
-                        <div className="absolute -right-8 -bottom-8 opacity-20 transform rotate-12">
-                            <Trophy size={160} className="text-background-dark" />
+                        <ArrowRight size={20} className="text-green-400" />
+                    </div>
+
+                    {/* Star Battle */}
+                    <div
+                        onClick={() => navigate('/tournaments')}
+                        className="bg-gradient-to-r from-yellow-500/15 to-amber-600/5 border border-yellow-500/20 rounded-2xl p-5 flex items-center gap-4 active:scale-[0.98] transition-all cursor-pointer"
+                    >
+                        <div className="text-4xl">⭐</div>
+                        <div className="flex-1">
+                            <h3 className="font-black text-base uppercase italic tracking-tighter text-yellow-400">Star Battle</h3>
+                            <p className="text-[10px] text-white/40 font-bold mt-0.5">Join or create rooms • Win Stars</p>
                         </div>
+                        <ArrowRight size={20} className="text-yellow-400" />
+                    </div>
+
+                    {/* TON Arena */}
+                    <div
+                        className="bg-gradient-to-r from-blue-500/10 to-blue-600/5 border border-blue-500/15 rounded-2xl p-5 flex items-center gap-4 opacity-60"
+                    >
+                        <div className="text-4xl">💎</div>
+                        <div className="flex-1">
+                            <h3 className="font-black text-base uppercase italic tracking-tighter text-blue-400">TON Arena</h3>
+                            <p className="text-[10px] text-white/40 font-bold mt-0.5">Real TON prizes • Coming Soon</p>
+                        </div>
+                        <span className="bg-blue-500/20 text-blue-300 text-[8px] font-black px-2 py-1 rounded-full uppercase">Soon</span>
                     </div>
                 </div>
 
