@@ -500,6 +500,9 @@ app.post('/api/withdraw', async (req, res) => {
 // Game State
 const rooms = new Map<string, GameManager>();
 
+// Cache to prevent spamming sync_profile (Map<userId, number>)
+const profileSyncCache = new Map<number, number>();
+
 io.on('connection', (socket) => {
     console.log('User connected:', socket.id);
 
@@ -673,9 +676,6 @@ io.on('connection', (socket) => {
         }
     });
 
-    // Cache to prevent spamming sync_profile (Map<userId, number>)
-    const profileSyncCache = new Map<number, number>();
-
     socket.on('sync_profile', async (data) => {
         const { telegramId, username } = data;
         const userId = telegramId ? parseInt(telegramId) : 0;
@@ -685,14 +685,14 @@ io.on('connection', (socket) => {
         const lastSync = profileSyncCache.get(userId);
         const now = Date.now();
         if (lastSync && (now - lastSync) < 2000) {
-            console.log(`[SYNC] Skipping duplicate request for ${userId} (throttled)`);
+            console.log(`[SYNC] Skipping duplicate request for ${userId} from ${socket.id} (throttled)`);
             return;
         }
 
         // Update cache timestamp immediately
         profileSyncCache.set(userId, now);
 
-        console.log(`[SYNC] Profile request for ${telegramId} (${username})`);
+        console.log(`[SYNC] Profile request for ${telegramId} (${username}) from ${socket.id}`);
 
         let user;
         try {
