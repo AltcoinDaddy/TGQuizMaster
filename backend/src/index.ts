@@ -12,6 +12,7 @@ if (dns.setDefaultResultOrder) {
 }
 
 import { supabase } from './config/supabase';
+import { getTonBalance } from './utils/tonBalance';
 
 import { GameManager } from './utils/GameManager';
 import './bot'; // Initialize Bot
@@ -737,10 +738,12 @@ io.on('connection', (socket) => {
                 const user = await existing.promise;
                 if (user) {
                     console.log(`[SYNC] Reusing cached result for ${userId} from ${socket.id}`);
+                    // Fetch live TON balance (getTonBalance has its own 30s cache, so this is cheap)
+                    const liveTon = user.wallet_address ? await getTonBalance(user.wallet_address) : 0;
                     // Still emit the result to THIS socket
                     socket.emit('profile_synced', {
                         stars: user.balance_stars,
-                        ton: user.balance_ton,
+                        ton: liveTon,
                         xp: user.stats_xp || 0,
                         wins: user.stats_wins || 0,
                         totalGames: user.stats_total_games || 0,
@@ -784,7 +787,13 @@ io.on('connection', (socket) => {
             return;
         }
 
-        console.log(`[SYNC] User ${userId} data: wallet=${user.wallet_address}, stars=${user.balance_stars}, xp=${user.stats_xp}`);
+        // Fetch live TON balance from blockchain if wallet is connected
+        let liveTonBalance = 0;
+        if (user.wallet_address) {
+            liveTonBalance = await getTonBalance(user.wallet_address);
+        }
+
+        console.log(`[SYNC] User ${userId} data: wallet=${user.wallet_address}, stars=${user.balance_stars}, xp=${user.stats_xp}, ton=${liveTonBalance}`);
 
         let referralCount = 0;
         let referrals: any[] | null = [];
@@ -839,7 +848,7 @@ io.on('connection', (socket) => {
 
         socket.emit('profile_synced', {
             stars: user.balance_stars,
-            ton: user.balance_ton,
+            ton: liveTonBalance,
             xp: user.stats_xp || 0,
             wins: user.stats_wins || 0,
             totalGames: user.stats_total_games || 0,
@@ -870,12 +879,17 @@ io.on('connection', (socket) => {
             } else {
                 console.log(`[WALLET] Successfully updated wallet_address in DB for ${telegramId}`);
 
-                // Emit sync to update frontend immediately
-                // We reuse the same logic as sync_profile, or just send partial update
-                // Sending partial for efficiency
+                // Fetch live TON balance for the newly connected wallet
+                let liveTonBalance = 0;
+                if (walletAddress) {
+                    liveTonBalance = await getTonBalance(walletAddress);
+                }
+
+                // Emit sync to update frontend immediately with real balance
                 socket.emit('profile_synced', {
                     walletConnected: !!updatedUser.wallet_address,
-                    walletAddress: updatedUser.wallet_address
+                    walletAddress: updatedUser.wallet_address,
+                    ton: liveTonBalance
                 });
             }
         } catch (e) {
