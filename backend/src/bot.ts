@@ -57,8 +57,7 @@ if (!token) {
                         telegram_id: msg.from?.id,
                         username: msg.from?.username || 'Anon_Player',
                         referred_by: parseInt(referrerId),
-                        balance_stars: 1000,
-                        balance_ton: 5.0
+                        balance_stars: 0
                     });
                     console.log(`[REFERRAL] New user ${msg.from?.id} referred by ${referrerId}`);
                 } else if (user && !user.referred_by) {

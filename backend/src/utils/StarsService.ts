@@ -67,9 +67,8 @@ export class StarsService {
                     .from('users')
                     .insert({
                         telegram_id: upsertId,
-                        username: 'Unknown', // We might not have username here if it's a raw payment callback
-                        balance_stars: 0,
-                        balance_ton: 0
+                        username: 'Unknown',
+                        balance_stars: 0
                     })
                     .select()
                     .single();

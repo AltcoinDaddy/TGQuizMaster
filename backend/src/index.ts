@@ -607,20 +607,14 @@ app.post('/api/withdraw', async (req, res) => {
             return res.status(400).json({ error: 'Missing required fields' });
         }
 
-        // 1. Check Balance
-        const { data: user, error: userError } = await supabase
-            .from('users')
-            .select('*')
-            .eq('telegram_id', userId)
-            .single();
+        // 1. Check live blockchain balance
+        const liveBalance = await getTonBalance(address);
 
-        if (userError || !user) return res.status(404).json({ error: 'User not found' });
-
-        if ((user.balance_ton || 0) < withdrawAmount) {
-            return res.status(400).json({ error: 'Insufficient balance' });
+        if (liveBalance < withdrawAmount) {
+            return res.status(400).json({ error: 'Insufficient on-chain balance' });
         }
 
-        // 2. Create Pending Transaction
+        // 2. Create Pending Transaction (for admin review)
         const { error: txError } = await supabase
             .from('transactions')
             .insert({
@@ -634,23 +628,10 @@ app.post('/api/withdraw', async (req, res) => {
 
         if (txError) throw txError;
 
-        // 3. Deduct Balance immediately (optimistic)
-        const { error: updateError } = await supabase
-            .from('users')
-            .update({ balance_ton: user.balance_ton - withdrawAmount })
-            .eq('telegram_id', userId);
-
-        if (updateError) {
-            // Rollback transaction if deduction fails? 
-            // Ideally use a DB transaction or function
-            console.error('Failed to deduct balance, potential inconsistency for user:', userId);
-            return res.status(500).json({ error: 'Withdrawal failed during balance update' });
-        }
-
-        // 4. Notify Admin / Process on Blockchain (Mock for now)
+        // 3. Actual on-chain transfer handled in Phase 2 via smart contract
         console.log(`[WITHDRAW] User ${userId} requested ${withdrawAmount} TON to ${address}`);
 
-        res.json({ success: true, newBalance: user.balance_ton - withdrawAmount });
+        res.json({ success: true, message: 'Withdrawal request submitted for processing' });
 
     } catch (error: any) {
         console.error('Withdrawals API Error:', error.message);
@@ -681,8 +662,7 @@ async function fetchUserWithRetry(userId: number, username: string, maxRetries =
                     .insert({
                         telegram_id: userId,
                         username: username || 'Anon_Player',
-                        balance_stars: 0,
-                        balance_ton: 0.0
+                        balance_stars: 0
                     })
                     .select()
                     .single();
@@ -736,8 +716,7 @@ io.on('connection', (socket) => {
                     .insert({
                         telegram_id: userId,
                         username,
-                        balance_stars: 0,
-                        balance_ton: 0.0
+                        balance_stars: 0
                     })
                     .select()
                     .single();
@@ -745,7 +724,7 @@ io.on('connection', (socket) => {
                 if (createError) {
                     if (data.roomType === 'practice') {
                         console.warn("User creation failed, proceeding for practice mode.");
-                        user = { telegram_id: userId, username, balance_stars: 0, balance_ton: 0 };
+                        user = { telegram_id: userId, username, balance_stars: 0 };
                     } else {
                         throw createError;
                     }
@@ -780,18 +759,10 @@ io.on('connection', (socket) => {
 
                     user.balance_stars -= feeAmount; // Update local state for client emit
                 } else if (feeCurrency === 'TON') {
-                    if ((user.balance_ton || 0) < feeAmount) {
-                        socket.emit('error', { message: 'Insufficient TON balance' });
-                        return;
-                    }
-                    // Deduct TON
-                    const { error: updateError } = await supabase
-                        .from('users')
-                        .update({ balance_ton: user.balance_ton - feeAmount })
-                        .eq('telegram_id', userId);
-                    if (updateError) throw updateError;
-
-                    user.balance_ton -= feeAmount;
+                    // TON entry fees will be handled via smart contract in Phase 2
+                    // For now, TON tournaments are not supported for fee deduction
+                    socket.emit('error', { message: 'TON tournaments coming soon' });
+                    return;
                 }
 
                 // Log Transaction
@@ -858,7 +829,7 @@ io.on('connection', (socket) => {
             // Send updated user balance to client
             socket.emit('balance_update', {
                 stars: user.balance_stars,
-                ton: user.balance_ton
+                ton: 0 // TON balance is fetched live from blockchain via /api/daily-reward or profile sync
             });
 
             io.to(roomId).emit('room_update', {

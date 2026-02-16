@@ -8,7 +8,6 @@ export interface Database {
                     first_name: string | null;
                     is_pro: boolean;
                     balance_stars: number;
-                    balance_ton: number;
                     stats_total_games: number;
                     stats_wins: number;
                     stats_streak: number;
@@ -23,7 +22,6 @@ export interface Database {
                     first_name?: string | null;
                     is_pro?: boolean;
                     balance_stars?: number;
-                    balance_ton?: number;
                     // ... other optional fields
                 };
                 Update: {

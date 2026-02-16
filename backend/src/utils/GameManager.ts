@@ -210,7 +210,7 @@ export class GameManager {
 
                     if (prize > 0) {
                         if (currency === 'STARS') updates.balance_stars = (user.balance_stars || 0) + prize;
-                        else updates.balance_ton = (user.balance_ton || 0) + prize;
+                        // TON prizes handled via smart contract (Phase 2)
 
                         // Log Transaction
                         await supabase.from('transactions').insert({
