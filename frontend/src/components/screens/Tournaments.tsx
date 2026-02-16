@@ -89,8 +89,8 @@ export const Tournaments: React.FC = () => {
                             key={t.key}
                             onClick={() => setTab(t.key)}
                             className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all italic flex items-center justify-center gap-1.5 ${tab === t.key
-                                    ? 'bg-primary text-background-dark shadow-lg shadow-primary/20'
-                                    : 'text-white/40'
+                                ? 'bg-primary text-background-dark shadow-lg shadow-primary/20'
+                                : 'text-white/40'
                                 }`}
                         >
                             {t.icon}
@@ -167,6 +167,15 @@ export const Tournaments: React.FC = () => {
                 {/* STARS Tab */}
                 {tab === 'stars' && (
                     <div className="space-y-6">
+                        {/* Create Room Button - always visible */}
+                        <button
+                            onClick={() => navigate('/create-tournament')}
+                            className="w-full flex items-center justify-center gap-2 bg-accent-gold/10 border border-accent-gold/20 text-accent-gold py-4 rounded-2xl font-black text-[11px] uppercase tracking-widest italic active:scale-[0.98] transition-all"
+                        >
+                            <Plus size={16} />
+                            Create Star Room
+                        </button>
+
                         {loading ? (
                             <div className="text-center py-10 opacity-50 font-black italic">LOADING ROOMS...</div>
                         ) : starsTournaments.length === 0 ? (
