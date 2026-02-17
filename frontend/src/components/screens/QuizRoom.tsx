@@ -18,6 +18,7 @@ export const QuizRoom: React.FC = () => {
     const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
     const [revealedAnswer, setRevealedAnswer] = useState<string | null>(null);
     const [players, setPlayers] = useState<any[]>([]);
+    const [maxPlayersCount, setMaxPlayersCount] = useState(5);
     const [gameStatus, setGameStatus] = useState<'waiting' | 'playing' | 'ended'>('waiting');
     const gameEndedRef = useRef(false);
 
@@ -34,6 +35,7 @@ export const QuizRoom: React.FC = () => {
         const onRoomUpdate = (room: any) => {
             const sortedPlayers = [...room.players].sort((a: any, b: any) => b.score - a.score);
             setPlayers(sortedPlayers);
+            if (room.maxPlayers) setMaxPlayersCount(room.maxPlayers);
         };
 
         const onGameStart = () => {
@@ -88,7 +90,8 @@ export const QuizRoom: React.FC = () => {
             if (balance) {
                 useAppStore.getState().setUser({
                     stars: balance.stars,
-                    tonBalance: balance.ton
+                    tonBalance: balance.ton,
+                    xp: balance.xp ?? useAppStore.getState().user.xp
                 });
             }
         };
@@ -187,7 +190,7 @@ export const QuizRoom: React.FC = () => {
                     </div>
                     <div className="text-center">
                         <h2 className="text-2xl font-black uppercase italic tracking-tighter">Finding Players...</h2>
-                        <p className="text-xs font-bold opacity-50 mt-2 uppercase italic tracking-widest">{players.length}/5 players joined</p>
+                        <p className="text-xs font-bold opacity-50 mt-2 uppercase italic tracking-widest">{players.length}/{maxPlayersCount} players joined</p>
                     </div>
                     <div className="flex -space-x-4">
                         {players.map((p, i) => (
@@ -221,6 +224,26 @@ export const QuizRoom: React.FC = () => {
                                 <span className="font-black text-primary italic text-lg">{p.score} <span className="text-xs">PTS</span></span>
                             </GlassCard>
                         ))}
+                    </div>
+
+                    {/* Navigation Buttons */}
+                    <div className="w-full px-2 space-y-3 mt-4">
+                        <button
+                            onClick={() => {
+                                gameEndedRef.current = false;
+                                navigate('/quiz', { state: location.state, replace: true });
+                                window.location.reload();
+                            }}
+                            className="w-full py-4 bg-primary text-background-dark font-black text-sm uppercase italic tracking-widest rounded-2xl active:scale-95 transition-all shadow-[0_0_20px_rgba(13,242,89,0.3)]"
+                        >
+                            ⚡ Play Again
+                        </button>
+                        <button
+                            onClick={() => navigate('/')}
+                            className="w-full py-4 bg-white/5 border border-white/10 text-white/60 font-black text-xs uppercase tracking-widest rounded-2xl active:scale-95 transition-all"
+                        >
+                            Back to Home
+                        </button>
                     </div>
                 </div>
             </MainLayout>

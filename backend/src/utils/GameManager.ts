@@ -267,6 +267,28 @@ export class GameManager {
                 prizes: { first: 5, second: 0, third: 0 },
                 currency: 'Stars'
             });
+
+            // Emit balance update so frontend refreshes immediately
+            for (const player of winners) {
+                if (!player.id) continue;
+                const userId = parseInt(player.id);
+                try {
+                    const { supabase } = await import('../config/supabase'); // Re-import if not already in scope
+                    const { data: freshUser } = await supabase.from('users')
+                        .select('balance_stars, stats_xp')
+                        .eq('telegram_id', userId)
+                        .single();
+                    if (freshUser) {
+                        this.io.to(this.roomId).emit('balance_update', {
+                            stars: freshUser.balance_stars,
+                            xp: freshUser.stats_xp
+                        });
+                    }
+                } catch (e) {
+                    console.error(`Failed to emit balance_update for user ${userId} in practice mode:`, e);
+                }
+            }
+
             console.log(`Practice game over in ${this.roomId}. Winner: ${winners[0]?.username} (+5 Stars, +10 XP)`);
 
             // Fix: Ensure we clean up the room!
@@ -361,6 +383,28 @@ export class GameManager {
         }
 
         console.log(`Game Over in ${this.roomId}. 1st: ${winners[0]?.username} wins ${distribution.first} ${this.tournamentType === 'stars' ? 'Stars' : 'TON'}`);
+
+        // Emit balance update so frontend refreshes immediately
+        for (const player of winners) {
+            if (!player.id) continue;
+            const userId = parseInt(player.id);
+            try {
+                const { supabase } = await import('../config/supabase');
+                const { data: freshUser } = await supabase.from('users')
+                    .select('balance_stars, balance_ton, stats_xp')
+                    .eq('telegram_id', userId)
+                    .single();
+                if (freshUser) {
+                    this.io.to(this.roomId).emit('balance_update', {
+                        stars: freshUser.balance_stars,
+                        ton: freshUser.balance_ton,
+                        xp: freshUser.stats_xp
+                    });
+                }
+            } catch (e) {
+                console.error(`Failed to emit balance_update for user ${userId}:`, e);
+            }
+        }
 
         this.io.to(this.roomId).emit('game_over', {
             winners,
