@@ -135,7 +135,8 @@ export const QuizRoom: React.FC = () => {
                 roomType: type || 'tournament',
                 tournamentId,
                 entryFee,
-                currency
+                currency,
+                maxPlayers: (type === 'tournament' || type === 'stars') ? (location.state?.maxPlayers || 5) : 5
             });
         };
 

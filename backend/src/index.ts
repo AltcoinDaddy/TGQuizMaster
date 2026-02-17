@@ -833,7 +833,7 @@ io.on('connection', (socket) => {
 
                 if (!roomId) {
                     roomId = crypto.randomUUID();
-                    rooms.set(roomId, new GameManager(roomId, io, 'stars', 0, quickFee));
+                    rooms.set(roomId, new GameManager(roomId, io, 'stars', 0, quickFee, 5));
                 }
 
                 feeAmount = quickFee;
@@ -855,7 +855,9 @@ io.on('connection', (socket) => {
 
             if (!roomId) {
                 roomId = crypto.randomUUID();
-                const newManager = new GameManager(roomId, io, feeCurrency === 'TON' ? 'ton' : 'stars', 0, feeAmount);
+                // Use provided maxPlayers but clamp between 2 and 20 for safety
+                const playersLimit = data.maxPlayers ? Math.min(Math.max(parseInt(data.maxPlayers), 2), 20) : 5;
+                const newManager = new GameManager(roomId, io, feeCurrency === 'TON' ? 'ton' : 'stars', 0, feeAmount, playersLimit);
 
                 // Handle room timeout: refund all players and clean up
                 const capturedRoomId = roomId;
