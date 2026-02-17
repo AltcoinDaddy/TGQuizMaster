@@ -202,24 +202,30 @@ export const Tournaments: React.FC = () => {
                         {/* Create Custom Room */}
                         <button
                             onClick={() => navigate('/create-tournament')}
-                            className="w-full flex items-center justify-center gap-2 bg-white/5 border border-white/10 text-white/60 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest italic active:scale-[0.98] transition-all"
+                            className="w-full flex items-center justify-between bg-gradient-to-r from-amber-900/20 to-yellow-900/10 border border-yellow-600/30 py-4 px-5 rounded-2xl active:scale-[0.98] transition-all"
                         >
-                            <Plus size={14} />
-                            Create Custom Room
+                            <div className="flex items-center gap-3">
+                                <span className="text-xl">🏆</span>
+                                <div className="text-left">
+                                    <p className="font-black text-xs uppercase italic tracking-tight text-yellow-500">Create Custom Room</p>
+                                    <p className="text-[10px] text-white/40 font-medium">Set your own entry fee & rules</p>
+                                </div>
+                            </div>
+                            <Plus size={18} className="text-yellow-500" />
                         </button>
 
                         {loading ? (
                             <div className="text-center py-10 opacity-50 font-black italic">LOADING ROOMS...</div>
                         ) : starsTournaments.length === 0 ? (
-                            <div className="text-center py-16 opacity-50 flex flex-col items-center gap-4">
-                                <Star size={40} className="text-accent-gold opacity-30" />
-                                <p className="font-black italic text-sm">NO STAR ROOMS ACTIVE</p>
-                                <p className="text-xs text-white/30">Create one or wait for others to host</p>
+                            <div className="text-center py-12 flex flex-col items-center gap-4">
+                                <Star size={44} className="text-accent-gold opacity-20" />
+                                <p className="font-black italic text-sm text-white/50">NO STAR ROOMS YET</p>
+                                <p className="text-xs text-white/30 max-w-[200px]">Tap Quick Play above to auto-join, or create your own room!</p>
                                 <button
                                     onClick={() => navigate('/create-tournament')}
-                                    className="mt-2 bg-accent-gold text-background-dark font-black px-6 py-3 rounded-full text-[10px] uppercase tracking-widest italic active:scale-95 transition-all"
+                                    className="mt-1 bg-gradient-to-r from-yellow-500 to-amber-500 text-background-dark font-black px-8 py-3.5 rounded-2xl text-xs uppercase tracking-wider italic active:scale-95 transition-all shadow-lg shadow-yellow-500/20"
                                 >
-                                    Create Room
+                                    🏆 Create a Room
                                 </button>
                             </div>
                         ) : (
