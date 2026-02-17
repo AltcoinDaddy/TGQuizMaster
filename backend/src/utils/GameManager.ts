@@ -263,6 +263,9 @@ export class GameManager {
                 currency: 'Stars'
             });
             console.log(`Practice game over in ${this.roomId}. Winner: ${winners[0]?.username} (+5 Stars, +10 XP)`);
+
+            // Fix: Ensure we clean up the room!
+            if (this.onGameOver) this.onGameOver(this.roomId);
             return;
         }
 
