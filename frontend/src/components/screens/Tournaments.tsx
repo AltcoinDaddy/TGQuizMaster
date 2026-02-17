@@ -123,7 +123,7 @@ export const Tournaments: React.FC = () => {
                     <div className="space-y-6">
                         {/* Quick Practice Card */}
                         <GlassCard
-                            onClick={() => navigate('/quiz', { state: { roomType: 'practice', entryFee: 'Free' } })}
+                            onClick={() => navigate('/quiz', { state: { type: 'practice', entryFee: 'Free' } })}
                             className="group p-6 relative overflow-hidden active:scale-[0.98] transition-all cursor-pointer border-primary/20"
                         >
                             <div className="absolute top-0 right-0 bg-primary px-4 py-1.5 rounded-bl-2xl">
@@ -184,7 +184,7 @@ export const Tournaments: React.FC = () => {
                     <div className="space-y-4">
                         {/* Quick Play Button - prominent */}
                         <button
-                            onClick={() => navigate('/quiz', { state: { roomType: 'quickplay', entryFee: '10 Stars', currency: 'Stars' } })}
+                            onClick={() => navigate('/quiz', { state: { type: 'quickplay', entryFee: '10 Stars', currency: 'Stars' } })}
                             className="w-full flex items-center justify-between bg-gradient-to-r from-yellow-500/20 to-amber-500/10 border border-yellow-500/30 py-5 px-6 rounded-2xl active:scale-[0.98] transition-all"
                         >
                             <div className="flex items-center gap-3">

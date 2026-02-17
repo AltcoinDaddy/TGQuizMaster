@@ -85,7 +85,7 @@ export const Home: React.FC = () => {
 
                     {/* Free Practice */}
                     <div
-                        onClick={() => navigate('/quiz', { state: { roomType: 'practice', entryFee: 'Free' } })}
+                        onClick={() => navigate('/quiz', { state: { type: 'practice', entryFee: 'Free' } })}
                         className="bg-gradient-to-r from-green-500/15 to-green-600/5 border border-green-500/20 rounded-2xl p-5 flex items-center gap-4 active:scale-[0.98] transition-all cursor-pointer"
                     >
                         <div className="text-4xl">🎮</div>

@@ -158,6 +158,7 @@ export const QuizRoom: React.FC = () => {
             socket.off('game_over', onGameOver);
             socket.off('room_expired', onRoomExpired);
             socket.off('connect', joinRoom);
+            socket.emit('leave_room');
         };
     }, [user.username]);
 

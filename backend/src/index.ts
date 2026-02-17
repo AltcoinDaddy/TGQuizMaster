@@ -985,6 +985,32 @@ io.on('connection', (socket) => {
         }
     });
 
+    socket.on('leave_room', () => {
+        const mapping = socketPlayerMap.get(socket.id);
+        if (!mapping) return;
+
+        const { roomId, playerId } = mapping;
+        console.log(`[LEAVE] Player ${playerId} leaving room ${roomId}`);
+
+        socketPlayerMap.delete(socket.id);
+        socket.leave(roomId);
+
+        const manager = rooms.get(roomId);
+        if (!manager) return;
+
+        // Same cleanup logic as disconnect
+        if (!manager.isStarted() && !manager.isExpired()) {
+            manager.removePlayer(playerId);
+            io.to(roomId).emit('room_update', manager.getRoomInfo());
+
+            if (manager.getPlayers().length === 0) {
+                manager.cancelTimeout();
+                rooms.delete(roomId);
+                console.log(`[CLEANUP] Empty room ${roomId} deleted`);
+            }
+        }
+    });
+
     socket.on('sync_profile', async (data) => {
         const { telegramId, username } = data;
         const userId = telegramId ? parseInt(telegramId) : 0;

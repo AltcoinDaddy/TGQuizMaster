@@ -70,7 +70,13 @@ export class GameManager {
     }
 
     addPlayer(player: Player) {
-        this.players.push(player);
+        const existingIndex = this.players.findIndex(p => p.id === player.id);
+        if (existingIndex !== -1) {
+            // Update existing player (e.g. socket reconnect)
+            this.players[existingIndex] = player;
+        } else {
+            this.players.push(player);
+        }
     }
 
     getPlayers() {
