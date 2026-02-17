@@ -19,10 +19,9 @@ interface ShopItem {
 
 export const Shop: React.FC = () => {
     const { user } = useAppStore();
-    const [category, setCategory] = useState<'stars' | 'powerups' | 'avatars' | 'pro'>('stars');
-    const [shopData, setShopData] = useState<{ stars: ShopItem[], powerups: ShopItem[], avatars: ShopItem[] }>({
+    const [category, setCategory] = useState<'stars' | 'avatars'>('stars');
+    const [shopData, setShopData] = useState<{ stars: ShopItem[], avatars: ShopItem[] }>({
         stars: [],
-        powerups: [],
         avatars: []
     });
     const [loading, setLoading] = useState(true);
@@ -42,9 +41,8 @@ export const Shop: React.FC = () => {
                     }));
 
                     setShopData({
-                        stars: mapIcons(data.shopItems.stars),
-                        powerups: mapIcons(data.shopItems.powerups),
-                        avatars: data.shopItems.avatars
+                        stars: mapIcons(data.shopItems.stars || []),
+                        avatars: data.shopItems.avatars || []
                     });
                 }
             } catch (e) {
@@ -105,7 +103,6 @@ export const Shop: React.FC = () => {
     };
 
     const starsItems = shopData.stars;
-    const powerupItems = shopData.powerups;
     const avatarItems = shopData.avatars;
 
     return (
@@ -129,13 +126,13 @@ export const Shop: React.FC = () => {
 
                 {/* Categories */}
                 <nav className="flex gap-3 mb-8 overflow-x-auto hide-scrollbar">
-                    {['stars', 'powerups', 'avatars', 'pro'].map((cat) => (
+                    {['stars', 'avatars'].map((cat) => (
                         <button
                             key={cat}
                             onClick={() => setCategory(cat as any)}
                             className={`flex-shrink-0 px-6 py-2.5 rounded-full font-black text-[10px] uppercase tracking-[0.2em] transition-all italic ${category === cat ? 'bg-primary text-background-dark shadow-lg shadow-primary/20' : 'bg-white/5 text-white/40 border border-white/5'}`}
                         >
-                            {cat}
+                            {cat === 'stars' ? '⭐ Stars' : '🎨 Avatars'}
                         </button>
                     ))}
                 </nav>
@@ -181,7 +178,7 @@ export const Shop: React.FC = () => {
                             </div>
                         ) : (
                             <div className="space-y-4">
-                                {(category === 'stars' ? starsItems : category === 'powerups' ? powerupItems : []).map((item) => (
+                                {(category === 'stars' ? starsItems : []).map((item) => (
                                     <GlassCard key={item.id} className="p-5 flex items-center gap-4 border-white/5 relative overflow-hidden group">
                                         <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center border border-primary/20 group-hover:bg-primary/20 transition-colors">
                                             {item.icon && <item.icon size={28} className="text-primary" />}
@@ -217,7 +214,7 @@ export const Shop: React.FC = () => {
                     <div className="absolute inset-0 z-20 p-8 flex flex-col justify-center">
                         <span className="bg-black/40 backdrop-blur-md text-white text-[9px] font-black uppercase tracking-[0.2em] w-fit px-3 py-1 rounded-full mb-3 italic">Limited Offer</span>
                         <h2 className="text-2xl font-black text-white leading-none uppercase italic tracking-tighter">STARTER<br />BUNDLE</h2>
-                        <p className="text-white/80 text-[10px] font-bold mt-2 uppercase tracking-widest">5 Power-ups for only 250 ⭐</p>
+                        <p className="text-white/80 text-[10px] font-bold mt-2 uppercase tracking-widest">1,000 Stars + Exclusive Avatar</p>
                     </div>
                 </div>
 
