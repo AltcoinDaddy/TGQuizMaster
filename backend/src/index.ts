@@ -967,7 +967,7 @@ io.on('connection', (socket) => {
             });
 
             const roomInfo = manager.getRoomInfo();
-            if (manager.getPlayers().length >= roomInfo.maxPlayers) {
+            if (manager.getPlayers().length >= roomInfo.maxPlayers && !manager.isStarted()) {
                 manager.recalculatePrizePool(); // Calculate prize pool & rake based on actual players
                 manager.start();
                 io.to(roomId).emit('game_start');

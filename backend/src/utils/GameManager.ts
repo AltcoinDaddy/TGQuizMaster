@@ -95,8 +95,10 @@ export class GameManager {
         return this.tournamentType;
     }
 
+    private started = false;
+
     isStarted() {
-        return this.currentIndex > 0;
+        return this.started;
     }
 
     getRoomInfo() {
@@ -107,7 +109,7 @@ export class GameManager {
             type: this.tournamentType,
             prizePool: this.prizePool,
             entryFee: this.entryFee,
-            status: this.currentIndex > 0 ? 'live' : 'waiting',
+            status: this.started ? 'live' : 'waiting',
             currency: this.tournamentType === 'stars' ? 'Stars' : 'TON'
         };
     }
@@ -122,6 +124,9 @@ export class GameManager {
     }
 
     async start() {
+        if (this.started) return; // Prevent double-start
+        this.started = true;
+
         this.cancelTimeout(); // Room filled — cancel the 5-min timeout
         console.log(`Match starting in room ${this.roomId} [Type: ${this.tournamentType}]`);
         await this.fetchQuestions();
