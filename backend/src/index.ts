@@ -16,7 +16,7 @@ import { getTonBalance } from './utils/tonBalance';
 
 import { GameManager } from './utils/GameManager';
 import './bot'; // Initialize Bot
-import { starsService } from './bot';
+import { starsService, notificationService } from './bot';
 
 dotenv.config();
 
@@ -859,6 +859,35 @@ io.on('connection', (socket) => {
                 roomId = crypto.randomUUID();
                 // Prize pool calculated dynamically when game starts (based on actual players)
                 rooms.set(roomId, new GameManager(roomId, io, feeCurrency === 'TON' ? 'ton' : 'stars', 0, feeAmount));
+
+                // Notify recently active users about the new room (Stars rooms only)
+                if (feeCurrency === 'STARS' && notificationService) {
+                    (async () => {
+                        try {
+                            const { supabase } = await import('./config/supabase');
+                            const { data: recentUsers } = await supabase
+                                .from('users')
+                                .select('telegram_id')
+                                .gt('stats_total_games', 0)
+                                .neq('telegram_id', userId)
+                                .limit(50);
+
+                            if (recentUsers && recentUsers.length > 0) {
+                                console.log(`[NOTIFY] Sending room notification to ${recentUsers.length} recent players`);
+                                for (const u of recentUsers) {
+                                    notificationService.notifyRoomOpen(u.telegram_id, {
+                                        entryFee: feeAmount,
+                                        currency: 'Stars',
+                                        playerCount: 1,
+                                        maxPlayers: 5
+                                    });
+                                }
+                            }
+                        } catch (e) {
+                            console.error('[NOTIFY] Room notification failed:', e);
+                        }
+                    })();
+                }
             }
 
             const manager = rooms.get(roomId)!;
@@ -1085,4 +1114,34 @@ io.on('connection', (socket) => {
 const PORT = process.env.PORT || 3001;
 server.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
+
+    // Daily Reward Reminder — runs every 6 hours
+    const SIX_HOURS = 6 * 60 * 60 * 1000;
+    setInterval(async () => {
+        if (!notificationService) return;
+
+        try {
+            const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+            const { data: usersAtRisk } = await supabase
+                .from('users')
+                .select('telegram_id, streak_current')
+                .gt('streak_current', 0)
+                .or(`streak_last_claim.is.null,streak_last_claim.lt.${today}`)
+                .limit(50);
+
+            if (usersAtRisk && usersAtRisk.length > 0) {
+                console.log(`[CRON] Sending daily reward reminders to ${usersAtRisk.length} users`);
+                const rewards = [10, 15, 20, 30, 50, 75, 100]; // Streak reward tiers
+                for (const u of usersAtRisk) {
+                    const nextDay = (u.streak_current || 0) + 1;
+                    const reward = rewards[Math.min(nextDay - 1, rewards.length - 1)];
+                    notificationService.notifyDailyReward(u.telegram_id, nextDay, reward);
+                }
+            }
+        } catch (e) {
+            console.error('[CRON] Daily reward reminder failed:', e);
+        }
+    }, SIX_HOURS);
+
+    console.log('[CRON] Daily reward reminder scheduled (every 6 hours)');
 });
