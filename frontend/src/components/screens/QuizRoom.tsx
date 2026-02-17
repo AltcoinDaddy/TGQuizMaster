@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { MainLayout } from '../layout/MainLayout';
 import { GlassCard } from '../ui/GlassCard';
@@ -19,6 +19,7 @@ export const QuizRoom: React.FC = () => {
     const [revealedAnswer, setRevealedAnswer] = useState<string | null>(null);
     const [players, setPlayers] = useState<any[]>([]);
     const [gameStatus, setGameStatus] = useState<'waiting' | 'playing' | 'ended'>('waiting');
+    const gameEndedRef = useRef(false);
 
     // Timer calculation for SVG Circle
     const radius = 50;
@@ -99,6 +100,7 @@ export const QuizRoom: React.FC = () => {
         };
 
         const onGameOver = (winners: any[]) => {
+            gameEndedRef.current = true;
             setGameStatus('ended');
             setPlayers(winners);
             const amIWinner = winners[0]?.username === user.username;
@@ -127,6 +129,11 @@ export const QuizRoom: React.FC = () => {
 
         // 2. Join Room
         const joinRoom = () => {
+            // Don't rejoin if the game already ended (prevents practice mode restart on reconnect)
+            if (gameEndedRef.current) {
+                console.log("Game already ended, skipping rejoin");
+                return;
+            }
             console.log("Joining room...", { type: type || 'tournament' });
             socket.emit('join_room', {
                 username: user.username,

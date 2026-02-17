@@ -780,6 +780,14 @@ io.on('connection', (socket) => {
             if (data.roomType === 'practice') {
                 roomId = crypto.randomUUID();
                 const mgr = new GameManager(roomId, io, 'practice', 0, 0);
+
+                // Assign cleanup handler so room is deleted after game ends
+                const capturedPracticeRoomId = roomId;
+                mgr.onGameOver = (finishedRoomId) => {
+                    rooms.delete(finishedRoomId);
+                    console.log(`[CLEANUP] Practice room ${finishedRoomId} deleted after game over`);
+                };
+
                 rooms.set(roomId, mgr);
 
                 mgr.addPlayer({
