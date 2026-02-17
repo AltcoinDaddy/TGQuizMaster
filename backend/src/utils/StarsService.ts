@@ -50,8 +50,8 @@ export class StarsService {
     // Shop item payload → in-game Stars reward mapping
     private static SHOP_REWARDS: Record<string, number> = {
         's1': 1000,     // Star Bundle: 50 Telegram Stars → 1,000 in-game Stars
-        's2': 5000,     // Star Mega: 200 Telegram Stars → 5,000 in-game Stars
-        's3': 20000,    // Star Ultra: 500 Telegram Stars → 20,000 in-game Stars
+        's2': 6000,     // Star Chest: 250 Telegram Stars → 6,000 in-game Stars
+        's3': 30000,    // Star Vault: 1000 Telegram Stars → 30,000 in-game Stars
     };
 
     // Verification logic for successful payments

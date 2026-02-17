@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { MainLayout } from '../layout/MainLayout';
 import { GlassCard } from '../ui/GlassCard';
-import { PowerUp } from '../ui/PowerUp';
+
 import { socket } from '../../utils/socket';
 import { useAppStore } from '../../store/useAppStore';
 import { soundManager } from '../../utils/SoundManager';
 
 export const QuizRoom: React.FC = () => {
     const { user } = useAppStore();
+    const navigate = useNavigate();
     const [timeLeft, setTimeLeft] = useState(15);
     const [currentQuestion, setCurrentQuestion] = useState<any>(null);
     const [questionIndex, setQuestionIndex] = useState(0);
@@ -104,6 +105,15 @@ export const QuizRoom: React.FC = () => {
             if (amIWinner) soundManager.play('win');
         };
 
+        const onRoomExpired = (data: any) => {
+            setGameStatus('ended');
+            const tg = (window as any).Telegram?.WebApp;
+            if (tg?.showAlert) {
+                tg.showAlert(data.message || 'Room closed — not enough players. Entry fee refunded.');
+            }
+            setTimeout(() => navigate('/'), 2000);
+        };
+
         socket.on('room_update', onRoomUpdate);
         socket.on('game_start', onGameStart);
         socket.on('new_question', onNewQuestion);
@@ -113,6 +123,7 @@ export const QuizRoom: React.FC = () => {
         socket.on('balance_update', onBalanceUpdate);
         socket.on('user_inventory_update', onInventoryUpdate);
         socket.on('game_over', onGameOver);
+        socket.on('room_expired', onRoomExpired);
 
         // 2. Join Room
         const joinRoom = () => {
@@ -145,6 +156,7 @@ export const QuizRoom: React.FC = () => {
             socket.off('balance_update', onBalanceUpdate);
             socket.off('user_inventory_update', onInventoryUpdate);
             socket.off('game_over', onGameOver);
+            socket.off('room_expired', onRoomExpired);
             socket.off('connect', joinRoom);
         };
     }, [user.username]);
@@ -256,12 +268,7 @@ export const QuizRoom: React.FC = () => {
                     </h2>
                 </div>
 
-                {/* Power-ups Grid */}
-                <div className="w-full grid grid-cols-3 gap-3">
-                    <PowerUp type="5050" count={2} onUse={() => { }} />
-                    <PowerUp type="extraLife" count={0} onUse={() => { }} />
-                    <PowerUp type="timeFreeze" count={1} onUse={() => { }} />
-                </div>
+
 
                 {/* Answer Options with Circle Identifiers */}
                 <div className="w-full grid grid-cols-1 gap-3">

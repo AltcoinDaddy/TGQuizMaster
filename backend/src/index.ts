@@ -203,10 +203,6 @@ app.get('/api/shop', async (req, res) => {
             { id: 's2', title: 'Star Chest', description: 'Most popular choice', price: 250, currency: 'Stars', reward: '6,000 Stars', tag: 'BEST VALUE', color: 'yellow-400' },
             { id: 's3', title: 'Star Vault', description: 'For the ultimate masters', price: 1000, currency: 'Stars', reward: '30,000 Stars', color: 'yellow-400' }
         ],
-        powerups: [
-            { id: 'p1', title: '50/50 Pack', description: 'Eliminate 2 wrong answers', price: 100, currency: 'Stars', reward: 'x10 50/50', color: 'primary' },
-            { id: 'p2', title: 'Shield Pack', description: 'Protect your streak', price: 150, currency: 'Stars', reward: 'x5 Shields', color: 'blue-400' }
-        ],
         avatars: [
             { id: 'a1', title: 'Neon Glitch', description: 'Animated Frame', price: 500, currency: 'Stars', reward: 'NFT Avatar', image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAJoJylJGktSTFhUfJdOVEmw1ozWpc8h-K9YKXlf-076p2a28wUyRQsSP-KmOgeizOi6c0O-cwUscuyxcYta4Qzlvxpf3V28xTSdGezOsojgY8VIEGye61sAR2uLYZvYQRXKNYUIkMP-JJCz1Iml2rnlQo7abJGIeqgTvXexQxF8IgBOdVmztnQ1YZNckUP7xpHFv-FF4x94DyKxks98fDY6W2GefcpXnOCPdrIuz5gOaNscs3KJwpb48g4CYV-IPAUfYVhvWTh2OA', color: 'primary' },
             { id: 'a2', title: 'Cyber Master', description: 'Premium Identity', price: 750, currency: 'Stars', reward: 'Legendary', image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCPahSwwA2M4HVR_vLV-lILzXC7xQf0Nox1bVuLcsHHMHaNB0P3tMJvfGAQhR8bjUciAoIGO6E9seaasLxRgULaniBkCmuWpyaweimfuakUNq2fAldQAcHIaImzziiR_16iI4yzrB3lav7O12FjqznvenQ2Bh7I-6f8ZAbJDvQTpblSoiTPnuFmX11iPLcMbsHgsUBjNOm9xx_-uuFtqiOjfUgtxs_MXfi_1w781LIrxGzYltnxrPtJ3k1O_f0P1B8qBuyrWzvlPWs', color: 'accent-purple' },
@@ -641,6 +637,7 @@ app.post('/api/withdraw', async (req, res) => {
 
 // Game State
 const rooms = new Map<string, GameManager>();
+const socketPlayerMap = new Map<string, { roomId: string; playerId: string }>();
 
 // In-flight request cache: stores the promise of an ongoing sync so duplicates share it
 const profileSyncInFlight = new Map<number, { promise: Promise<any>; timestamp: number }>();
@@ -793,6 +790,7 @@ io.on('connection', (socket) => {
                 });
 
                 socket.join(roomId);
+                socketPlayerMap.set(socket.id, { roomId, playerId: userId.toString() });
                 socket.emit('game_start'); // Instant start for practice
                 mgr.start(); // Start questions
                 return;
@@ -907,6 +905,12 @@ io.on('connection', (socket) => {
                     rooms.delete(capturedRoomId);
                 };
 
+                // Clean up room after game finishes
+                newManager.onGameOver = (finishedRoomId) => {
+                    rooms.delete(finishedRoomId);
+                    console.log(`[CLEANUP] Room ${finishedRoomId} deleted after game over`);
+                };
+
                 rooms.set(roomId, newManager);
 
                 // Notify recently active users about the new room (Stars rooms only)
@@ -948,6 +952,7 @@ io.on('connection', (socket) => {
             });
 
             socket.join(roomId);
+            socketPlayerMap.set(socket.id, { roomId, playerId: userId.toString() });
 
             // Send updated user balance to client
             socket.emit('balance_update', {
@@ -1153,8 +1158,67 @@ io.on('connection', (socket) => {
         }
     });
 
-    socket.on('disconnect', () => {
+    socket.on('disconnect', async () => {
         console.log('User disconnected:', socket.id);
+
+        const mapping = socketPlayerMap.get(socket.id);
+        if (!mapping) return;
+
+        const { roomId, playerId } = mapping;
+        socketPlayerMap.delete(socket.id);
+
+        const manager = rooms.get(roomId);
+        if (!manager) return;
+
+        // If game hasn't started, remove player and refund entry fee
+        if (!manager.isStarted() && !manager.isExpired()) {
+            const fee = manager.getEntryFee();
+            const type = manager.getType();
+            manager.removePlayer(playerId);
+
+            console.log(`[DISCONNECT] Player ${playerId} left room ${roomId} (fee: ${fee})`);
+
+            // Refund entry fee if it was a paid room
+            if (fee > 0 && (type === 'stars' || type === 'ton')) {
+                try {
+                    const pid = parseInt(playerId);
+                    const { data: userData } = await supabase
+                        .from('users')
+                        .select('balance_stars')
+                        .eq('telegram_id', pid)
+                        .single();
+
+                    if (userData) {
+                        await supabase.from('users')
+                            .update({ balance_stars: (userData.balance_stars || 0) + fee })
+                            .eq('telegram_id', pid);
+                    }
+
+                    await supabase.from('transactions').insert({
+                        user_id: pid,
+                        type: 'REFUND',
+                        amount: fee,
+                        currency: 'STARS',
+                        metadata: { reason: 'player_disconnect', roomId },
+                        status: 'COMPLETED'
+                    });
+
+                    console.log(`[REFUND] Refunded ${fee} Stars to disconnected player ${pid}`);
+                } catch (e) {
+                    console.error('[REFUND] Disconnect refund failed:', e);
+                }
+            }
+
+            // Update room for remaining players
+            io.to(roomId).emit('room_update', manager.getRoomInfo());
+
+            // Clean up empty rooms
+            if (manager.getPlayers().length === 0) {
+                manager.cancelTimeout();
+                rooms.delete(roomId);
+                console.log(`[CLEANUP] Empty room ${roomId} deleted`);
+            }
+        }
     });
 });
 

@@ -77,6 +77,22 @@ export class GameManager {
         return this.players;
     }
 
+    removePlayer(playerId: string) {
+        this.players = this.players.filter(p => p.id !== playerId);
+    }
+
+    getEntryFee() {
+        return this.entryFee;
+    }
+
+    getType() {
+        return this.tournamentType;
+    }
+
+    isStarted() {
+        return this.currentIndex > 0;
+    }
+
     getRoomInfo() {
         return {
             id: this.roomId,
@@ -335,7 +351,13 @@ export class GameManager {
         this.io.to(this.roomId).emit('game_over', {
             winners,
             prizes: distribution,
-            currency: this.tournamentType === 'stars' ? 'Stars' : 'TON'
+            currency: this.tournamentType === 'stars' ? 'Stars' : 'TON',
+            roomId: this.roomId
         });
+
+        // Notify index.ts to clean up this room
+        if (this.onGameOver) this.onGameOver(this.roomId);
     }
+
+    public onGameOver?: (roomId: string) => void;
 }
