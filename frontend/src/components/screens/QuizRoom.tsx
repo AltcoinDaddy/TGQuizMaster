@@ -230,12 +230,12 @@ export const QuizRoom: React.FC = () => {
                         </h1>
                     </div>
                     <div className="flex items-center gap-2 bg-primary/10 px-4 py-2 rounded-full border border-primary/20">
-                        <i className="material-icons text-primary text-sm">payments</i>
-                        <span className="text-sm font-black italic tracking-tighter">2,450 <span className="text-xs">TON</span></span>
+                        <i className="material-icons text-primary text-sm">star</i>
+                        <span className="text-sm font-black italic tracking-tighter">{user.stars.toLocaleString()} <span className="text-xs">⭐</span></span>
                     </div>
                 </div>
                 <div className="w-full h-2.5 bg-white/10 rounded-full overflow-hidden">
-                    <div className="h-full bg-primary day-active-glow w-[40%] rounded-full transition-all duration-500"></div>
+                    <div className="h-full bg-primary day-active-glow rounded-full transition-all duration-500" style={{ width: `${totalQuestions > 0 ? (questionIndex / totalQuestions) * 100 : 0}%` }}></div>
                 </div>
             </header>
 
