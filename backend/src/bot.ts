@@ -1,17 +1,20 @@
 import TelegramBot from 'node-telegram-bot-api';
 import dotenv from 'dotenv';
 import { StarsService } from './utils/StarsService';
+import { NotificationService } from './utils/NotificationService';
 
 dotenv.config();
 
 const token = process.env.TELEGRAM_BOT_TOKEN;
 export let starsService: StarsService;
+export let notificationService: NotificationService;
 
 if (!token) {
     console.error('TELEGRAM_BOT_TOKEN is missing! Bot will not start.');
 } else {
     const bot = new TelegramBot(token, { polling: true });
     starsService = new StarsService(bot);
+    notificationService = new NotificationService(bot);
 
     // WebApp URL for the Menu Button (uses env or hardcoded fallback)
     const webAppUrl = process.env.VITE_API_URL || 'https://tg-quiz-master.vercel.app';
@@ -92,6 +95,13 @@ if (!token) {
                         });
 
                         console.log(`[REFERRAL] Referrer ${referrerId} earned 50 Stars`);
+
+                        // Notify the referrer via Telegram
+                        notificationService.notifyReferralReward(
+                            parseInt(referrerId),
+                            50,
+                            msg.from?.username || msg.from?.first_name || 'A friend'
+                        );
                     }
 
                     console.log(`[REFERRAL] New user ${msg.from?.id} got 200 Stars welcome bonus`);

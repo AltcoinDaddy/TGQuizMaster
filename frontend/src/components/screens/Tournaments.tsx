@@ -181,14 +181,31 @@ export const Tournaments: React.FC = () => {
 
                 {/* STARS Tab */}
                 {tab === 'stars' && (
-                    <div className="space-y-6">
-                        {/* Create Room Button - always visible */}
+                    <div className="space-y-4">
+                        {/* Quick Play Button - prominent */}
+                        <button
+                            onClick={() => navigate('/quiz', { state: { roomType: 'quickplay', entryFee: '10 Stars', currency: 'Stars' } })}
+                            className="w-full flex items-center justify-between bg-gradient-to-r from-yellow-500/20 to-amber-500/10 border border-yellow-500/30 py-5 px-6 rounded-2xl active:scale-[0.98] transition-all"
+                        >
+                            <div className="flex items-center gap-3">
+                                <span className="text-2xl">⚡</span>
+                                <div className="text-left">
+                                    <p className="font-black text-sm uppercase italic tracking-tighter text-yellow-400">Quick Play</p>
+                                    <p className="text-[10px] text-white/40 font-bold">Auto-match • 10⭐ entry</p>
+                                </div>
+                            </div>
+                            <div className="bg-yellow-400 text-background-dark font-black px-4 py-2 rounded-xl text-xs uppercase italic">
+                                Play
+                            </div>
+                        </button>
+
+                        {/* Create Custom Room */}
                         <button
                             onClick={() => navigate('/create-tournament')}
-                            className="w-full flex items-center justify-center gap-2 bg-accent-gold/10 border border-accent-gold/20 text-accent-gold py-4 rounded-2xl font-black text-[11px] uppercase tracking-widest italic active:scale-[0.98] transition-all"
+                            className="w-full flex items-center justify-center gap-2 bg-white/5 border border-white/10 text-white/60 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest italic active:scale-[0.98] transition-all"
                         >
-                            <Plus size={16} />
-                            Create Star Room
+                            <Plus size={14} />
+                            Create Custom Room
                         </button>
 
                         {loading ? (

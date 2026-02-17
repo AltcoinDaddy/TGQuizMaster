@@ -26,14 +26,17 @@ export class GameManager {
     private prizePool = 0;
     private entryFee = 0;
     private questionCount = 10;
+    private maxPlayers = 5;
+    private rakePercentage = 0.10; // 10% platform cut
 
-    constructor(roomId: string, io: any, type: 'free' | 'stars' | 'ton' | 'practice' = 'free', prize = 0, fee = 0) {
+    constructor(roomId: string, io: any, type: 'free' | 'stars' | 'ton' | 'practice' = 'free', prize = 0, fee = 0, maxPlayers = 5) {
         this.roomId = roomId;
         this.players = [];
         this.io = io;
         this.tournamentType = type;
         this.prizePool = prize;
         this.entryFee = fee;
+        this.maxPlayers = maxPlayers;
         this.questionCount = type === 'practice' ? 5 : 10;
     }
 
@@ -49,13 +52,22 @@ export class GameManager {
         return {
             id: this.roomId,
             players: this.players.length,
-            maxPlayers: 5, // Hardcoded for now
+            maxPlayers: this.maxPlayers,
             type: this.tournamentType,
             prizePool: this.prizePool,
             entryFee: this.entryFee,
             status: this.currentIndex > 0 ? 'live' : 'waiting',
             currency: this.tournamentType === 'stars' ? 'Stars' : 'TON'
         };
+    }
+
+    // Recalculate prize pool based on actual players who joined
+    recalculatePrizePool() {
+        if (this.tournamentType === 'practice' || this.tournamentType === 'free') return;
+        const grossPool = this.entryFee * this.players.length;
+        const rake = Math.floor(grossPool * this.rakePercentage);
+        this.prizePool = grossPool - rake;
+        console.log(`[RAKE] Room ${this.roomId}: Gross=${grossPool}, Rake=${rake} (${this.rakePercentage * 100}%), Net Prize=${this.prizePool}`);
     }
 
     async start() {
@@ -142,12 +154,18 @@ export class GameManager {
     private async endGame() {
         const winners = [...this.players].sort((a, b) => b.score - a.score);
 
-        // Distribution Logic
-        const totalPrize = this.prizePool;
+        // Calculate rake and net prize pool
+        const grossPool = this.entryFee * this.players.length;
+        const rake = (this.tournamentType === 'stars' || this.tournamentType === 'ton')
+            ? Math.floor(grossPool * this.rakePercentage)
+            : 0;
+        const netPrize = grossPool - rake;
+
+        // Distribution Logic (from net pool after rake)
         const distribution = {
-            first: Math.floor(totalPrize * 0.6),
-            second: Math.floor(totalPrize * 0.3),
-            third: Math.floor(totalPrize * 0.1)
+            first: Math.floor(netPrize * 0.6),
+            second: Math.floor(netPrize * 0.3),
+            third: Math.floor(netPrize * 0.1)
         };
 
         const prizes = [distribution.first, distribution.second, distribution.third];
@@ -204,9 +222,9 @@ export class GameManager {
                 .insert({
                     title: `Room ${this.roomId}`,
                     status: 'finished',
-                    prize_pool: this.prizePool,
+                    prize_pool: netPrize,
                     currency,
-                    entry_fee: 0,
+                    entry_fee: this.entryFee,
                     start_time: new Date().toISOString(),
                     winners: winners.slice(0, 3).map((w, i) => ({
                         userId: w.id,
@@ -219,6 +237,19 @@ export class GameManager {
 
             if (tourError) throw tourError;
             console.log(`[DB] Tournament saved: ${tournamentRecord.id}`);
+
+            // 2. Log Platform Rake as transaction
+            if (rake > 0) {
+                await supabase.from('transactions').insert({
+                    user_id: 0, // Platform account
+                    type: 'PLATFORM_RAKE',
+                    amount: rake,
+                    currency,
+                    metadata: { tournamentId: tournamentRecord.id, grossPool, rakePercent: this.rakePercentage * 100 },
+                    status: 'COMPLETED'
+                });
+                console.log(`[RAKE] Collected ${rake} ${currency} from tournament ${tournamentRecord.id}`);
+            }
 
             // 2. Update Users and Create Transactions
             for (const [index, player] of winners.entries()) {

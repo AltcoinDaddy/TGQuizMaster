@@ -798,22 +798,67 @@ io.on('connection', (socket) => {
                 return;
             }
 
-            // Find a room matching the currency/type or create new
-            roomId = Array.from(rooms.keys()).find(id => {
-                const mgr = rooms.get(id);
-                if (!mgr) return false;
-                const info = mgr.getRoomInfo();
-                return info.players < info.maxPlayers &&
-                    info.status === 'waiting' &&
-                    info.currency === (feeCurrency === 'TON' ? 'TON' : 'Stars') &&
-                    Math.abs(info.entryFee - feeAmount) < 0.01; // Float safety
-            });
+            // Quick Play: auto-join any open Stars room with 10 Stars entry
+            if (data.roomType === 'quickplay') {
+                const quickFee = 10;
+                if ((user.balance_stars || 0) < quickFee) {
+                    socket.emit('error', { message: `Need at least ${quickFee} Stars for Quick Play` });
+                    return;
+                }
+
+                // Deduct Stars
+                await supabase.from('users')
+                    .update({ balance_stars: user.balance_stars - quickFee })
+                    .eq('telegram_id', userId);
+                user.balance_stars -= quickFee;
+
+                // Log entry fee transaction
+                await supabase.from('transactions').insert({
+                    user_id: userId,
+                    type: 'ENTRY_FEE',
+                    amount: -quickFee,
+                    currency: 'STARS',
+                    metadata: { mode: 'quickplay' },
+                    status: 'COMPLETED'
+                });
+
+                // Find any open Stars room or create one
+                roomId = Array.from(rooms.keys()).find(id => {
+                    const mgr = rooms.get(id);
+                    if (!mgr) return false;
+                    const info = mgr.getRoomInfo();
+                    return info.players < info.maxPlayers &&
+                        info.status === 'waiting' &&
+                        info.currency === 'Stars' &&
+                        Math.abs(info.entryFee - quickFee) < 0.01;
+                });
+
+                if (!roomId) {
+                    roomId = crypto.randomUUID();
+                    rooms.set(roomId, new GameManager(roomId, io, 'stars', 0, quickFee));
+                }
+
+                feeAmount = quickFee;
+                feeCurrency = 'STARS';
+                // Fall through to normal join logic below
+            }
+            // Find a room matching the currency/type or create new (skip if quickplay already found one)
+            if (!roomId) {
+                roomId = Array.from(rooms.keys()).find(id => {
+                    const mgr = rooms.get(id);
+                    if (!mgr) return false;
+                    const info = mgr.getRoomInfo();
+                    return info.players < info.maxPlayers &&
+                        info.status === 'waiting' &&
+                        info.currency === (feeCurrency === 'TON' ? 'TON' : 'Stars') &&
+                        Math.abs(info.entryFee - feeAmount) < 0.01; // Float safety
+                });
+            }
 
             if (!roomId) {
                 roomId = crypto.randomUUID();
-                // Determine prize pool based on entry fee or default
-                const pool = feeAmount * 5 * 0.9; // Simple pool logic
-                rooms.set(roomId, new GameManager(roomId, io, feeCurrency === 'TON' ? 'ton' : 'stars', pool, feeAmount));
+                // Prize pool calculated dynamically when game starts (based on actual players)
+                rooms.set(roomId, new GameManager(roomId, io, feeCurrency === 'TON' ? 'ton' : 'stars', 0, feeAmount));
             }
 
             const manager = rooms.get(roomId)!;
@@ -836,7 +881,9 @@ io.on('connection', (socket) => {
                 players: manager.getPlayers()
             });
 
-            if (manager.getPlayers().length === 5) {
+            const roomInfo = manager.getRoomInfo();
+            if (manager.getPlayers().length >= roomInfo.maxPlayers) {
+                manager.recalculatePrizePool(); // Calculate prize pool & rake based on actual players
                 manager.start();
                 io.to(roomId).emit('game_start');
             }

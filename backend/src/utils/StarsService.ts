@@ -47,9 +47,18 @@ export class StarsService {
         }
     }
 
+    // Shop item payload → in-game Stars reward mapping
+    private static SHOP_REWARDS: Record<string, number> = {
+        's1': 1000,     // Star Bundle: 50 Telegram Stars → 1,000 in-game Stars
+        's2': 5000,     // Star Mega: 200 Telegram Stars → 5,000 in-game Stars
+        's3': 20000,    // Star Ultra: 500 Telegram Stars → 20,000 in-game Stars
+    };
+
     // Verification logic for successful payments
-    async verifyPayment(userId: string, payload: string, amount: number) {
-        console.log(`[PAYMENT] Verifying: User=${userId} | Amount=${amount} | Type=${payload}`);
+    async verifyPayment(userId: string, payload: string, telegramStarsAmount: number) {
+        // Map payload to actual in-game Stars reward (or use Telegram Stars amount as fallback)
+        const rewardAmount = StarsService.SHOP_REWARDS[payload] || telegramStarsAmount;
+        console.log(`[PAYMENT] Verifying: User=${userId} | Paid=${telegramStarsAmount} TG Stars | Reward=${rewardAmount} Stars | Item=${payload}`);
 
         try {
             const { supabase } = await import('../config/supabase');
@@ -77,7 +86,7 @@ export class StarsService {
 
             if (user) {
                 const updates: any = {
-                    balance_stars: (user.balance_stars || 0) + amount
+                    balance_stars: (user.balance_stars || 0) + rewardAmount
                 };
 
                 // Add to inventory
@@ -96,7 +105,7 @@ export class StarsService {
             await supabase.from('transactions').insert({
                 user_id: upsertId,
                 type: 'DEPOSIT',
-                amount,
+                amount: rewardAmount,
                 currency: 'STARS',
                 metadata: { item: payload },
                 status: 'COMPLETED'
