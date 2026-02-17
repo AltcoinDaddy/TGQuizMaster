@@ -28,6 +28,9 @@ export class GameManager {
     private questionCount = 10;
     private maxPlayers = 5;
     private rakePercentage = 0.10; // 10% platform cut
+    private roomTimeout: NodeJS.Timeout | null = null;
+    private expired = false;
+    public onExpire?: (manager: GameManager) => void; // Callback for timeout
 
     constructor(roomId: string, io: any, type: 'free' | 'stars' | 'ton' | 'practice' = 'free', prize = 0, fee = 0, maxPlayers = 5) {
         this.roomId = roomId;
@@ -38,6 +41,32 @@ export class GameManager {
         this.entryFee = fee;
         this.maxPlayers = maxPlayers;
         this.questionCount = type === 'practice' ? 5 : 10;
+
+        // Auto-expire rooms after 5 minutes if not filled (skip for practice — instant start)
+        if (type !== 'practice') {
+            this.roomTimeout = setTimeout(() => {
+                if (this.currentIndex === 0 && this.players.length < this.maxPlayers) {
+                    this.expired = true;
+                    console.log(`[TIMEOUT] Room ${this.roomId} expired after 5 min (${this.players.length}/${this.maxPlayers} players)`);
+                    this.io.to(this.roomId).emit('room_expired', {
+                        message: 'Room closed — not enough players. Your entry fee has been refunded.',
+                        refunded: true
+                    });
+                    if (this.onExpire) this.onExpire(this);
+                }
+            }, 5 * 60 * 1000); // 5 minutes
+        }
+    }
+
+    isExpired() {
+        return this.expired;
+    }
+
+    cancelTimeout() {
+        if (this.roomTimeout) {
+            clearTimeout(this.roomTimeout);
+            this.roomTimeout = null;
+        }
     }
 
     addPlayer(player: Player) {
@@ -71,6 +100,7 @@ export class GameManager {
     }
 
     async start() {
+        this.cancelTimeout(); // Room filled — cancel the 5-min timeout
         console.log(`Match starting in room ${this.roomId} [Type: ${this.tournamentType}]`);
         await this.fetchQuestions();
         this.sendQuestion();

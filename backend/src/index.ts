@@ -857,8 +857,57 @@ io.on('connection', (socket) => {
 
             if (!roomId) {
                 roomId = crypto.randomUUID();
-                // Prize pool calculated dynamically when game starts (based on actual players)
-                rooms.set(roomId, new GameManager(roomId, io, feeCurrency === 'TON' ? 'ton' : 'stars', 0, feeAmount));
+                const newManager = new GameManager(roomId, io, feeCurrency === 'TON' ? 'ton' : 'stars', 0, feeAmount);
+
+                // Handle room timeout: refund all players and clean up
+                const capturedRoomId = roomId;
+                newManager.onExpire = async (mgr) => {
+                    try {
+                        const info = mgr.getRoomInfo();
+                        const players = mgr.getPlayers();
+
+                        if (info.entryFee > 0 && players.length > 0) {
+                            console.log(`[REFUND] Refunding ${players.length} players in expired room ${capturedRoomId} (${info.entryFee} Stars each)`);
+
+                            for (const player of players) {
+                                const playerId = parseInt(player.id);
+                                if (!playerId) continue;
+
+                                // Credit Stars back
+                                const { data: userData } = await supabase
+                                    .from('users')
+                                    .select('balance_stars')
+                                    .eq('telegram_id', playerId)
+                                    .single();
+
+                                if (userData) {
+                                    await supabase.from('users')
+                                        .update({ balance_stars: (userData.balance_stars || 0) + info.entryFee })
+                                        .eq('telegram_id', playerId);
+                                }
+
+                                // Log refund transaction
+                                await supabase.from('transactions').insert({
+                                    user_id: playerId,
+                                    type: 'REFUND',
+                                    amount: info.entryFee,
+                                    currency: 'STARS',
+                                    metadata: { reason: 'room_expired', roomId: capturedRoomId },
+                                    status: 'COMPLETED'
+                                });
+
+                                console.log(`[REFUND] Refunded ${info.entryFee} Stars to user ${playerId}`);
+                            }
+                        }
+                    } catch (e) {
+                        console.error('[REFUND] Failed to refund players:', e);
+                    }
+
+                    // Clean up room from memory
+                    rooms.delete(capturedRoomId);
+                };
+
+                rooms.set(roomId, newManager);
 
                 // Notify recently active users about the new room (Stars rooms only)
                 if (feeCurrency === 'STARS' && notificationService) {
