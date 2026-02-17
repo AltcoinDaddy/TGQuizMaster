@@ -160,7 +160,30 @@ if (!token) {
         if (!chatId) return;
 
         if (query.data === 'how_to_play') {
-            bot.sendMessage(chatId, "📖 **How to Play TGQuizMaster**\n\n1. Launch the Mini App\n2. Join a Paid or Free tournament\n3. Answer questions as fast as possible\n4. Top 3 scorers win the prize pool!\n\nUse power-ups like 50/50 and Time Freeze to get an edge! ⚡️");
+            bot.sendMessage(chatId, `📖 *How to Play TGQuizMaster*
+
+🆓 *Start Free*
+Tap Play → Free Practice to try a solo quiz round. No cost, earn Stars & XP for winning!
+
+⚡ *Quick Play (10⭐)*
+Tap Play → Stars tab → Quick Play. You're auto-matched into a 5-player room. Answer trivia questions fast — top 3 scorers split the prize pool!
+
+🏆 *Create a Room*
+Want custom stakes? Create your own Star room and set the entry fee (10-500⭐). Share with friends or wait for others to join.
+
+💰 *How Scoring Works*
+• 10 questions per match, 15 seconds each
+• Faster correct answers = more points
+• 1st place gets 60%, 2nd gets 30%, 3rd gets 10%
+
+⭐ *Earning Stars*
+• Win practice games: +5⭐
+• Win tournaments: share the prize pool
+• Daily rewards: claim every day for bigger bonuses
+• Invite friends: earn 50⭐ per referral
+
+🎁 *Daily Rewards*
+Open the app daily to claim free Stars. Keep your streak alive for bigger rewards!`, { parse_mode: 'Markdown' });
         }
     });
 
