@@ -19,10 +19,11 @@ interface ShopItem {
 
 export const Shop: React.FC = () => {
     const { user } = useAppStore();
-    const [category, setCategory] = useState<'stars' | 'avatars'>('stars');
-    const [shopData, setShopData] = useState<{ stars: ShopItem[], avatars: ShopItem[] }>({
+    const [category, setCategory] = useState<'stars' | 'avatars' | 'powerups'>('stars');
+    const [shopData, setShopData] = useState<{ stars: ShopItem[], avatars: ShopItem[], powerups: ShopItem[] }>({
         stars: [],
-        avatars: []
+        avatars: [],
+        powerups: []
     });
     const [loading, setLoading] = useState(true);
 
@@ -42,7 +43,8 @@ export const Shop: React.FC = () => {
 
                     setShopData({
                         stars: mapIcons(data.shopItems.stars || []),
-                        avatars: data.shopItems.avatars || []
+                        avatars: data.shopItems.avatars || [],
+                        powerups: (data.shopItems.powerups || []).map((p: any) => ({ ...p, icon: Zap }))
                     });
                 }
             } catch (e) {
@@ -102,6 +104,41 @@ export const Shop: React.FC = () => {
         }
     };
 
+    // Power-up purchase: spend in-game Stars directly
+    const handlePowerUpPurchase = async (item: ShopItem) => {
+        if (user.stars < item.price) {
+            const tg = (window as any).Telegram?.WebApp;
+            if (tg?.showAlert) tg.showAlert('Not enough Stars!');
+            else alert('Not enough Stars!');
+            return;
+        }
+        setIsPurchasing(item.id);
+        try {
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/buy-powerup`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ telegramId: user.telegramId, powerUpId: item.id, cost: item.price })
+            });
+            const data = await res.json();
+            if (data.success) {
+                useAppStore.getState().setUser({
+                    stars: data.newBalance,
+                    inventory: data.inventory
+                });
+                const tg = (window as any).Telegram?.WebApp;
+                if (tg?.showAlert) tg.showAlert(`${item.title} added to your inventory! ⚡`);
+                else alert(`${item.title} purchased!`);
+            } else {
+                throw new Error(data.error || 'Purchase failed');
+            }
+        } catch (e: any) {
+            console.error('Power-up purchase failed:', e);
+            alert(e.message || 'Purchase failed');
+        } finally {
+            setIsPurchasing(null);
+        }
+    };
+
     const starsItems = shopData.stars;
     const avatarItems = shopData.avatars;
 
@@ -126,22 +163,24 @@ export const Shop: React.FC = () => {
 
                 {/* Categories */}
                 <nav className="flex gap-3 mb-8 overflow-x-auto hide-scrollbar">
-                    {['stars', 'avatars'].map((cat) => (
+                    {['stars', 'powerups', 'avatars'].map((cat) => (
                         <button
                             key={cat}
                             onClick={() => setCategory(cat as any)}
                             className={`flex-shrink-0 px-6 py-2.5 rounded-full font-black text-[10px] uppercase tracking-[0.2em] transition-all italic ${category === cat ? 'bg-primary text-background-dark shadow-lg shadow-primary/20' : 'bg-white/5 text-white/40 border border-white/5'}`}
                         >
-                            {cat === 'stars' ? '⭐ Stars' : '🎨 Avatars'}
+                            {cat === 'stars' ? '⭐ Stars' : cat === 'powerups' ? '⚡ Power-Ups' : '🎨 Avatars'}
                         </button>
                     ))}
                 </nav>
 
                 {/* Categories Sub-headers */}
                 <div className="flex justify-between items-end mb-6">
-                    <h3 className="text-lg font-black italic tracking-tighter uppercase">{category === 'avatars' ? 'Exclusive Avatars' : 'Battle Tools'}</h3>
+                    <h3 className="text-lg font-black italic tracking-tighter uppercase">
+                        {category === 'avatars' ? 'Exclusive Avatars' : category === 'powerups' ? 'Game Power-Ups' : 'Battle Tools'}
+                    </h3>
                     <span className="text-primary text-[10px] font-black uppercase tracking-[0.2em] italic opacity-60">
-                        {category === 'avatars' ? 'Premium Identity' : '3 Items'}
+                        {category === 'avatars' ? 'Premium Identity' : category === 'powerups' ? 'Use in-game' : '3 Items'}
                     </span>
                 </div>
 
@@ -175,6 +214,32 @@ export const Shop: React.FC = () => {
                                         </button>
                                     </GlassCard>
                                 ))}
+                            </div>
+                        ) : category === 'powerups' ? (
+                            <div className="space-y-4">
+                                {shopData.powerups.map((item) => {
+                                    const ownedCount = (user.inventory || []).filter((i: string) => i === item.id).length;
+                                    return (
+                                        <GlassCard key={item.id} className="p-5 flex items-center gap-4 border-white/5 relative overflow-hidden group">
+                                            <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center border border-primary/20 text-3xl">
+                                                {item.id === 'pu_5050' ? '🎯' : item.id === 'pu_time' ? '⏰' : '⚡'}
+                                            </div>
+                                            <div className="flex-1">
+                                                <h4 className="font-black text-sm uppercase italic tracking-tighter leading-none mb-1">{item.title}</h4>
+                                                <p className="text-[10px] text-white/40 font-bold uppercase tracking-widest">{item.description}</p>
+                                                <p className="mt-1 text-[10px] text-primary/60 font-bold">Owned: {ownedCount}</p>
+                                            </div>
+                                            <button
+                                                onClick={() => handlePowerUpPurchase(item)}
+                                                disabled={isPurchasing !== null || user.stars < item.price}
+                                                className="bg-primary text-background-dark font-black px-5 py-2.5 rounded-full text-[10px] flex items-center gap-1 italic uppercase tracking-widest shadow-lg shadow-primary/20 active:scale-95 transition-all disabled:opacity-50"
+                                            >
+                                                {isPurchasing === item.id ? <Loader2 size={12} className="animate-spin" /> : <Star size={10} className="fill-background-dark" />}
+                                                {item.price}
+                                            </button>
+                                        </GlassCard>
+                                    );
+                                })}
                             </div>
                         ) : (
                             <div className="space-y-4">

@@ -22,6 +22,12 @@ export const QuizRoom: React.FC = () => {
     const [gameStatus, setGameStatus] = useState<'waiting' | 'playing' | 'ended'>('waiting');
     const gameEndedRef = useRef(false);
 
+    // Power-Up State
+    const [usedPowerUps, setUsedPowerUps] = useState<string[]>([]);
+    const [eliminatedOptions, setEliminatedOptions] = useState<string[]>([]);
+    const [doublePointsActive, setDoublePointsActive] = useState(false);
+    const [powerUpLoading, setPowerUpLoading] = useState<string | null>(null);
+
     // Timer calculation for SVG Circle
     const radius = 50;
     const circumference = 2 * Math.PI * radius;
@@ -58,6 +64,8 @@ export const QuizRoom: React.FC = () => {
             setSelectedAnswer(null);
             setIsCorrect(null);
             setRevealedAnswer(null);
+            setEliminatedOptions([]); // Reset 50/50 for new question
+            setDoublePointsActive(false);
         };
 
         const onTimerUpdate = (time: number) => {
@@ -130,6 +138,31 @@ export const QuizRoom: React.FC = () => {
         socket.on('game_over', onGameOver);
         socket.on('room_expired', onRoomExpired);
 
+        // Power-up result handler
+        const onPowerUpResult = (result: any) => {
+            setPowerUpLoading(null);
+            if (result.success && result.data) {
+                if (result.data.type === 'fifty_fifty') {
+                    setEliminatedOptions(result.data.removed);
+                    (window as any).Telegram?.WebApp?.HapticFeedback?.impactOccurred('medium');
+                } else if (result.data.type === 'extra_time') {
+                    (window as any).Telegram?.WebApp?.HapticFeedback?.impactOccurred('medium');
+                } else if (result.data.type === 'double_points') {
+                    setDoublePointsActive(true);
+                    (window as any).Telegram?.WebApp?.HapticFeedback?.impactOccurred('heavy');
+                }
+            }
+        };
+        socket.on('powerup_result', onPowerUpResult);
+
+        const onLevelUp = (data: any) => {
+            soundManager.play('win'); // Re-use win sound or add a specific level-up sound
+            setTimeout(() => {
+                navigate('/level-up', { state: { level: data.level, title: data.title } });
+            }, 2000); // Small delay to let them see the game result first
+        };
+        socket.on('level_up', onLevelUp);
+
         // 2. Join Room
         const joinRoom = () => {
             // Don't rejoin if the game already ended (prevents practice mode restart on reconnect)
@@ -168,17 +201,33 @@ export const QuizRoom: React.FC = () => {
             socket.off('user_inventory_update', onInventoryUpdate);
             socket.off('game_over', onGameOver);
             socket.off('room_expired', onRoomExpired);
+            socket.off('powerup_result', onPowerUpResult);
+            socket.off('level_up', onLevelUp);
+            socket.off('powerup_result', onPowerUpResult);
             socket.off('connect', joinRoom);
             socket.emit('leave_room');
         };
     }, [user.username]);
 
     const handleAnswer = (option: string) => {
-        if (selectedAnswer || gameStatus !== 'playing') return;
+        if (selectedAnswer || gameStatus !== 'playing' || eliminatedOptions.includes(option)) return;
         (window as any).Telegram?.WebApp?.HapticFeedback?.impactOccurred('light');
         soundManager.play('click');
         setSelectedAnswer(option);
         socket.emit('submit_answer', option);
+    };
+
+    const handlePowerUp = (powerUpId: string) => {
+        if (usedPowerUps.includes(powerUpId) || gameStatus !== 'playing' || powerUpLoading) return;
+        // Check inventory
+        const inv = useAppStore.getState().user.inventory || [];
+        if (!inv.includes(powerUpId)) {
+            (window as any).Telegram?.WebApp?.showAlert?.('You don\'t have this power-up! Buy it from the Shop.');
+            return;
+        }
+        setPowerUpLoading(powerUpId);
+        setUsedPowerUps(prev => [...prev, powerUpId]);
+        socket.emit('use_powerup', powerUpId);
     };
 
     if (gameStatus === 'waiting') {
@@ -308,9 +357,12 @@ export const QuizRoom: React.FC = () => {
                         const letters = ['A', 'B', 'C', 'D'];
                         const isSelected = selectedAnswer === option;
                         const isRevealed = revealedAnswer === option;
+                        const isEliminated = eliminatedOptions.includes(option);
 
                         let buttonClass = 'bg-white/5 border-white/5 hover:border-primary/30';
-                        if (isSelected) {
+                        if (isEliminated) {
+                            buttonClass = 'bg-white/2 border-white/5 opacity-30 line-through pointer-events-none';
+                        } else if (isSelected) {
                             if (isCorrect === true) buttonClass = 'bg-primary/20 border-primary shadow-[0_0_20px_rgba(13,242,89,0.3)]';
                             else if (isCorrect === false) buttonClass = 'bg-red-500/20 border-red-500';
                             else buttonClass = 'bg-primary/20 border-primary shadow-[0_0_15px_rgba(13,242,89,0.2)]';
@@ -322,7 +374,7 @@ export const QuizRoom: React.FC = () => {
                             <button
                                 key={option}
                                 onClick={() => handleAnswer(option)}
-                                disabled={!!selectedAnswer}
+                                disabled={!!selectedAnswer || isEliminated}
                                 className={`group w-full p-4 border-2 rounded-2xl flex items-center transition-all animate-in fade-in slide-in-from-bottom duration-300 active:scale-[0.98] ${buttonClass}`}
                                 style={{ animationDelay: `${idx * 100}ms` }}
                             >
@@ -330,7 +382,7 @@ export const QuizRoom: React.FC = () => {
                                     }`}>
                                     {letters[idx]}
                                 </div>
-                                <span className="text-lg font-black italic tracking-tighter">{option}</span>
+                                <span className={`text-lg font-black italic tracking-tighter ${isEliminated ? 'line-through' : ''}`}>{option}</span>
                                 {((isSelected && isCorrect !== null) || (isRevealed && option === revealedAnswer)) && (
                                     <i className={`material-icons ml-auto ${(option === revealedAnswer || isCorrect === true) ? 'text-primary drop-shadow-[0_0_8px_rgba(13,242,89,0.8)]' : 'text-red-500 drop-shadow-[0_0_8px_rgba(239,68,68,0.8)]'
                                         }`}>
@@ -341,6 +393,43 @@ export const QuizRoom: React.FC = () => {
                         );
                     })}
                 </div>
+
+                {/* Power-Up Bar */}
+                {gameStatus === 'playing' && (
+                    <div className="w-full flex justify-center gap-3 mt-2">
+                        {[
+                            { id: 'pu_5050', icon: '🎯', label: '50/50' },
+                            { id: 'pu_time', icon: '⏰', label: '+10s' },
+                            { id: 'pu_double', icon: '⚡', label: '2x' },
+                        ].map(pu => {
+                            const isUsed = usedPowerUps.includes(pu.id);
+                            const isLoading = powerUpLoading === pu.id;
+                            const hasInInventory = (user.inventory || []).includes(pu.id);
+                            const isActive = pu.id === 'pu_double' && doublePointsActive;
+                            return (
+                                <button
+                                    key={pu.id}
+                                    onClick={() => handlePowerUp(pu.id)}
+                                    disabled={isUsed || isLoading || !hasInInventory}
+                                    className={`flex flex-col items-center gap-1 px-4 py-2 rounded-xl border transition-all active:scale-95 ${isActive
+                                        ? 'bg-primary/20 border-primary shadow-[0_0_15px_rgba(13,242,89,0.4)] animate-pulse'
+                                        : isUsed
+                                            ? 'bg-white/5 border-white/5 opacity-30'
+                                            : !hasInInventory
+                                                ? 'bg-white/5 border-white/5 opacity-40'
+                                                : 'bg-white/10 border-white/10 hover:border-primary/30'
+                                        }`}
+                                >
+                                    <span className="text-xl">{isLoading ? '⏳' : pu.icon}</span>
+                                    <span className="text-[9px] font-black uppercase tracking-wider">{pu.label}</span>
+                                    {!hasInInventory && !isUsed && (
+                                        <span className="text-[8px] opacity-50">none</span>
+                                    )}
+                                </button>
+                            );
+                        })}
+                    </div>
+                )}
             </main>
 
             {/* Pedestal Live Footer Leaderboard */}

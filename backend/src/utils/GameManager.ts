@@ -6,6 +6,8 @@ export interface Player {
     username: string;
     avatar: string;
     score: number;
+    usedPowerUps?: string[];   // Track which power-ups have been used this game
+    doublePoints?: boolean;     // Flag for 2x score on next correct answer
 }
 
 export interface Question {
@@ -13,6 +15,31 @@ export interface Question {
     text: string;
     options: string[];
     correctAnswer: string;
+}
+
+// Level System
+const LEVEL_THRESHOLDS = [
+    { level: 1, xp: 0, title: 'Beginner' },
+    { level: 2, xp: 100, title: 'Rookie' },
+    { level: 3, xp: 300, title: 'Player' },
+    { level: 4, xp: 600, title: 'Competitor' },
+    { level: 5, xp: 1000, title: 'Expert' },
+    { level: 6, xp: 1500, title: 'Master' },
+    { level: 7, xp: 2500, title: 'Champion' },
+    { level: 8, xp: 4000, title: 'Legend' },
+    { level: 9, xp: 6000, title: 'Mythic' },
+    { level: 10, xp: 10000, title: 'Immortal' },
+];
+
+function calculateLevel(xp: number): { level: number; title: string; nextXp: number } {
+    let current = LEVEL_THRESHOLDS[0];
+    for (const t of LEVEL_THRESHOLDS) {
+        if (xp >= t.xp) current = t;
+        else break;
+    }
+    const nextIdx = LEVEL_THRESHOLDS.findIndex(t => t.level === current.level) + 1;
+    const nextXp = nextIdx < LEVEL_THRESHOLDS.length ? LEVEL_THRESHOLDS[nextIdx].xp : current.xp;
+    return { level: current.level, title: current.title, nextXp };
 }
 
 export class GameManager {
@@ -172,14 +199,17 @@ export class GameManager {
         this.startTimer();
     }
 
+    private timerInterval: NodeJS.Timeout | null = null;
+
     private startTimer() {
         this.timer = 15;
-        const interval = setInterval(() => {
+        this.timerInterval = setInterval(() => {
             this.timer--;
             this.io.to(this.roomId).emit('timer_update', this.timer);
 
             if (this.timer <= 0) {
-                clearInterval(interval);
+                clearInterval(this.timerInterval!);
+                this.timerInterval = null;
                 this.revealAnswer();
             }
         }, 1000);
@@ -201,11 +231,58 @@ export class GameManager {
 
         const question = this.questions[this.currentIndex];
         if (answer === question.correctAnswer) {
-            const points = Math.max(50, this.timer * 6.6); // Fast answers get ~150 points
+            let points = Math.max(50, this.timer * 6.6); // Fast answers get ~150 points
+            if (player.doublePoints) {
+                points *= 2;
+                player.doublePoints = false; // Consume the power-up
+            }
             player.score += Math.round(points);
+        } else {
+            // Wrong answer — clear double points if active
+            player.doublePoints = false;
         }
 
         this.io.to(this.roomId).emit('score_update', this.players);
+    }
+
+    // Power-Up System
+    usePowerUp(playerId: string, powerUpId: string): { success: boolean; error?: string; data?: any } {
+        const player = this.players.find(p => p.id === playerId);
+        if (!player) return { success: false, error: 'Player not found' };
+        if (!this.started || this.currentIndex >= this.questions.length) {
+            return { success: false, error: 'Game not in progress' };
+        }
+
+        // Initialize tracking array
+        if (!player.usedPowerUps) player.usedPowerUps = [];
+
+        // Check if already used this power-up
+        if (player.usedPowerUps.includes(powerUpId)) {
+            return { success: false, error: 'Already used this power-up' };
+        }
+
+        player.usedPowerUps.push(powerUpId);
+
+        switch (powerUpId) {
+            case 'pu_5050': {
+                const question = this.questions[this.currentIndex];
+                const wrongAnswers = question.options.filter(o => o !== question.correctAnswer);
+                // Pick 2 random wrong answers to eliminate
+                const toRemove = wrongAnswers.sort(() => Math.random() - 0.5).slice(0, 2);
+                return { success: true, data: { type: 'fifty_fifty', removed: toRemove } };
+            }
+            case 'pu_time': {
+                this.timer += 10;
+                this.io.to(this.roomId).emit('timer_update', this.timer);
+                return { success: true, data: { type: 'extra_time', newTimer: this.timer } };
+            }
+            case 'pu_double': {
+                player.doublePoints = true;
+                return { success: true, data: { type: 'double_points' } };
+            }
+            default:
+                return { success: false, error: 'Unknown power-up' };
+        }
     }
 
     private async endGame() {
@@ -247,15 +324,34 @@ export class GameManager {
                         const isWinner = index === 0;
                         const starReward = isWinner ? 5 : 0;
                         const xpReward = isWinner ? 10 : 5;
+                        const oldXp = user.stats_xp || 0;
+                        const newXp = oldXp + xpReward;
+                        const oldLevel = calculateLevel(oldXp);
+                        const newLevel = calculateLevel(newXp);
 
-                        await supabase.from('users').update({
+                        const updates: any = {
                             balance_stars: (user.balance_stars || 0) + starReward,
                             stats_total_games: (user.stats_total_games || 0) + 1,
                             stats_wins: (user.stats_wins || 0) + (isWinner ? 1 : 0),
-                            stats_xp: (user.stats_xp || 0) + xpReward,
+                            stats_xp: newXp,
+                            stats_level: newLevel.level,
                             daily_games_today: (user.daily_games_today || 0) + 1,
                             daily_wins_today: (user.daily_wins_today || 0) + (isWinner ? 1 : 0)
-                        }).eq('telegram_id', userId);
+                        };
+
+                        await supabase.from('users').update(updates).eq('telegram_id', userId);
+
+                        // Emit level-up event if player leveled up
+                        if (newLevel.level > oldLevel.level) {
+                            this.io.to(this.roomId).emit('level_up', {
+                                playerId: player.id,
+                                level: newLevel.level,
+                                title: newLevel.title,
+                                nextXp: newLevel.nextXp,
+                                currentXp: newXp
+                            });
+                            console.log(`[LEVEL UP] Player ${player.id} → Level ${newLevel.level} (${newLevel.title})`);
+                        }
                     }
                 }
             } catch (e) {
@@ -348,10 +444,16 @@ export class GameManager {
                     .single();
 
                 if (user && !userError) {
+                    const oldXp = user.stats_xp || 0;
+                    const newXp = oldXp + player.score;
+                    const oldLevel = calculateLevel(oldXp);
+                    const newLevel = calculateLevel(newXp);
+
                     // Prepare updates
                     const updates: any = {
                         stats_total_games: (user.stats_total_games || 0) + 1,
-                        stats_xp: (user.stats_xp || 0) + player.score,
+                        stats_xp: newXp,
+                        stats_level: newLevel.level,
                         daily_games_today: (user.daily_games_today || 0) + 1
                     };
                     if (index === 0) {
@@ -375,6 +477,18 @@ export class GameManager {
                     }
 
                     await supabase.from('users').update(updates).eq('telegram_id', userId);
+
+                    // Emit level-up event if player leveled up
+                    if (newLevel.level > oldLevel.level) {
+                        this.io.to(this.roomId).emit('level_up', {
+                            playerId: player.id,
+                            level: newLevel.level,
+                            title: newLevel.title,
+                            nextXp: newLevel.nextXp,
+                            currentXp: newXp
+                        });
+                        console.log(`[LEVEL UP] Player ${player.id} → Level ${newLevel.level} (${newLevel.title})`);
+                    }
                 }
             }
 

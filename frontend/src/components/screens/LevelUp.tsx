@@ -2,10 +2,12 @@ import React from 'react';
 import { MainLayout } from '../layout/MainLayout';
 import { Button } from '../ui/Button';
 import { Trophy, Star, ArrowRight, Share2, Sparkles } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 export const LevelUp: React.FC = () => {
     const navigate = useNavigate();
+    const location = useLocation();
+    const { level = 2, title = 'Rookie' } = location.state || {};
 
     return (
         <MainLayout showHeader={false} showNav={false}>
@@ -16,14 +18,14 @@ export const LevelUp: React.FC = () => {
                 {/* Header */}
                 <div className="text-center relative z-10 pt-12 animate-in fade-in slide-in-from-top-4 duration-700">
                     <span className="text-primary font-black tracking-[0.3em] text-[10px] uppercase mb-4 block">New Milestone Reached</span>
-                    <h1 className="text-6xl font-black text-white italic italic tracking-tighter drop-shadow-[0_0_20px_rgba(242,204,13,0.5)]">LEVEL UP!</h1>
+                    <h1 className="text-6xl font-black text-white italic tracking-tighter drop-shadow-[0_0_20px_rgba(242,204,13,0.5)]">LEVEL UP!</h1>
                 </div>
 
                 {/* Center Content: Level Gem */}
                 <div className="relative z-10 flex items-center justify-center animate-in zoom-in duration-700 delay-200">
                     <div className="w-64 h-64 rounded-full border-[10px] border-primary/20 flex items-center justify-center relative bg-background-dark shadow-[0_0_50px_rgba(242,204,13,0.2)]">
                         <div className="absolute inset-0 border-[10px] border-primary rounded-full shadow-[0_0_30px_rgba(242,204,13,0.5)]" style={{ clipPath: 'polygon(50% 50%, 50% 0%, 100% 0%, 100% 100%, 0% 100%, 0% 0%, 10% 0%)' }}></div>
-                        <div className="text-[140px] leading-none font-black text-primary italic drop-shadow-2xl">10</div>
+                        <div className="text-[120px] leading-none font-black text-primary italic drop-shadow-2xl">{level}</div>
                     </div>
                     {/* Particles */}
                     <div className="absolute -top-10 -right-5 text-4xl animate-bounce">✨</div>
@@ -33,7 +35,7 @@ export const LevelUp: React.FC = () => {
                 {/* Rewards */}
                 <div className="relative z-10 w-full text-center space-y-6">
                     <div>
-                        <h2 className="text-2xl font-black text-white italic italic uppercase tracking-tighter">Quiz Expert Unlocked</h2>
+                        <h2 className="text-2xl font-black text-white italic uppercase tracking-tighter">{title} Unlocked</h2>
                         <p className="text-[10px] font-bold opacity-40 uppercase tracking-widest mt-1">You're crushing the leaderboards!</p>
                     </div>
 
@@ -50,7 +52,7 @@ export const LevelUp: React.FC = () => {
                                 <div className="w-16 h-16 rounded-2xl bg-primary/20 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
                                     <Star size={32} />
                                 </div>
-                                <span className="text-[9px] font-black uppercase tracking-tight opacity-60">+100 Stars</span>
+                                <span className="text-[9px] font-black uppercase tracking-tight opacity-60">+{level * 50} Stars</span>
                             </div>
                             <div className="flex flex-col items-center gap-2 group">
                                 <div className="w-16 h-16 rounded-2xl bg-primary/20 flex items-center justify-center text-primary relative overflow-hidden group-hover:scale-110 transition-transform">
@@ -68,7 +70,7 @@ export const LevelUp: React.FC = () => {
                         fullWidth
                         size="lg"
                         onClick={() => navigate('/')}
-                        className="py-5 text-xl font-black italic italic tracking-widest shadow-[0_10px_30px_rgba(242,204,13,0.3)]"
+                        className="py-5 text-xl font-black italic tracking-widest shadow-[0_10px_30px_rgba(242,204,13,0.3)]"
                     >
                         CONTINUE
                         <ArrowRight size={24} />

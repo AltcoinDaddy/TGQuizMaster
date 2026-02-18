@@ -1,16 +1,54 @@
 import React from 'react';
 import { MainLayout } from '../layout/MainLayout';
 import { GlassCard } from '../ui/GlassCard';
-import { Wallet, Settings, ChevronRight, LogOut, Award, PlayCircle, Zap, HelpCircle, ExternalLink, ShieldCheck, Users } from 'lucide-react';
+import { Wallet, Settings, ChevronRight, LogOut, Award, PlayCircle, Zap, HelpCircle, ExternalLink, Users } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../../store/useAppStore';
 import { useTonConnectUI } from '@tonconnect/ui-react';
 
+// Level System Constants (Mirroring Backend)
+const LEVEL_THRESHOLDS = [
+    { level: 1, xp: 0, title: 'Beginner' },
+    { level: 2, xp: 100, title: 'Rookie' },
+    { level: 3, xp: 300, title: 'Player' },
+    { level: 4, xp: 600, title: 'Competitor' },
+    { level: 5, xp: 1000, title: 'Expert' },
+    { level: 6, xp: 1500, title: 'Master' },
+    { level: 7, xp: 2500, title: 'Champion' },
+    { level: 8, xp: 4000, title: 'Legend' },
+    { level: 9, xp: 6000, title: 'Mythic' },
+    { level: 10, xp: 10000, title: 'Immortal' },
+];
+
+function calculateLevelInfo(xp: number) {
+    let current = LEVEL_THRESHOLDS[0];
+    for (const t of LEVEL_THRESHOLDS) {
+        if (xp >= t.xp) current = t;
+        else break;
+    }
+    const nextIdx = LEVEL_THRESHOLDS.findIndex(t => t.level === current.level) + 1;
+    const nextLevel = nextIdx < LEVEL_THRESHOLDS.length ? LEVEL_THRESHOLDS[nextIdx] : null;
+
+    // Calculate progress percentage
+    let progress = 0;
+    if (nextLevel) {
+        const range = nextLevel.xp - current.xp;
+        const gained = xp - current.xp;
+        progress = Math.min(100, Math.max(0, (gained / range) * 100));
+    } else {
+        progress = 100; // Max level
+    }
+
+    return { current, nextLevel, progress };
+}
+
 export const Profile: React.FC = () => {
     const navigate = useNavigate();
     const user = useAppStore(state => state.user);
+    const { current, nextLevel, progress } = calculateLevelInfo(user.xp || 0);
 
     const [tonConnectUI] = useTonConnectUI();
+    // ... (keep handling disconnect same as before)
 
     const handleDisconnect = async () => {
         try {
@@ -58,24 +96,36 @@ export const Profile: React.FC = () => {
                             alt="Profile"
                         />
                         <div className="absolute -bottom-1 -right-1 bg-primary text-background-dark flex items-center justify-center w-10 h-10 rounded-full border-4 border-background-dark shadow-xl">
-                            <ShieldCheck size={20} />
+                            <span className="font-black italic text-xs">Lvl {current.level}</span>
                         </div>
                     </div>
 
                     <h2 className="text-3xl font-black text-white italic tracking-tighter mb-1 uppercase tracking-tighter leading-none">
                         {user.firstName || user.username}
                     </h2>
-                    <p className="text-primary font-black text-[10px] uppercase tracking-[0.3em] mb-6 italic opacity-80">@{user.username}</p>
+                    <p className="text-primary font-black text-[10px] uppercase tracking-[0.3em] mb-4 italic opacity-80">@{user.username}</p>
+                    <div className="px-3 py-1 rounded-full bg-white/5 border border-white/10 mb-6">
+                        <p className="text-[9px] font-black uppercase tracking-widest text-white/60">{current.title}</p>
+                    </div>
+
+                    {/* Level Progress */}
+                    <div className="w-full max-w-[200px] mb-8">
+                        <div className="flex justify-between text-[9px] font-black uppercase tracking-wider mb-1 opacity-60">
+                            <span>XP {user.xp || 0}</span>
+                            <span>{nextLevel ? nextLevel.xp : 'MAX'}</span>
+                        </div>
+                        <div className="h-2 bg-white/10 rounded-full overflow-hidden">
+                            <div
+                                className="h-full bg-primary shadow-[0_0_10px_rgba(13,242,89,0.5)] transition-all duration-1000"
+                                style={{ width: `${progress}%` }}
+                            ></div>
+                        </div>
+                    </div>
 
                     <div className="flex gap-4">
                         <div className="flex flex-col items-center">
                             <span className="text-lg font-black italic">{user.wins}</span>
                             <span className="text-[8px] font-black uppercase tracking-widest opacity-40">Wins</span>
-                        </div>
-                        <div className="w-[1px] h-8 bg-white/10"></div>
-                        <div className="flex flex-col items-center">
-                            <span className="text-lg font-black italic">{user.xp}</span>
-                            <span className="text-[8px] font-black uppercase tracking-widest opacity-40">XP</span>
                         </div>
                         <div className="w-[1px] h-8 bg-white/10"></div>
                         <div className="flex flex-col items-center">

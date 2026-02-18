@@ -207,9 +207,69 @@ app.get('/api/shop', async (req, res) => {
             { id: 'a1', title: 'Neon Glitch', description: 'Animated Frame', price: 500, currency: 'Stars', reward: 'NFT Avatar', image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAJoJylJGktSTFhUfJdOVEmw1ozWpc8h-K9YKXlf-076p2a28wUyRQsSP-KmOgeizOi6c0O-cwUscuyxcYta4Qzlvxpf3V28xTSdGezOsojgY8VIEGye61sAR2uLYZvYQRXKNYUIkMP-JJCz1Iml2rnlQo7abJGIeqgTvXexQxF8IgBOdVmztnQ1YZNckUP7xpHFv-FF4x94DyKxks98fDY6W2GefcpXnOCPdrIuz5gOaNscs3KJwpb48g4CYV-IPAUfYVhvWTh2OA', color: 'primary' },
             { id: 'a2', title: 'Cyber Master', description: 'Premium Identity', price: 750, currency: 'Stars', reward: 'Legendary', image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCPahSwwA2M4HVR_vLV-lILzXC7xQf0Nox1bVuLcsHHMHaNB0P3tMJvfGAQhR8bjUciAoIGO6E9seaasLxRgULaniBkCmuWpyaweimfuakUNq2fAldQAcHIaImzziiR_16iI4yzrB3lav7O12FjqznvenQ2Bh7I-6f8ZAbJDvQTpblSoiTPnuFmX11iPLcMbsHgsUBjNOm9xx_-uuFtqiOjfUgtxs_MXfi_1w781LIrxGzYltnxrPtJ3k1O_f0P1B8qBuyrWzvlPWs', color: 'accent-purple' },
             { id: 'a3', title: 'Quiz Crown', description: 'Legendary Icon', price: 1200, currency: 'Stars', reward: 'Mythic', image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCpxvQnPLgvRsdJag0ER3UXSPs0e4Hs_EXeQMs10qLZI63j4W69n5WSnHjbC2ZFM6SZUF6DEuscPqqvkdw6MGkdyMA1xGOT4FNal-D6FHvTJCZEwLNitNulAPX8nU76wCAuwGHfauWHdN3PFV_IQF_AGlus2_ahPcsfr1mYYcjDaN4BAWV9ciFrZnHSG9UyhQ9-jhGkmCVbisnuWHtUDYGpB3VhlaVf6onab2vnMA3l9Llngng8mUcB2hNgkxZcSfDn6ZMit_xobvc', color: 'accent-gold' }
+        ],
+        powerups: [
+            { id: 'pu_5050', title: '50/50', description: 'Removes 2 wrong answers', price: 100, currency: 'Stars', reward: '1x Use', icon: '🎯', color: 'primary' },
+            { id: 'pu_time', title: 'Extra Time', description: '+10 seconds on a question', price: 75, currency: 'Stars', reward: '1x Use', icon: '⏰', color: 'yellow-400' },
+            { id: 'pu_double', title: 'Double Points', description: '2x score on next answer', price: 150, currency: 'Stars', reward: '1x Use', icon: '⚡', color: 'accent-purple' }
         ]
     };
     res.json({ shopItems });
+});
+
+// Power-Up Purchase (in-game Stars)
+const POWERUP_COSTS: Record<string, number> = {
+    'pu_5050': 100,
+    'pu_time': 75,
+    'pu_double': 150
+};
+
+app.post('/api/buy-powerup', async (req, res) => {
+    try {
+        const { telegramId, powerUpId, cost } = req.body;
+        if (!telegramId || !powerUpId) return res.status(400).json({ success: false, error: 'Missing fields' });
+
+        const expectedCost = POWERUP_COSTS[powerUpId];
+        if (!expectedCost) return res.status(400).json({ success: false, error: 'Invalid power-up' });
+
+        const { supabase } = await import('./config/supabase');
+        const userId = parseInt(telegramId);
+
+        const { data: user, error } = await supabase
+            .from('users')
+            .select('balance_stars, inventory')
+            .eq('telegram_id', userId)
+            .single();
+
+        if (error || !user) return res.status(404).json({ success: false, error: 'User not found' });
+        if ((user.balance_stars || 0) < expectedCost) {
+            return res.status(400).json({ success: false, error: 'Not enough Stars' });
+        }
+
+        const newBalance = (user.balance_stars || 0) - expectedCost;
+        const newInventory = [...(user.inventory || []), powerUpId];
+
+        await supabase.from('users').update({
+            balance_stars: newBalance,
+            inventory: newInventory
+        }).eq('telegram_id', userId);
+
+        // Log transaction
+        await supabase.from('transactions').insert({
+            user_id: userId,
+            type: 'SHOP_PURCHASE',
+            amount: expectedCost,
+            currency: 'STARS',
+            metadata: { item: powerUpId, type: 'powerup' },
+            status: 'COMPLETED'
+        });
+
+        console.log(`[SHOP] User ${telegramId} bought ${powerUpId} for ${expectedCost} Stars`);
+        res.json({ success: true, newBalance, inventory: newInventory });
+    } catch (e) {
+        console.error('Buy power-up error:', e);
+        res.status(500).json({ success: false, error: 'Server error' });
+    }
 });
 
 // Daily Reward Streak Rewards Map
@@ -992,6 +1052,60 @@ io.on('connection', (socket) => {
         const roomId = Array.from(socket.rooms).find(r => rooms.has(r));
         if (roomId) {
             rooms.get(roomId)?.submitAnswer(socket.id, answer);
+        }
+    });
+
+    // Power-Up Usage
+    socket.on('use_powerup', async (powerUpId: string) => {
+        const roomId = Array.from(socket.rooms).find(r => rooms.has(r));
+        if (!roomId) return socket.emit('powerup_result', { success: false, error: 'Not in a room' });
+
+        const manager = rooms.get(roomId);
+        if (!manager) return socket.emit('powerup_result', { success: false, error: 'Room not found' });
+
+        // Check user inventory in DB
+        try {
+            const mapping = socketPlayerMap.get(socket.id);
+            if (!mapping) return socket.emit('powerup_result', { success: false, error: 'Player not mapped' });
+
+            const { supabase } = await import('./config/supabase');
+            const userId = parseInt(mapping.playerId);
+            const { data: user } = await supabase
+                .from('users')
+                .select('inventory, balance_stars')
+                .eq('telegram_id', userId)
+                .single();
+
+            if (!user) return socket.emit('powerup_result', { success: false, error: 'User not found' });
+
+            const inv: string[] = user.inventory || [];
+            const puIndex = inv.indexOf(powerUpId);
+            if (puIndex === -1) {
+                return socket.emit('powerup_result', { success: false, error: 'Power-up not in inventory' });
+            }
+
+            // Use the power-up in the game
+            const result = manager.usePowerUp(socket.id, powerUpId);
+            if (!result.success) {
+                return socket.emit('powerup_result', result);
+            }
+
+            // Deduct from inventory in DB
+            const updatedInv = [...inv];
+            updatedInv.splice(puIndex, 1);
+            await supabase.from('users').update({ inventory: updatedInv }).eq('telegram_id', userId);
+
+            // Emit result to the player
+            socket.emit('powerup_result', result);
+            // Notify the room about the power-up usage
+            io.to(roomId).emit('powerup_used', { playerId: socket.id, powerUpId, playerName: mapping.playerId });
+            // Update user inventory on frontend
+            socket.emit('user_inventory_update', updatedInv);
+
+            console.log(`[POWERUP] Player ${mapping.playerId} used ${powerUpId} in room ${roomId}`);
+        } catch (e) {
+            console.error('Power-up error:', e);
+            socket.emit('powerup_result', { success: false, error: 'Server error' });
         }
     });
 
