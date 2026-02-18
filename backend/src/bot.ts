@@ -21,9 +21,18 @@ if (!token) {
 
     console.log('Telegram Bot initializing...');
 
-    // Polling Error Handling
+    // Polling Error Handling with backoff
+    let pollingErrorCount = 0;
     bot.on('polling_error', (error) => {
-        console.error('Bot Polling Error:', error.message);
+        pollingErrorCount++;
+        // Only log every 10th DNS error to prevent log spam
+        if (error.message.includes('EAI_AGAIN') || error.message.includes('ENOTFOUND')) {
+            if (pollingErrorCount % 10 === 1) {
+                console.error(`Bot Polling Error (DNS failure, occurrence #${pollingErrorCount}): ${error.message}`);
+            }
+        } else {
+            console.error('Bot Polling Error:', error.message);
+        }
         if (error.message.includes('409 Conflict')) {
             console.error('CRITICAL: Another instance of this bot is already running. Please terminate other processes.');
         }

@@ -14,14 +14,12 @@ import { Quests } from './components/screens/Quests';
 import { Tournaments } from './components/screens/Tournaments';
 import { CreateTournament } from './components/screens/CreateTournament';
 import { TournamentHistory } from './components/screens/TournamentHistory';
-import { TournamentResults } from './components/screens/TournamentResults';
 import { Achievements } from './components/screens/Achievements';
 import { LevelUp } from './components/screens/LevelUp';
 import { WithdrawalConfirmation } from './components/screens/WithdrawalConfirmation';
 import { WithdrawalSuccess } from './components/screens/WithdrawalSuccess';
 import { Support } from './components/screens/Support';
 import { BugReport } from './components/screens/BugReport';
-import { WaitingLobby } from './components/screens/WaitingLobby';
 import { PurchaseConfirmation } from './components/screens/PurchaseConfirmation';
 import { AdFreeUpsell } from './components/screens/AdFreeUpsell';
 import { Settings } from './components/screens/Settings';
@@ -142,14 +140,12 @@ function App() {
         <Route path="/tournaments" element={<Tournaments />} />
         <Route path="/create-tournament" element={<CreateTournament />} />
         <Route path="/tournament-history" element={<TournamentHistory />} />
-        <Route path="/tournament-results" element={<TournamentResults />} />
         <Route path="/achievements" element={<Achievements />} />
         <Route path="/level-up" element={<LevelUp />} />
         <Route path="/withdrawal" element={<WithdrawalConfirmation />} />
         <Route path="/withdrawal-success" element={<WithdrawalSuccess />} />
         <Route path="/support" element={<Support />} />
         <Route path="/bug-report" element={<BugReport />} />
-        <Route path="/waiting-lobby" element={<WaitingLobby />} />
         <Route path="/purchase-confirmation" element={<PurchaseConfirmation />} />
         <Route path="/ad-free" element={<AdFreeUpsell />} />
         <Route path="/settings" element={<Settings />} />
