@@ -4,9 +4,50 @@ import { Button } from '../ui/Button';
 import { GlassCard } from '../ui/GlassCard';
 import { ShieldAlert, Zap, Sparkles, Check, ChevronLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useAppStore } from '../../store/useAppStore';
 
 export const AdFreeUpsell: React.FC = () => {
     const navigate = useNavigate();
+    const { user, updateStars, setUser } = useAppStore();
+    const [loading, setLoading] = React.useState(false);
+
+    const handlePurchase = async () => {
+        if (user.isPro) return;
+        if ((user.stars || 0) < 500) {
+            const tg = (window as any).Telegram?.WebApp;
+            if (tg?.showAlert) tg.showAlert('Not enough Stars! You need 500.');
+            else alert('Not enough Stars!');
+            return;
+        }
+
+        if (!confirm('Buy Pro for 500 Stars?')) return;
+
+        setLoading(true);
+        try {
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/buy-pro`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ telegramId: user.telegramId })
+            });
+            const data = await res.json();
+
+            if (data.success) {
+                setUser({ isPro: true });
+                updateStars(-500);
+                const tg = (window as any).Telegram?.WebApp;
+                if (tg?.showAlert) tg.showAlert('Welcome to Pro!');
+                else alert('Welcome to Pro!');
+                navigate('/');
+            } else {
+                throw new Error(data.error || 'Purchase failed');
+            }
+        } catch (e: any) {
+            console.error('Pro purchase failed:', e);
+            alert(e.message || 'Purchase failed');
+        } finally {
+            setLoading(false);
+        }
+    };
 
     return (
         <MainLayout>
@@ -19,11 +60,11 @@ export const AdFreeUpsell: React.FC = () => {
                     >
                         <ChevronLeft size={20} />
                     </button>
-                    <h1 className="text-xl font-black text-white">Premium Access</h1>
+                    <h1 className="text-xl font-black text-white italic tracking-tighter uppercase">Premium Access</h1>
                 </div>
 
                 {/* Hero */}
-                <div className="relative bg-gradient-to-br from-indigo-600 to-purple-600 rounded-[3rem] p-10 mb-8 overflow-hidden shadow-[0_20px_50px_rgba(79,70,229,0.3)] group">
+                <div className={`relative ${user.isPro ? 'bg-gradient-to-br from-yellow-500 to-orange-500' : 'bg-gradient-to-br from-indigo-600 to-purple-600'} rounded-[3rem] p-10 mb-8 overflow-hidden shadow-[0_20px_50px_rgba(79,70,229,0.3)] group`}>
                     <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-110 transition-transform">
                         <ShieldAlert size={120} />
                     </div>
@@ -31,8 +72,8 @@ export const AdFreeUpsell: React.FC = () => {
                         <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center mb-6 backdrop-blur-md">
                             <Sparkles className="text-white" size={24} />
                         </div>
-                        <h2 className="text-4xl font-black text-white italic italic tracking-tighter mb-2 leading-none uppercase">GO AD-FREE</h2>
-                        <p className="text-white/60 font-bold text-[10px] uppercase tracking-[0.2em]">Unlock the ultimate quiz experience</p>
+                        <h2 className="text-4xl font-black text-white italic italic tracking-tighter mb-2 leading-none uppercase">{user.isPro ? 'PRO ACTIVE' : 'GO AD-FREE'}</h2>
+                        <p className="text-white/60 font-bold text-[10px] uppercase tracking-[0.2em]">{user.isPro ? 'You are a Legend.' : 'Unlock the ultimate quiz experience'}</p>
                     </div>
                 </div>
 
@@ -46,27 +87,30 @@ export const AdFreeUpsell: React.FC = () => {
                 </div>
 
                 {/* Pricing / CTA */}
-                <div className="space-y-4">
-                    <GlassCard className="p-6 flex items-center justify-between border-primary/20 bg-primary/5">
-                        <div className="flex flex-col">
-                            <span className="text-[10px] font-black text-primary uppercase tracking-widest mb-1">Monthly Pass</span>
-                            <span className="text-3xl font-black text-white italic italic">2.50 <span className="text-sm not-italic opacity-40">TON</span></span>
-                        </div>
-                        <div className="bg-primary text-background-dark px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-primary/20">
-                            SAVE 20%
-                        </div>
-                    </GlassCard>
+                {!user.isPro && (
+                    <div className="space-y-4">
+                        <GlassCard className="p-6 flex items-center justify-between border-primary/20 bg-primary/5">
+                            <div className="flex flex-col">
+                                <span className="text-[10px] font-black text-primary uppercase tracking-widest mb-1">Lifetime Pass</span>
+                                <span className="text-3xl font-black text-white italic italic">500 <span className="text-sm not-italic opacity-40">Stars</span></span>
+                            </div>
+                            <div className="bg-primary text-background-dark px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-primary/20">
+                                BEST VALUE
+                            </div>
+                        </GlassCard>
 
-                    <Button
-                        fullWidth
-                        size="lg"
-                        onClick={() => navigate('/shop')}
-                        className="py-5 text-xl italic font-black tracking-widest shadow-[0_10px_30px_rgba(13,242,89,0.2)]"
-                    >
-                        UPGRADE NOW
-                        <Zap size={24} className="ml-2" />
-                    </Button>
-                </div>
+                        <Button
+                            fullWidth
+                            size="lg"
+                            onClick={handlePurchase}
+                            disabled={loading || (user.stars || 0) < 500}
+                            className="py-5 text-xl italic font-black tracking-widest shadow-[0_10px_30px_rgba(13,242,89,0.2)] disabled:opacity-50 disabled:grayscale"
+                        >
+                            {loading ? 'PURCHASING...' : ((user.stars || 0) < 500 ? 'NEED MORE STARS' : 'UPGRADE NOW')}
+                            <Zap size={24} className="ml-2" />
+                        </Button>
+                    </div>
+                )}
             </div>
         </MainLayout>
     );

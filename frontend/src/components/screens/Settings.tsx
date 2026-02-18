@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
+import { useAppStore } from '../../store/useAppStore';
 import { MainLayout } from '../layout/MainLayout';
 import { ChevronLeft, Volume2, VolumeX, Smartphone, Shield, LogOut } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -7,27 +8,18 @@ import { useTonConnectUI } from '@tonconnect/ui-react';
 
 export const Settings: React.FC = () => {
     const navigate = useNavigate();
-    const [soundEnabled, setSoundEnabled] = useState(true);
-    const [hapticsEnabled, setHapticsEnabled] = useState(true);
+    const { user, updateSettings } = useAppStore();
     const [tonConnectUI] = useTonConnectUI();
 
-    useEffect(() => {
-        const storedSound = localStorage.getItem('sound_enabled');
-        const storedHaptics = localStorage.getItem('haptics_enabled');
-        if (storedSound !== null) setSoundEnabled(storedSound === 'true');
-        if (storedHaptics !== null) setHapticsEnabled(storedHaptics === 'true');
-    }, []);
+    const { soundEnabled, hapticsEnabled } = user.settings || { soundEnabled: true, hapticsEnabled: true };
 
     const toggleSound = () => {
-        const newState = !soundEnabled;
-        setSoundEnabled(newState);
-        localStorage.setItem('sound_enabled', String(newState));
+        updateSettings({ soundEnabled: !soundEnabled, hapticsEnabled });
     };
 
     const toggleHaptics = () => {
         const newState = !hapticsEnabled;
-        setHapticsEnabled(newState);
-        localStorage.setItem('haptics_enabled', String(newState));
+        updateSettings({ soundEnabled, hapticsEnabled: newState });
         if (newState && (window as any).Telegram?.WebApp?.HapticFeedback) {
             (window as any).Telegram.WebApp.HapticFeedback.impactOccurred('medium');
         }

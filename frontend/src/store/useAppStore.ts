@@ -17,6 +17,10 @@ interface UserState {
     referralEarnings?: number;
     referrals?: any[]; // { username, date, earned }
     transactions?: any[]; // { id, title, date, amount, type }
+    settings?: {
+        soundEnabled: boolean;
+        hapticsEnabled: boolean;
+    };
 }
 
 interface AppStore {
@@ -26,9 +30,10 @@ interface AppStore {
     updateStars: (amount: number) => void;
     updateTON: (amount: number) => void;
     syncFromBackend: (data: any) => void;
+    updateSettings: (settings: { soundEnabled: boolean; hapticsEnabled: boolean }) => void;
 }
 
-export const useAppStore = create<AppStore>((set) => ({
+export const useAppStore = create<AppStore>((set, get) => ({
     user: {
         telegramId: "123456789", // Default for dev
         username: "@Alex_Quiz",
@@ -41,7 +46,11 @@ export const useAppStore = create<AppStore>((set) => ({
         inventory: [],
         walletConnected: false,
         referrals: [],
-        transactions: []
+        transactions: [],
+        settings: {
+            soundEnabled: true,
+            hapticsEnabled: true
+        }
     },
     setUser: (userData) =>
         set((state) => ({ user: { ...state.user, ...userData } })),
@@ -58,6 +67,8 @@ export const useAppStore = create<AppStore>((set) => ({
                 stars: data.stars,
                 tonBalance: data.ton,
                 xp: data.xp,
+                isPro: data.isPro ?? state.user.isPro,
+                settings: data.settings ?? state.user.settings,
                 wins: data.wins,
                 totalGames: data.totalGames,
                 walletConnected: data.walletConnected ?? state.user.walletConnected,
@@ -68,4 +79,25 @@ export const useAppStore = create<AppStore>((set) => ({
                 transactions: data.recentTransactions ?? state.user.transactions
             }
         })),
+    updateSettings: async (settings) => {
+        const state = get();
+        const newSettings = { ...state.user.settings, ...settings };
+
+        // Optimistic update
+        set((state) => ({ user: { ...state.user, settings: newSettings } }));
+
+        // Sync with backend
+        try {
+            await fetch(`${import.meta.env.VITE_API_URL}/api/settings`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    telegramId: state.user.telegramId,
+                    settings: newSettings
+                })
+            });
+        } catch (e) {
+            console.error('Failed to save settings:', e);
+        }
+    }
 }));

@@ -272,6 +272,97 @@ app.post('/api/buy-powerup', async (req, res) => {
     }
 });
 
+// Submit Bug Report
+app.post('/api/bug-report', async (req, res) => {
+    try {
+        const { telegramId, type, description } = req.body;
+        if (!telegramId || !description) return res.status(400).json({ success: false, error: 'Missing fields' });
+
+        const { supabase } = await import('./config/supabase');
+        const userId = parseInt(telegramId);
+
+        const { error } = await supabase.from('bug_reports').insert({
+            user_id: userId,
+            type: type || 'Other',
+            description,
+            status: 'new'
+        });
+
+        if (error) throw error;
+
+        console.log(`[BUG REPORT] User ${telegramId} reported: ${description.substring(0, 50)}...`);
+        res.json({ success: true, message: 'Report submitted successfully' });
+    } catch (e) {
+        console.error('Bug report error:', e);
+        res.status(500).json({ success: false, error: 'Server error' });
+    }
+});
+
+// Buy Pro Subscription
+const PRO_COST = 500; // 500 Stars for lifetime Pro? Or monthly? Let's say Lifetime for this MVP
+app.post('/api/buy-pro', async (req, res) => {
+    try {
+        const { telegramId } = req.body;
+        if (!telegramId) return res.status(400).json({ success: false, error: 'Missing telegramId' });
+
+        const { supabase } = await import('./config/supabase');
+        const userId = parseInt(telegramId);
+
+        // Fetch user
+        const { data: user, error } = await supabase.from('users').select('balance_stars, is_pro').eq('telegram_id', userId).single();
+        if (error || !user) return res.status(404).json({ success: false, error: 'User not found' });
+
+        if (user.is_pro) return res.status(400).json({ success: false, error: 'Already Pro' });
+        if ((user.balance_stars || 0) < PRO_COST) return res.status(400).json({ success: false, error: 'Not enough Stars' });
+
+        // Deduct stars and set is_pro
+        const newBalance = (user.balance_stars || 0) - PRO_COST;
+        await supabase.from('users').update({
+            balance_stars: newBalance,
+            is_pro: true
+        }).eq('telegram_id', userId);
+
+        // Log transaction
+        await supabase.from('transactions').insert({
+            user_id: userId,
+            type: 'SHOP_PURCHASE',
+            amount: PRO_COST,
+            currency: 'STARS',
+            metadata: { item: 'pro_subscription', type: 'subscription' },
+            status: 'COMPLETED'
+        });
+
+        console.log(`[SHOP] User ${telegramId} bought PRO for ${PRO_COST} Stars`);
+        res.json({ success: true, isPro: true, newBalance });
+    } catch (e) {
+        console.error('Buy Pro error:', e);
+        res.status(500).json({ success: false, error: 'Server error' });
+    }
+});
+
+// Save User Settings
+app.post('/api/settings', async (req, res) => {
+    try {
+        const { telegramId, settings } = req.body;
+        if (!telegramId || !settings) return res.status(400).json({ success: false, error: 'Missing fields' });
+
+        const { supabase } = await import('./config/supabase');
+        const userId = parseInt(telegramId);
+
+        const { error } = await supabase.from('users').update({
+            settings
+        }).eq('telegram_id', userId);
+
+        if (error) throw error;
+
+        // console.log(`[SETTINGS] Saved for ${telegramId}`, settings);
+        res.json({ success: true });
+    } catch (e) {
+        console.error('Save settings error:', e);
+        res.status(500).json({ success: false, error: 'Server error' });
+    }
+});
+
 // Daily Reward Streak Rewards Map
 const STREAK_REWARDS = [0, 50, 75, 100, 150, 200, 300, 500]; // index 0 unused, day 1-7
 
