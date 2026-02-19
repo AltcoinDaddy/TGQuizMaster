@@ -21,6 +21,7 @@ export const QuizRoom: React.FC = () => {
     const [maxPlayersCount, setMaxPlayersCount] = useState(5);
     const [gameStatus, setGameStatus] = useState<'waiting' | 'playing' | 'ended'>('waiting');
     const gameEndedRef = useRef(false);
+    const [gameResults, setGameResults] = useState<any>(null);
 
     // Power-Up State
     const [usedPowerUps, setUsedPowerUps] = useState<string[]>([]);
@@ -110,11 +111,23 @@ export const QuizRoom: React.FC = () => {
             }
         };
 
-        const onGameOver = (winners: any[]) => {
+        const onGameOver = (data: any) => {
             gameEndedRef.current = true;
             setGameStatus('ended');
-            setPlayers(winners);
-            const amIWinner = winners[0]?.username === user.username;
+            setPlayers(data.winners);
+            const amIWinner = data.winners[0]?.username === user.username;
+
+            // Store results for display
+            if (location.state?.type === 'practice' || !location.state?.type) {
+                // For practice mode, use the data sent from backend
+                setGameResults({
+                    score: data.winners.find((p: any) => p.username === user.username)?.score || 0,
+                    xp: amIWinner ? 10 : 5,
+                    reward: amIWinner ? 5 : 0,
+                    currency: 'Stars'
+                });
+            }
+
             if (amIWinner) soundManager.play('win');
         };
 
@@ -260,6 +273,27 @@ export const QuizRoom: React.FC = () => {
                         <p className="opacity-50 mt-2 text-xs font-bold uppercase tracking-widest">Final Leaderboard</p>
                     </div>
                     <div className="w-full space-y-3 px-2">
+                        {/* Game Stats Card */}
+                        {gameResults && (
+                            <GlassCard className="p-6 mb-6 bg-gradient-to-br from-primary/10 to-transparent border-primary/20 text-center">
+                                <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-60 mb-2">Your Performance</p>
+                                <div className="grid grid-cols-3 gap-4 mb-4">
+                                    <div className="flex flex-col">
+                                        <span className="text-2xl font-black italic text-white">{gameResults.score}</span>
+                                        <span className="text-[8px] font-bold uppercase tracking-widest opacity-40">Score</span>
+                                    </div>
+                                    <div className="flex flex-col">
+                                        <span className="text-2xl font-black italic text-primary">+{gameResults.xp}</span>
+                                        <span className="text-[8px] font-bold uppercase tracking-widest opacity-40">XP</span>
+                                    </div>
+                                    <div className="flex flex-col">
+                                        <span className="text-2xl font-black italic text-accent-gold">+{gameResults.reward}</span>
+                                        <span className="text-[8px] font-bold uppercase tracking-widest opacity-40">{gameResults.currency}</span>
+                                    </div>
+                                </div>
+                            </GlassCard>
+                        )}
+
                         {players.slice(0, 5).map((p, i) => (
                             <GlassCard key={p.id} className="flex items-center justify-between p-5 bg-white/5 border-white/10 rounded-2xl">
                                 <div className="flex items-center gap-4">

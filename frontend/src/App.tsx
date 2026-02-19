@@ -70,6 +70,7 @@ function App() {
 
       // Initialize Telegram
       const tg = (window as any).Telegram?.WebApp;
+
       if (tg) {
         tg.ready();
         tg.expand();
@@ -98,7 +99,10 @@ function App() {
           socket.emit('sync_profile', { telegramId: testId, username: "@Alex_Quiz" });
         }
       } else {
-        console.error('Telegram WebApp script not found!');
+        console.error('Telegram WebApp script not found! Using fallback for local testing.');
+        const testId = "123456789";
+        socket.connect();
+        socket.emit('sync_profile', { telegramId: testId, username: "@Alex_Quiz" });
       }
 
       // Socket Listeners

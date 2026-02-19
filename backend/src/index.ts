@@ -6,10 +6,10 @@ import dotenv from 'dotenv';
 import crypto from 'crypto';
 import dns from 'dns';
 
-// Force usage of IPv4 for DNS resolution to avoid timeouts on some networks
-if (dns.setDefaultResultOrder) {
-    dns.setDefaultResultOrder('ipv4first');
-}
+// DNS resolution order simplified
+// if (dns.setDefaultResultOrder) {
+//    dns.setDefaultResultOrder('ipv4first');
+// }
 
 import { supabase } from './config/supabase';
 import { getTonBalance } from './utils/tonBalance';
@@ -929,6 +929,24 @@ io.on('connection', (socket) => {
             let roomId: string | undefined;
 
             if (data.roomType === 'practice') {
+                // DAILY LIMIT CHECK
+                const today = new Date().toISOString().split('T')[0];
+                if (user.daily_reset_date !== today) {
+                    // Reset if new day
+                    await supabase.from('users').update({
+                        daily_games_today: 0,
+                        daily_wins_today: 0,
+                        daily_reset_date: today
+                    }).eq('telegram_id', userId);
+                    user.daily_games_today = 0;
+                    user.daily_reset_date = today;
+                }
+
+                if ((user.daily_games_today || 0) >= 10) {
+                    socket.emit('error', { message: 'Daily limit reached! Come back tomorrow.' }); // 10 games max
+                    return;
+                }
+
                 roomId = crypto.randomUUID();
                 const mgr = new GameManager(roomId, io, 'practice', 0, 0);
 
@@ -950,6 +968,12 @@ io.on('connection', (socket) => {
 
                 socket.join(roomId);
                 socketPlayerMap.set(socket.id, { roomId, playerId: userId.toString() });
+
+                // Increment Usage ONLY after successful join
+                await supabase.from('users').update({
+                    daily_games_today: (user.daily_games_today || 0) + 1
+                }).eq('telegram_id', userId);
+
                 socket.emit('game_start'); // Instant start for practice
                 mgr.start(); // Start questions
                 return;

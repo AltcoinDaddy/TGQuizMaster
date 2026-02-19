@@ -360,7 +360,9 @@ export class GameManager {
             this.io.to(this.roomId).emit('game_over', {
                 winners,
                 prizes: { first: 5, second: 0, third: 0 },
-                currency: 'Stars'
+                currency: 'Stars',
+                xpEarned: 10, // Winner gets 10, others 5. Frontend can filter based on username
+                dailyGamesLeft: Math.max(0, 10 - ((winners[0] as any).daily_games_today || 0)), // Limit of 10
             });
 
             // Emit balance update so frontend refreshes immediately
