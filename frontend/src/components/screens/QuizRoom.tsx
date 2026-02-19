@@ -28,14 +28,6 @@ export const QuizRoom: React.FC = () => {
     const [doublePointsActive, setDoublePointsActive] = useState(false);
     const [powerUpLoading, setPowerUpLoading] = useState<string | null>(null);
 
-    // Practice Mode Stats
-    const [practiceStats, setPracticeStats] = useState<{
-        earnedStars: number;
-        earnedXp: number;
-        dailyPlayed: number;
-        dailyLimit: number;
-    } | null>(null);
-
     // Timer calculation for SVG Circle
     const radius = 50;
     const circumference = 2 * Math.PI * radius;
@@ -118,27 +110,11 @@ export const QuizRoom: React.FC = () => {
             }
         };
 
-        const onGameOver = (data: any) => {
+        const onGameOver = (winners: any[]) => {
             gameEndedRef.current = true;
             setGameStatus('ended');
-
-            let winnersList: any[] = [];
-            if (Array.isArray(data)) {
-                winnersList = data;
-            } else {
-                winnersList = data.winners;
-                if (data.isPractice) {
-                    setPracticeStats({
-                        earnedStars: data.earnedRewards?.stars || 0,
-                        earnedXp: data.earnedRewards?.xp || 0,
-                        dailyPlayed: data.dailyStats?.played || 0,
-                        dailyLimit: data.dailyStats?.limit || 20
-                    });
-                }
-            }
-
-            setPlayers(winnersList);
-            const amIWinner = winnersList[0]?.username === user.username;
+            setPlayers(winners);
+            const amIWinner = winners[0]?.username === user.username;
             if (amIWinner) soundManager.play('win');
         };
 
@@ -280,66 +256,24 @@ export const QuizRoom: React.FC = () => {
             <MainLayout showNav={false}>
                 <div className="flex flex-col items-center justify-center min-h-[80dvh] space-y-8">
                     <div className="text-center">
-                        <h2 className="text-4xl font-black text-primary uppercase italic tracking-tighter drop-shadow-[0_0_15px_rgba(13,242,89,0.4)]">
-                            {practiceStats ? "Practice Complete!" : "Game Over!"}
-                        </h2>
-                        <p className="opacity-50 mt-2 text-xs font-bold uppercase tracking-widest">
-                            {practiceStats ? "Here is how you did" : "Final Leaderboard"}
-                        </p>
+                        <h2 className="text-4xl font-black text-primary uppercase italic tracking-tighter drop-shadow-[0_0_15px_rgba(13,242,89,0.4)]">Game Over!</h2>
+                        <p className="opacity-50 mt-2 text-xs font-bold uppercase tracking-widest">Final Leaderboard</p>
                     </div>
-
-                    {practiceStats ? (
-                        <div className="w-full space-y-4 px-4">
-                            {/* Score Card */}
-                            <GlassCard className="p-5 bg-white/5 border-white/10 rounded-3xl flex flex-col items-center">
-                                <span className="text-[10px] font-black uppercase tracking-widest opacity-50 mb-1">Total Score</span>
-                                <span className="text-5xl font-black italic text-white tracking-tighter">{players[0]?.score || 0}</span>
+                    <div className="w-full space-y-3 px-2">
+                        {players.slice(0, 5).map((p, i) => (
+                            <GlassCard key={p.id} className="flex items-center justify-between p-5 bg-white/5 border-white/10 rounded-2xl">
+                                <div className="flex items-center gap-4">
+                                    <span className={`font-black italic text-xl w-6 ${i === 0 ? 'text-primary' : 'opacity-20'}`}>{i + 1}</span>
+                                    <img src={p.avatar} className="w-12 h-12 rounded-full border-2 border-white/5" alt={p.username} />
+                                    <div>
+                                        <p className="font-black uppercase italic tracking-tighter leading-none">{p.username}</p>
+                                        <p className="text-[10px] font-bold opacity-40 uppercase tracking-widest mt-1">Player Rank</p>
+                                    </div>
+                                </div>
+                                <span className="font-black text-primary italic text-lg">{p.score} <span className="text-xs">PTS</span></span>
                             </GlassCard>
-
-                            <div className="grid grid-cols-2 gap-3">
-                                {/* Rewards */}
-                                <GlassCard className="p-4 bg-white/5 border-white/10 rounded-2xl flex flex-col items-center justify-center">
-                                    <span className="text-[9px] font-black uppercase tracking-widest opacity-50 mb-1">Rewards</span>
-                                    <div className="flex items-center gap-2">
-                                        <div className="flex flex-col items-center">
-                                            <span className="text-xl font-black text-primary italic">+{practiceStats.earnedStars}</span>
-                                            <span className="text-[8px] font-black uppercase tracking-wider">Stars</span>
-                                        </div>
-                                        <div className="w-px h-6 bg-white/10"></div>
-                                        <div className="flex flex-col items-center">
-                                            <span className="text-xl font-black text-yellow-400 italic">+{practiceStats.earnedXp}</span>
-                                            <span className="text-[8px] font-black uppercase tracking-wider">XP</span>
-                                        </div>
-                                    </div>
-                                </GlassCard>
-
-                                {/* Daily Limit */}
-                                <GlassCard className="p-4 bg-white/5 border-white/10 rounded-2xl flex flex-col items-center justify-center">
-                                    <span className="text-[9px] font-black uppercase tracking-widest opacity-50 mb-1">Daily Plays</span>
-                                    <span className="text-2xl font-black text-white italic">
-                                        {practiceStats.dailyLimit - practiceStats.dailyPlayed}/{practiceStats.dailyLimit}
-                                    </span>
-                                    <span className="text-[8px] font-black uppercase tracking-wider opacity-60">Remaining</span>
-                                </GlassCard>
-                            </div>
-                        </div>
-                    ) : (
-                        <div className="w-full space-y-3 px-2">
-                            {players.slice(0, 5).map((p, i) => (
-                                <GlassCard key={p.id} className="flex items-center justify-between p-5 bg-white/5 border-white/10 rounded-2xl">
-                                    <div className="flex items-center gap-4">
-                                        <span className={`font-black italic text-xl w-6 ${i === 0 ? 'text-primary' : 'opacity-20'}`}>{i + 1}</span>
-                                        <img src={p.avatar} className="w-12 h-12 rounded-full border-2 border-white/5" alt={p.username} />
-                                        <div>
-                                            <p className="font-black uppercase italic tracking-tighter leading-none">{p.username}</p>
-                                            <p className="text-[10px] font-bold opacity-40 uppercase tracking-widest mt-1">Player Rank</p>
-                                        </div>
-                                    </div>
-                                    <span className="font-black text-primary italic text-lg">{p.score} <span className="text-xs">PTS</span></span>
-                                </GlassCard>
-                            ))}
-                        </div>
-                    )}
+                        ))}
+                    </div>
 
                     {/* Navigation Buttons */}
                     <div className="w-full px-2 space-y-3 mt-4">
