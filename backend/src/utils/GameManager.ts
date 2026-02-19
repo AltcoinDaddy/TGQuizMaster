@@ -8,6 +8,7 @@ export interface Player {
     score: number;
     usedPowerUps?: string[];   // Track which power-ups have been used this game
     doublePoints?: boolean;     // Flag for 2x score on next correct answer
+    daily_games_today?: number; // Standardize for practice mode stats
 }
 
 export interface Question {
@@ -339,6 +340,9 @@ export class GameManager {
                             daily_wins_today: (user.daily_wins_today || 0) + (isWinner ? 1 : 0)
                         };
 
+                        // Update local player object for the game_over event
+                        player.daily_games_today = updates.daily_games_today;
+
                         await supabase.from('users').update(updates).eq('telegram_id', userId);
 
                         // Emit level-up event if player leveled up
@@ -361,7 +365,16 @@ export class GameManager {
             this.io.to(this.roomId).emit('game_over', {
                 winners,
                 prizes: { first: 5, second: 0, third: 0 },
-                currency: 'Stars'
+                currency: 'Stars',
+                isPractice: true,
+                earnedRewards: {
+                    stars: 5,
+                    xp: 10
+                },
+                dailyStats: {
+                    played: winners[0].daily_games_today || 1, // Use the updated value from the loop
+                    limit: 20
+                }
             });
 
             // Emit balance update so frontend refreshes immediately
