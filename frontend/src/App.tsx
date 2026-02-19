@@ -107,8 +107,18 @@ function App() {
         useAppStore.getState().syncFromBackend(data);
       });
 
+      // Re-sync on reconnection
+      socket.on('connect', () => {
+        console.log('Socket reconnected, refreshing profile...');
+        const user = useAppStore.getState().user;
+        if (user.telegramId) {
+          socket.emit('sync_profile', { telegramId: user.telegramId, username: user.username });
+        }
+      });
+
       return () => {
         socket.off('profile_synced');
+        socket.off('connect');
       };
     } catch (e) {
       console.error('App init error:', e);

@@ -1289,13 +1289,26 @@ io.on('connection', (socket) => {
             return;
         }
 
-        // Fetch live TON balance from blockchain if wallet is connected
-        let liveTonBalance = 0;
+        // Fetch live TON balance from blockchain if wallet is connected (Async / Non-blocking)
+        let cachedTonBalance = user.balance_ton || 0; // Use DB value if available
+
         if (user.wallet_address) {
-            liveTonBalance = await getTonBalance(user.wallet_address);
+            // Background fetch
+            getTonBalance(user.wallet_address).then(async (liveBalance) => {
+                if (liveBalance !== cachedTonBalance) {
+                    // Update DB
+                    await supabase.from('users').update({ balance_ton: liveBalance }).eq('telegram_id', userId);
+
+                    // Emit update
+                    socket.emit('balance_update', {
+                        ton: liveBalance
+                    });
+                    console.log(`[SYNC] Updated live TON balance for ${userId}: ${liveBalance}`);
+                }
+            }).catch(err => console.error(`[SYNC] Background balance check failed for ${userId}`, err));
         }
 
-        console.log(`[SYNC] User ${userId} data: wallet=${user.wallet_address}, stars=${user.balance_stars}, xp=${user.stats_xp}, ton=${liveTonBalance}`);
+        console.log(`[SYNC] User ${userId} data: wallet=${user.wallet_address}, stars=${user.balance_stars}, xp=${user.stats_xp}`);
 
         let referralCount = 0;
         let referrals: any[] | null = [];
@@ -1350,7 +1363,7 @@ io.on('connection', (socket) => {
 
         socket.emit('profile_synced', {
             stars: user.balance_stars,
-            ton: liveTonBalance,
+            ton: cachedTonBalance, // Instant return
             xp: user.stats_xp || 0,
             wins: user.stats_wins || 0,
             totalGames: user.stats_total_games || 0,
@@ -1361,7 +1374,6 @@ io.on('connection', (socket) => {
             recentReferrals,
             recentTransactions
         });
-
     });
 
     socket.on('update_wallet', async (data) => {
