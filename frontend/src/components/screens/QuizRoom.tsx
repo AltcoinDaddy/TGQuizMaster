@@ -169,10 +169,13 @@ export const QuizRoom: React.FC = () => {
         socket.on('powerup_result', onPowerUpResult);
 
         const onLevelUp = (data: any) => {
-            soundManager.play('win'); // Re-use win sound or add a specific level-up sound
+            console.log("Level up received!", data);
+            soundManager.play('win');
             setTimeout(() => {
-                navigate('/level-up', { state: { level: data.level, title: data.title } });
-            }, 2000); // Small delay to let them see the game result first
+                if (gameEndedRef.current) {
+                    navigate('/level-up', { state: { level: data.level, title: data.title } });
+                }
+            }, 7000); // Increased to 7 seconds to let them see the game result first
         };
         socket.on('level_up', onLevelUp);
 

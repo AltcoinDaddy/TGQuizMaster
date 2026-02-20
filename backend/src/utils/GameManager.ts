@@ -171,11 +171,15 @@ export class GameManager {
             }));
         } catch (e) {
             console.error('Failed to fetch questions:', e);
-            // Fallback to mock
+            // Fallback to robust mock set (5 questions to match practice mode count)
             this.questions = [
-                { id: '1', text: "Which consensus mechanism does Ethereum now use?", options: ["PoW", "PoS", "PoA", "PoH"], correctAnswer: "PoS" },
-                { id: '2', text: "What is the primary token of the TON network?", options: ["ETH", "SOL", "TON", "DOT"], correctAnswer: "TON" }
+                { id: 'f1', text: "Which consensus mechanism does Ethereum now use?", options: ["Proof of Work", "Proof of Stake", "Proof of History", "Proof of Authority"], correctAnswer: "Proof of Stake" },
+                { id: 'f2', text: "What is the primary token of the TON network?", options: ["ETH", "SOL", "TON", "DOT"], correctAnswer: "TON" },
+                { id: 'f3', text: "Who is the founder of Telegram?", options: ["Pavel Durov", "Mark Zuckerberg", "Jack Dorsey", "Vitalik Buterin"], correctAnswer: "Pavel Durov" },
+                { id: 'f4', text: "What does 'HODL' originally stand for in crypto?", options: ["Hold On for Dear Life", "Highly Optimized Digital Ledger", "Home of Digital Liberty", "It was a typo for 'HOLD'"], correctAnswer: "It was a typo for 'HOLD'" },
+                { id: 'f5', text: "In which year was Bitcoin created?", options: ["2008", "2009", "2010", "2011"], correctAnswer: "2009" }
             ];
+            console.log(`[GAME] API failed, used ${this.questions.length} fallback questions`);
         }
     }
 
