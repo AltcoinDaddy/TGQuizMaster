@@ -19,7 +19,7 @@ export class NotificationService {
                 parse_mode: 'Markdown',
                 reply_markup: {
                     inline_keyboard: [[
-                        { text: '🎮 Join Now', web_app: { url: process.env.VITE_API_URL || 'https://tg-quiz-master.vercel.app' } }
+                        { text: '🎮 Join Now', web_app: { url: process.env.VITE_APP_URL || 'https://tgquizmaster.online' } }
                     ]]
                 }
             });
@@ -42,7 +42,7 @@ export class NotificationService {
                 parse_mode: 'Markdown',
                 reply_markup: {
                     inline_keyboard: [[
-                        { text: '🎁 Claim Reward', web_app: { url: process.env.VITE_API_URL || 'https://tg-quiz-master.vercel.app' } }
+                        { text: '🎁 Claim Reward', web_app: { url: process.env.VITE_APP_URL || 'https://tgquizmaster.online' } }
                     ]]
                 }
             });

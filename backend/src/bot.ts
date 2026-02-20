@@ -17,7 +17,7 @@ if (!token) {
     notificationService = new NotificationService(bot);
 
     // WebApp URL for the Menu Button (uses env or hardcoded fallback)
-    const webAppUrl = process.env.VITE_API_URL || 'https://tg-quiz-master.vercel.app';
+    const webAppUrl = process.env.VITE_APP_URL || 'https://tgquizmaster.online';
 
     console.log('Telegram Bot initializing...');
 
