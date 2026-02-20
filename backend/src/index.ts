@@ -22,14 +22,27 @@ dotenv.config();
 
 const app = express();
 const server = http.createServer(app);
+
+const ALLOWED_ORIGINS = [
+    "http://localhost:5173",
+    "http://localhost:5174",
+    "https://tg-quiz-master.vercel.app",
+    "https://tgquizmaster.online"
+];
+
 const io = new Server(server, {
     cors: {
-        origin: "*",
-        methods: ["GET", "POST"]
+        origin: ALLOWED_ORIGINS,
+        methods: ["GET", "POST"],
+        credentials: true
     }
 });
 
-app.use(cors());
+app.use(cors({
+    origin: ALLOWED_ORIGINS,
+    methods: ["GET", "POST", "OPTIONS"],
+    credentials: true
+}));
 app.use(express.json());
 
 // Health Check
@@ -43,7 +56,8 @@ const verifySchema = async () => {
     try {
         const { data, error } = await supabase.from('users').select('*').limit(1);
         if (error) {
-            console.error('[DB] Schema Error:', error.message);
+            console.error('[DB] Supabase Connection Error:', error.message);
+            console.error('[DB] Details:', error);
             if (error.message.includes('column "wallet_address" does not exist')) {
                 console.error('CRITICAL: MISSING COLUMN "wallet_address". Please run the SQL migration!');
             }
