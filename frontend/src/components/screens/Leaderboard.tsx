@@ -157,7 +157,7 @@ export const Leaderboard: React.FC = () => {
                             </div>
                             <div className="text-right">
                                 <span className={`font-black italic text-sm block ${player.isUser ? 'text-primary' : 'text-white'}`}>{player.reward}</span>
-                                <span className="text-[8px] opacity-20 uppercase font-black tracking-widest">Winnings</span>
+                                <span className="text-[8px] opacity-20 uppercase font-black tracking-widest">Total XP</span>
                             </div>
                         </div>
                     ))}

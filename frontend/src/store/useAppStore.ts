@@ -65,13 +65,13 @@ export const useAppStore = create<AppStore>((set, get) => ({
         set((state) => ({
             user: {
                 ...state.user,
-                stars: data.stars,
-                tonBalance: data.ton,
-                xp: data.xp,
+                stars: data.stars ?? state.user.stars,
+                tonBalance: data.ton ?? state.user.tonBalance,
+                xp: data.xp ?? state.user.xp,
                 isPro: data.isPro ?? state.user.isPro,
                 settings: data.settings ?? state.user.settings,
-                wins: data.wins,
-                totalGames: data.totalGames,
+                wins: data.wins ?? state.user.wins,
+                totalGames: data.totalGames ?? state.user.totalGames,
                 walletConnected: data.walletConnected ?? state.user.walletConnected,
                 walletAddress: data.walletAddress ?? state.user.walletAddress,
                 referralCount: data.referralCount ?? state.user.referralCount,

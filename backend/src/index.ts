@@ -119,7 +119,7 @@ app.get('/api/leaderboard', async (req, res) => {
             score: `${p.stats_wins || 0} Wins`,
             isTop: index === 0,
             xp: p.stats_xp || 0,
-            reward: `${((p.stats_wins || 0) * 0.5).toFixed(1)} TON`, // Mock reward calc
+            reward: `${p.stats_xp || 0} XP`,
             telegramId: p.telegram_id.toString()
         }));
 
@@ -1437,11 +1437,19 @@ io.on('connection', (socket) => {
                     liveTonBalance = await getTonBalance(walletAddress);
                 }
 
-                // Emit sync to update frontend immediately with real balance
+                // Emit full sync to update frontend immediately with all data
                 socket.emit('profile_synced', {
+                    stars: updatedUser.balance_stars,
+                    ton: liveTonBalance,
+                    xp: updatedUser.stats_xp || 0,
+                    wins: updatedUser.stats_wins || 0,
+                    totalGames: updatedUser.stats_total_games || 0,
                     walletConnected: !!updatedUser.wallet_address,
                     walletAddress: updatedUser.wallet_address,
-                    ton: liveTonBalance
+                    referralCount: 0,
+                    referralEarnings: 0,
+                    recentReferrals: [],
+                    recentTransactions: []
                 });
             }
         } catch (e) {

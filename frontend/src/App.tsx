@@ -38,10 +38,9 @@ function WalletSyncer() {
           telegramId: user.telegramId,
           walletAddress: userFriendlyAddress
         });
-        useAppStore.getState().setUser({
-          walletConnected: true,
-          walletAddress: userFriendlyAddress
-        });
+        // The backend will emit 'profile_synced' with all user data after updating the wallet.
+        // The frontend's 'profile_synced' listener will handle updating the store.
+        // No need to partially update here.
       }
     } else if (user.telegramId && !userFriendlyAddress && user.walletConnected) {
       // Handle disconnect
@@ -109,6 +108,11 @@ function App() {
       socket.on('profile_synced', (data) => {
         console.log('Profile synced with backend:', data);
         useAppStore.getState().syncFromBackend(data);
+      });
+
+      socket.on('balance_update', (data) => {
+        console.log('Balance update received:', data);
+        useAppStore.getState().setUser({ tonBalance: data.ton });
       });
 
       // Re-sync on reconnection

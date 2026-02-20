@@ -212,7 +212,7 @@ const LeaderboardItem = ({ rank, name, winCount, reward, isTop = false }: any) =
         </div>
         <div className="text-right">
             <p className={`font-black italic text-base ${isTop ? 'text-primary' : 'text-white/90'}`}>{reward}</p>
-            <p className="text-[9px] opacity-40 font-bold uppercase tracking-widest">Earned</p>
+            <p className="text-[9px] opacity-40 font-bold uppercase tracking-widest">Total XP</p>
         </div>
     </div>
 );
