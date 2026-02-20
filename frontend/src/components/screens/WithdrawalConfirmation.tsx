@@ -1,4 +1,5 @@
 import React from 'react';
+import { API_URL } from '../../config/api';
 import { MainLayout } from '../layout/MainLayout';
 import { GlassCard } from '../ui/GlassCard';
 import { Button } from '../ui/Button';
@@ -27,7 +28,7 @@ export const WithdrawalConfirmation: React.FC = () => {
 
         setLoading(true);
         try {
-            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/withdraw`, {
+            const res = await fetch(`${API_URL}/api/withdraw`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

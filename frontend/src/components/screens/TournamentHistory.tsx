@@ -1,4 +1,5 @@
 import React from 'react';
+import { API_URL } from '../../config/api';
 import { MainLayout } from '../layout/MainLayout';
 import { GlassCard } from '../ui/GlassCard';
 import { ChevronLeft, Trophy, Clock, ChevronDown } from 'lucide-react';
@@ -28,7 +29,7 @@ export const TournamentHistory: React.FC = () => {
         const fetchHistory = async () => {
             if (!user.telegramId) return;
             try {
-                const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api/history?telegramId=${user.telegramId}`);
+                const response = await fetch(`${API_URL}/api/history?telegramId=${user.telegramId}`);
                 if (response.ok) {
                     const data = await response.json();
                     setHistory(data.history);

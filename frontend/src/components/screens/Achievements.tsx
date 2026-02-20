@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { API_URL } from '../../config/api';
 import { MainLayout } from '../layout/MainLayout';
 import { GlassCard } from '../ui/GlassCard';
 import { Button } from '../ui/Button';
@@ -36,7 +37,7 @@ export const Achievements: React.FC = () => {
         const fetchAchievements = async () => {
             if (!user.telegramId) return;
             try {
-                const res = await fetch(`${import.meta.env.VITE_API_URL}/api/achievements?telegramId=${user.telegramId}`);
+                const res = await fetch(`${API_URL}/api/achievements?telegramId=${user.telegramId}`);
                 const data = await res.json();
 
                 if (data.achievements) {

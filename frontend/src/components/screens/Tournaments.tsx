@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { API_URL } from '../../config/api';
 import { MainLayout } from '../layout/MainLayout';
 import { GlassCard } from '../ui/GlassCard';
 import { Timer, Star, Plus, ArrowRight, Zap, Trophy, Lock, Gamepad2 } from 'lucide-react';
@@ -31,7 +32,7 @@ export const Tournaments: React.FC = () => {
     useEffect(() => {
         const fetchTournaments = async () => {
             try {
-                const res = await fetch(`${import.meta.env.VITE_API_URL}/api/tournaments`);
+                const res = await fetch(`${API_URL}/api/tournaments`);
                 const data = await res.json();
                 if (data.tournaments) {
                     const formatted = data.tournaments.map((t: any) => ({

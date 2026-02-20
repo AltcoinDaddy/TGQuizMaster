@@ -1,4 +1,5 @@
 import React from 'react';
+import { API_URL } from '../../config/api';
 import { MainLayout } from '../layout/MainLayout';
 import { Button } from '../ui/Button';
 import { GlassCard } from '../ui/GlassCard';
@@ -24,7 +25,7 @@ export const AdFreeUpsell: React.FC = () => {
 
         setLoading(true);
         try {
-            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/buy-pro`, {
+            const res = await fetch(`${API_URL}/api/buy-pro`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ telegramId: user.telegramId })

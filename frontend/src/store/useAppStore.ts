@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { API_URL } from '../config/api';
 
 interface UserState {
     telegramId: string;
@@ -88,7 +89,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
         // Sync with backend
         try {
-            await fetch(`${import.meta.env.VITE_API_URL}/api/settings`, {
+            await fetch(`${API_URL}/api/settings`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { API_URL } from '../../config/api';
 import { MainLayout } from '../layout/MainLayout';
 import { Button } from '../ui/Button';
 import { ChevronLeft, Camera, Send, Bug } from 'lucide-react';
@@ -23,7 +24,7 @@ export const BugReport: React.FC = () => {
 
         setSubmitting(true);
         try {
-            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/bug-report`, {
+            const res = await fetch(`${API_URL}/api/bug-report`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

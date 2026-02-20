@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { API_URL } from '../../config/api';
 import { useAppStore } from '../../store/useAppStore';
 import { MainLayout } from '../layout/MainLayout';
 import { GlassCard } from '../ui/GlassCard';
@@ -32,7 +33,7 @@ export const Shop: React.FC = () => {
     React.useEffect(() => {
         const fetchShop = async () => {
             try {
-                const res = await fetch(`${import.meta.env.VITE_API_URL}/api/shop`);
+                const res = await fetch(`${API_URL}/api/shop`);
                 const data = await res.json();
                 if (data.shopItems) {
                     // Map icons back to components (API sends just strings/data)
@@ -61,7 +62,7 @@ export const Shop: React.FC = () => {
         console.log(`[SHOP] Initiating purchase for ${item.title} (${item.price} ${item.currency})`);
 
         try {
-            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/create-payment-link`, {
+            const response = await fetch(`${API_URL}/api/create-payment-link`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -114,7 +115,7 @@ export const Shop: React.FC = () => {
         }
         setIsPurchasing(item.id);
         try {
-            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/buy-powerup`, {
+            const res = await fetch(`${API_URL}/api/buy-powerup`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ telegramId: user.telegramId, powerUpId: item.id, cost: item.price })

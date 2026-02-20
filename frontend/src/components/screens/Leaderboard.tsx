@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { API_URL } from '../../config/api';
 import { MainLayout } from '../layout/MainLayout';
 import { Trophy, Star, ChevronRight, TrendingUp } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
@@ -12,7 +13,7 @@ export const Leaderboard: React.FC = () => {
     useEffect(() => {
         const fetchLeaderboard = async () => {
             try {
-                const res = await fetch(`${import.meta.env.VITE_API_URL}/api/leaderboard`);
+                const res = await fetch(`${API_URL}/api/leaderboard`);
                 const data = await res.json();
                 if (data.leaderboard) {
                     const formattedDetails = data.leaderboard.map((p: any) => ({

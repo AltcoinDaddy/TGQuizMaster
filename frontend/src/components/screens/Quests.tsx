@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { API_URL } from '../../config/api';
 import { useAppStore } from '../../store/useAppStore';
 import { MainLayout } from '../layout/MainLayout';
 import { GlassCard } from '../ui/GlassCard';
@@ -32,7 +33,7 @@ export const Quests: React.FC = () => {
             if (!user.telegramId) return;
             try {
                 setLoading(true); // Moved setLoading(true) here
-                const res = await fetch(`${import.meta.env.VITE_API_URL}/api/quests?telegramId=${user.telegramId}`);
+                const res = await fetch(`${API_URL}/api/quests?telegramId=${user.telegramId}`);
                 const data = await res.json();
                 if (data.quests) {
                     // Map API status to UI icons (re-added this logic as it was removed in the snippet but needed for Quest interface)
@@ -57,7 +58,7 @@ export const Quests: React.FC = () => {
     const handleClaim = async (quest: Quest) => { // Changed back to Quest object for reward modal
         setClaiming(quest.id); // Use quest.id for claiming state
         try {
-            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/claim-quest`, {
+            const res = await fetch(`${API_URL}/api/claim-quest`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ telegramId: user.telegramId, questId: quest.id })

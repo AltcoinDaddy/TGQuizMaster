@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { API_URL } from '../../config/api';
 import { MainLayout } from '../layout/MainLayout';
 import { Rocket, ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -18,7 +19,7 @@ export const Home: React.FC = () => {
 
         const checkDailyReward = async () => {
             try {
-                const res = await fetch(`${import.meta.env.VITE_API_URL}/api/daily-reward?telegramId=${user.telegramId}`);
+                const res = await fetch(`${API_URL}/api/daily-reward?telegramId=${user.telegramId}`);
                 const data = await res.json();
 
                 if (data.claimable) {
@@ -35,7 +36,7 @@ export const Home: React.FC = () => {
 
     const handleClaim = async () => {
         try {
-            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/claim-daily`, {
+            const res = await fetch(`${API_URL}/api/claim-daily`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ telegramId: user.telegramId })
@@ -64,7 +65,7 @@ export const Home: React.FC = () => {
     useEffect(() => {
         const fetchPreview = async () => {
             try {
-                const res = await fetch(`${import.meta.env.VITE_API_URL}/api/leaderboard?limit=2`);
+                const res = await fetch(`${API_URL}/api/leaderboard?limit=2`);
                 const data = await res.json();
                 if (data.leaderboard) {
                     setLeaderboardPreview(data.leaderboard.slice(0, 2));
