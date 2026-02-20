@@ -310,6 +310,8 @@ export class GameManager {
             try {
                 const { supabase } = await import('../config/supabase');
 
+                let firstWinnerDailyGames = 0;
+
                 for (const [index, player] of winners.entries()) {
                     if (!player.id) continue;
                     const userId = parseInt(player.id);
@@ -321,6 +323,7 @@ export class GameManager {
                         .single();
 
                     if (user) {
+                        if (index === 0) firstWinnerDailyGames = user.daily_games_today || 0;
                         const isWinner = index === 0;
                         const starReward = isWinner ? 5 : 0;
                         const xpReward = isWinner ? 10 : 5;
@@ -353,47 +356,45 @@ export class GameManager {
                         }
                     }
                 }
+
+                this.io.to(this.roomId).emit('game_over', {
+                    winners,
+                    prizes: { first: 5, second: 0, third: 0 },
+                    currency: 'Stars',
+                    xpEarned: 10,
+                    dailyGamesLeft: Math.max(0, 10 - firstWinnerDailyGames),
+                });
+
+                // Emit balance update so frontend refreshes immediately
+                for (const player of winners) {
+                    if (!player.id) continue;
+                    const userId = parseInt(player.id);
+                    try {
+                        const { supabase } = await import('../config/supabase'); // Re-import if not already in scope
+                        const { data: freshUser } = await supabase.from('users')
+                            .select('balance_stars, stats_xp')
+                            .eq('telegram_id', userId)
+                            .single();
+                        if (freshUser) {
+                            this.io.to(this.roomId).emit('balance_update', {
+                                stars: freshUser.balance_stars,
+                                xp: freshUser.stats_xp
+                            });
+                        }
+                    } catch (e) {
+                        console.error(`Failed to emit balance_update for user ${userId} in practice mode:`, e);
+                    }
+                }
+
+                console.log(`Practice game over in ${this.roomId}. Winner: ${winners[0]?.username} (+5 Stars, +10 XP)`);
+
+                // Fix: Ensure we clean up the room!
+                if (this.onGameOver) this.onGameOver(this.roomId);
+                return;
             } catch (e) {
                 console.error('Failed to save practice results:', e);
             }
-
-            this.io.to(this.roomId).emit('game_over', {
-                winners,
-                prizes: { first: 5, second: 0, third: 0 },
-                currency: 'Stars',
-                xpEarned: 10, // Winner gets 10, others 5. Frontend can filter based on username
-                dailyGamesLeft: Math.max(0, 10 - ((winners[0] as any).daily_games_today || 0)), // Limit of 10
-            });
-
-            // Emit balance update so frontend refreshes immediately
-            for (const player of winners) {
-                if (!player.id) continue;
-                const userId = parseInt(player.id);
-                try {
-                    const { supabase } = await import('../config/supabase'); // Re-import if not already in scope
-                    const { data: freshUser } = await supabase.from('users')
-                        .select('balance_stars, stats_xp')
-                        .eq('telegram_id', userId)
-                        .single();
-                    if (freshUser) {
-                        this.io.to(this.roomId).emit('balance_update', {
-                            stars: freshUser.balance_stars,
-                            xp: freshUser.stats_xp
-                        });
-                    }
-                } catch (e) {
-                    console.error(`Failed to emit balance_update for user ${userId} in practice mode:`, e);
-                }
-            }
-
-            console.log(`Practice game over in ${this.roomId}. Winner: ${winners[0]?.username} (+5 Stars, +10 XP)`);
-
-            // Fix: Ensure we clean up the room!
-            if (this.onGameOver) this.onGameOver(this.roomId);
-            return;
         }
-
-        // 1. Create Tournament Record
         try {
             const { supabase } = await import('../config/supabase');
             const { data: tournamentRecord, error: tourError } = await supabase

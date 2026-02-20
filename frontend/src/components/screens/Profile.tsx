@@ -209,6 +209,17 @@ export const Profile: React.FC = () => {
                 {/* Security & Support Actions */}
                 <div className="space-y-3">
                     <button
+                        onClick={() => navigate('/tournament-history')}
+                        className="w-full flex items-center justify-between p-5 rounded-2xl bg-white/5 border border-white/5 active:bg-white/10 transition-all"
+                    >
+                        <div className="flex items-center gap-3">
+                            <Award size={18} className="text-primary" />
+                            <span className="text-[10px] font-black text-white uppercase tracking-widest italic">Tournament History</span>
+                        </div>
+                        <ChevronRight size={14} className="text-white/20" />
+                    </button>
+
+                    <button
                         onClick={() => navigate('/referral')}
                         className="w-full flex items-center justify-between p-5 rounded-2xl bg-gradient-to-r from-primary/10 to-transparent border border-primary/20 active:bg-primary/20 transition-all"
                     >
