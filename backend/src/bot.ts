@@ -5,6 +5,8 @@ import { NotificationService } from './utils/NotificationService';
 
 dotenv.config();
 
+console.log(`[BOT-ENV] Loaded keys: ${Object.keys(process.env).filter(k => !k.startsWith('npm_')).join(', ')}`);
+
 const token = process.env.TELEGRAM_BOT_TOKEN;
 export let starsService: StarsService;
 export let notificationService: NotificationService;
@@ -18,8 +20,10 @@ if (!token) {
 
     // WebApp URL for the Menu Button (uses env or hardcoded fallback)
     const webAppUrl = process.env.VITE_APP_URL || 'https://tgquizmaster.online';
+    const adminIds = process.env.ADMIN_IDS || '';
 
-    console.log('Telegram Bot initializing...');
+    console.log(`Telegram Bot initializing...`);
+    console.log(`[BOT] Admin IDs configured: ${adminIds}`);
 
     // Polling Error Handling with backoff
     let pollingErrorCount = 0;
