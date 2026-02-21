@@ -221,9 +221,12 @@ Open the app daily to claim free Stars. Keep your streak alive for bigger reward
         const userId = msg.from?.id.toString() || '';
         const allowedAdmins = (process.env.ADMIN_IDS || '').split(',').map(id => id.trim());
 
+        console.log(`[BOT] Admin command received from ${userId}. Allowed: ${allowedAdmins.join(', ')}`);
+
         if (!allowedAdmins.includes(userId)) {
             console.warn(`[BOT-AUTH] Unauthorized admin command attempt from: ${userId}`);
-            return; // Silently ignore or send "Access Denied" if you prefer
+            bot.sendMessage(chatId, `⚠️ **Access Denied**\n\nYour Telegram ID (\`${userId}\`) is not whitelisted for admin access. Please add it to your backend \`.env\` file.`);
+            return;
         }
 
         const adminUrl = `${webAppUrl}/admin`;
