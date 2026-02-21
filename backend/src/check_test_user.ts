@@ -21,7 +21,7 @@ async function checkUser(telegramId: string) {
             .eq('referred_by', telegramId);
 
         if (!refError) {
-            console.log(`REFERRAL COUNT: ${count}`);
+            console.log(`REFERRAL COUNT: ${count ?? 0}`);
         }
 
     } catch (e) {

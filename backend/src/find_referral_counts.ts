@@ -19,7 +19,7 @@ async function findReferralCounts() {
 
             if (!refError && count === 7) {
                 console.log(`USER ${user.username} (${user.telegram_id}) HAS EXACTLY 7 REFERRALS`);
-            } else if (!refError && count > 0) {
+            } else if (!refError && count !== null && count > 0) {
                 console.log(`User ${user.username} has ${count} referrals`);
             }
         }

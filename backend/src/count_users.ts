@@ -11,7 +11,7 @@ async function countUsers() {
             return;
         }
 
-        console.log(`TOTAL USERS IN DATABASE: ${count}`);
+        console.log(`TOTAL USERS IN DATABASE: ${count ?? 0}`);
 
         const { count: activeCount, error: activeError } = await supabase
             .from('users')
@@ -19,7 +19,7 @@ async function countUsers() {
             .gt('stats_total_games', 0);
 
         if (!activeError) {
-            console.log(`TOTAL USERS WHO PLAYED AT LEAST ONE GAME: ${activeCount}`);
+            console.log(`TOTAL USERS WHO PLAYED AT LEAST ONE GAME: ${activeCount ?? 0}`);
         }
 
         const { count: walletCount, error: walletError } = await supabase
@@ -28,7 +28,7 @@ async function countUsers() {
             .not('wallet_address', 'is', null);
 
         if (!walletError) {
-            console.log(`TOTAL USERS WITH WALLET CONNECTED: ${walletCount}`);
+            console.log(`TOTAL USERS WITH WALLET CONNECTED: ${walletCount ?? 0}`);
         }
 
         // Daily Breakdown
@@ -48,7 +48,7 @@ async function countUsers() {
                 .lt('created_at', end.toISOString());
 
             if (!dailyError) {
-                console.log(`${start.toISOString().split('T')[0]}: ${dailyCount}`);
+                console.log(`${start.toISOString().split('T')[0]}: ${dailyCount ?? 0}`);
             }
         }
 
