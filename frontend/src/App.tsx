@@ -24,6 +24,7 @@ import { PurchaseConfirmation } from './components/screens/PurchaseConfirmation'
 import { AdFreeUpsell } from './components/screens/AdFreeUpsell';
 import { Settings } from './components/screens/Settings';
 import { NavigationController } from './components/layout/NavigationController';
+import { AdminDashboard } from './components/screens/AdminDashboard';
 
 function WalletSyncer() {
   const userFriendlyAddress = useTonAddress();
@@ -167,6 +168,7 @@ function App() {
         <Route path="/purchase-confirmation" element={<PurchaseConfirmation />} />
         <Route path="/ad-free" element={<AdFreeUpsell />} />
         <Route path="/settings" element={<Settings />} />
+        <Route path="/admin" element={<AdminDashboard />} />
       </Routes>
     </Router>
   );

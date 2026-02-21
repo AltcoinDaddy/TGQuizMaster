@@ -101,6 +101,50 @@ app.post('/api/create-payment-link', async (req, res) => {
     }
 });
 
+// -----------------------------------------------------------------------------
+// Admin / Stats APIs
+// -----------------------------------------------------------------------------
+app.get('/api/admin/stats', async (req, res) => {
+    try {
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+        const { count: totalUsers } = await supabase
+            .from('users')
+            .select('*', { count: 'exact', head: true });
+
+        const { count: monthlyUsers } = await supabase
+            .from('users')
+            .select('*', { count: 'exact', head: true })
+            .gte('created_at', thirtyDaysAgo.toISOString());
+
+        const { count: activePlayers } = await supabase
+            .from('users')
+            .select('*', { count: 'exact', head: true })
+            .gt('stats_total_games', 0);
+
+        const { data: tourStats } = await supabase
+            .from('tournaments')
+            .select('prize_pool');
+
+        const totalPrizePool = (tourStats || []).reduce((sum, t) => sum + (t.prize_pool || 0), 0);
+
+        res.json({
+            success: true,
+            stats: {
+                totalUsers: totalUsers || 0,
+                monthlyUsers: monthlyUsers || 0,
+                activePlayers: activePlayers || 0,
+                totalTournaments: tourStats?.length || 0,
+                totalPrizePool: totalPrizePool.toFixed(2)
+            }
+        });
+    } catch (error: any) {
+        console.error('Admin Stats Error:', error.message);
+        res.status(500).json({ error: 'Failed to fetch admin stats' });
+    }
+});
+
 // Leaderboard API
 app.get('/api/leaderboard', async (req, res) => {
     try {

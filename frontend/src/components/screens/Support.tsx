@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { MainLayout } from '../layout/MainLayout';
 import { GlassCard } from '../ui/GlassCard';
-import { ChevronLeft, Search, MessageSquare, Bug, Users, ChevronDown, ChevronUp, HelpCircle } from 'lucide-react';
+import { ChevronLeft, Search, MessageSquare, Bug, Activity, ChevronDown, ChevronUp, HelpCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export const Support: React.FC = () => {
@@ -72,9 +72,12 @@ export const Support: React.FC = () => {
                             <Bug size={24} className="text-primary" />
                             <span className="text-[10px] font-black uppercase tracking-widest text-white/80">Report Bug</span>
                         </button>
-                        <button className="flex flex-col items-center justify-center gap-3 p-6 rounded-3xl bg-white/5 border border-white/10 active:scale-95 transition-all">
-                            <Users size={24} className="text-primary" />
-                            <span className="text-[10px] font-black uppercase tracking-widest text-white/80">Community</span>
+                        <button
+                            onClick={() => navigate('/admin')}
+                            className="flex flex-col items-center justify-center gap-3 p-6 rounded-3xl bg-white/5 border border-white/10 active:scale-95 transition-all"
+                        >
+                            <Activity size={24} className="text-primary" />
+                            <span className="text-[10px] font-black uppercase tracking-widest text-white/80">Admin Stats</span>
                         </button>
                     </div>
                 </div>
