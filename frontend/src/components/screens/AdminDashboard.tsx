@@ -4,11 +4,13 @@ import { MainLayout } from '../layout/MainLayout';
 import { GlassCard } from '../ui/GlassCard';
 import { ChevronLeft, Users, Trophy, Activity, Calendar, DollarSign, TrendingUp } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useAppStore } from '../../store/useAppStore';
 
 interface Stats {
     totalUsers: number;
     monthlyUsers: number;
     activePlayers: number;
+    economicallyActiveUsers: number;
     totalTournaments: number;
     totalPrizePool: string;
 }
@@ -21,7 +23,11 @@ export const AdminDashboard: React.FC = () => {
     useEffect(() => {
         const fetchStats = async () => {
             try {
-                const res = await fetch(`${API_URL}/api/admin/stats`);
+                const res = await fetch(`${API_URL}/api/admin/stats`, {
+                    headers: {
+                        'x-admin-id': useAppStore.getState().user.telegramId
+                    }
+                });
                 const data = await res.json();
                 if (data.success) {
                     setStats(data.stats);
@@ -78,10 +84,17 @@ export const AdminDashboard: React.FC = () => {
                                 subtitle="Played > 0 games"
                             />
                             <StatCard
+                                icon={<DollarSign size={20} />}
+                                label="Transacting"
+                                value={stats?.economicallyActiveUsers.toString() || '0'}
+                                color="text-yellow-400"
+                                subtitle="Made a transaction"
+                            />
+                            <StatCard
                                 icon={<Trophy size={20} />}
                                 label="Tournaments"
                                 value={stats?.totalTournaments.toString() || '0'}
-                                color="text-yellow-400"
+                                color="text-purple-400"
                             />
                         </div>
 

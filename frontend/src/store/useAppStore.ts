@@ -14,6 +14,7 @@ interface UserState {
     inventory: string[];
     walletConnected: boolean;
     walletAddress?: string;
+    isAdmin: boolean;
     referralCount?: number;
     referralEarnings?: number;
     referrals?: any[]; // { username, date, earned }
@@ -46,6 +47,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
         tonBalance: 0,
         inventory: [],
         walletConnected: false,
+        isAdmin: false,
         referrals: [],
         transactions: [],
         settings: {
@@ -74,6 +76,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
                 totalGames: data.totalGames ?? state.user.totalGames,
                 walletConnected: data.walletConnected ?? state.user.walletConnected,
                 walletAddress: data.walletAddress ?? state.user.walletAddress,
+                isAdmin: data.isAdmin ?? state.user.isAdmin,
                 referralCount: data.referralCount ?? state.user.referralCount,
                 referralEarnings: data.referralEarnings ?? state.user.referralEarnings,
                 referrals: data.recentReferrals ?? state.user.referrals,

@@ -106,6 +106,14 @@ app.post('/api/create-payment-link', async (req, res) => {
 // -----------------------------------------------------------------------------
 app.get('/api/admin/stats', async (req, res) => {
     try {
+        const adminIdHeader = req.headers['x-admin-id'];
+        const allowedAdmins = (process.env.ADMIN_IDS || '').split(',').map(id => id.trim());
+
+        if (!adminIdHeader || !allowedAdmins.includes(adminIdHeader as string)) {
+            console.warn(`[AUTH] Unauthorized admin stats access attempt from ID: ${adminIdHeader}`);
+            return res.status(403).json({ success: false, error: 'Unauthorized Access' });
+        }
+
         const thirtyDaysAgo = new Date();
         thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
@@ -129,12 +137,19 @@ app.get('/api/admin/stats', async (req, res) => {
 
         const totalPrizePool = (tourStats || []).reduce((sum, t) => sum + (t.prize_pool || 0), 0);
 
+        const { data: transactingUsers } = await supabase
+            .from('transactions')
+            .select('user_id');
+
+        const economicallyActiveCount = new Set((transactingUsers || []).map(tx => tx.user_id)).size;
+
         res.json({
             success: true,
             stats: {
                 totalUsers: totalUsers || 0,
                 monthlyUsers: monthlyUsers || 0,
                 activePlayers: activePlayers || 0,
+                economicallyActiveUsers: economicallyActiveCount, // This matches the "7" the user found
                 totalTournaments: tourStats?.length || 0,
                 totalPrizePool: totalPrizePool.toFixed(2)
             }
@@ -1333,6 +1348,7 @@ io.on('connection', (socket) => {
                         totalGames: user.stats_total_games || 0,
                         walletConnected: !!user.wallet_address,
                         walletAddress: user.wallet_address,
+                        isAdmin: (process.env.ADMIN_IDS || '').split(',').map(id => id.trim()).includes(userId.toString()),
                         referralCount: 0,
                         referralEarnings: 0,
                         recentReferrals: [],
@@ -1451,6 +1467,7 @@ io.on('connection', (socket) => {
             totalGames: user.stats_total_games || 0,
             walletConnected: !!user.wallet_address,
             walletAddress: user.wallet_address,
+            isAdmin: (process.env.ADMIN_IDS || '').split(',').map(id => id.trim()).includes(userId.toString()),
             referralCount: referralCount,
             referralEarnings: referralEarnings,
             recentReferrals,

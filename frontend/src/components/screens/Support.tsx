@@ -3,9 +3,11 @@ import { MainLayout } from '../layout/MainLayout';
 import { GlassCard } from '../ui/GlassCard';
 import { ChevronLeft, Search, MessageSquare, Bug, Activity, ChevronDown, ChevronUp, HelpCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useAppStore } from '../../store/useAppStore';
 
 export const Support: React.FC = () => {
     const navigate = useNavigate();
+    const { user } = useAppStore();
     const [openFaq, setOpenFaq] = useState<string | null>(null);
 
     const faqs = [
@@ -72,13 +74,15 @@ export const Support: React.FC = () => {
                             <Bug size={24} className="text-primary" />
                             <span className="text-[10px] font-black uppercase tracking-widest text-white/80">Report Bug</span>
                         </button>
-                        <button
-                            onClick={() => navigate('/admin')}
-                            className="flex flex-col items-center justify-center gap-3 p-6 rounded-3xl bg-white/5 border border-white/10 active:scale-95 transition-all"
-                        >
-                            <Activity size={24} className="text-primary" />
-                            <span className="text-[10px] font-black uppercase tracking-widest text-white/80">Admin Stats</span>
-                        </button>
+                        {user.isAdmin && (
+                            <button
+                                onClick={() => navigate('/admin')}
+                                className="flex flex-col items-center justify-center gap-3 p-6 rounded-3xl bg-white/5 border border-white/10 active:scale-95 transition-all"
+                            >
+                                <Activity size={24} className="text-primary" />
+                                <span className="text-[10px] font-black uppercase tracking-widest text-white/80">Admin Stats</span>
+                            </button>
+                        )}
                     </div>
                 </div>
 

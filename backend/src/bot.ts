@@ -214,4 +214,27 @@ Open the app daily to claim free Stars. Keep your streak alive for bigger reward
             bot.sendMessage(chatId, `⚠️ Failed to update menu button: ${error.message}`);
         }
     });
+
+    // Admin Command: Direct access to dashboard
+    bot.onText(/\/admin/, async (msg) => {
+        const chatId = msg.chat.id;
+        const userId = msg.from?.id.toString() || '';
+        const allowedAdmins = (process.env.ADMIN_IDS || '').split(',').map(id => id.trim());
+
+        if (!allowedAdmins.includes(userId)) {
+            console.warn(`[BOT-AUTH] Unauthorized admin command attempt from: ${userId}`);
+            return; // Silently ignore or send "Access Denied" if you prefer
+        }
+
+        const adminUrl = `${webAppUrl}/admin`;
+
+        bot.sendMessage(chatId, `📊 **Admin Dashboard Access**\n\nTap the button below to view real-time statistics and user metrics.`, {
+            parse_mode: 'Markdown',
+            reply_markup: {
+                inline_keyboard: [[
+                    { text: '📊 Open Dashboard', web_app: { url: adminUrl } }
+                ]]
+            }
+        });
+    });
 }
