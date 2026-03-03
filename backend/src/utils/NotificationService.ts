@@ -68,4 +68,65 @@ export class NotificationService {
             }
         }
     }
+
+    // Re-engagement: bring back dormant users
+    async notifyReengagement(userId: number, username: string) {
+        try {
+            const message =
+                `👋 *Hey ${username || 'Quiz Master'}!*\n\n` +
+                `We've missed you! 🧠\n\n` +
+                `🆕 New quizzes and challenges are waiting\n` +
+                `🎁 Come back and claim your *welcome-back bonus*\n` +
+                `🏆 Climb the leaderboard — your spot is slipping!\n\n` +
+                `Tap below to jump back in ⚡`;
+
+            await this.bot.sendMessage(userId, message, {
+                parse_mode: 'Markdown',
+                reply_markup: {
+                    inline_keyboard: [[
+                        { text: '🎮 Play Now', web_app: { url: process.env.VITE_APP_URL || 'https://tgquizmaster.online' } }
+                    ]]
+                }
+            });
+            return { success: true };
+        } catch (e: any) {
+            const blocked = e.message?.includes('bot was blocked') || e.message?.includes('user is deactivated');
+            if (!blocked) {
+                console.error(`[NOTIFY] Re-engagement failed for ${userId}:`, e.message);
+            }
+            return { success: false, blocked };
+        }
+    }
+
+    // Broadcast a custom message to a list of user IDs
+    async broadcastMessage(userIds: number[], message: string, delayMs = 100) {
+        let sent = 0;
+        let failed = 0;
+        let blocked = 0;
+
+        for (const userId of userIds) {
+            try {
+                await this.bot.sendMessage(userId, message, {
+                    parse_mode: 'Markdown',
+                    reply_markup: {
+                        inline_keyboard: [[
+                            { text: '🎮 Open App', web_app: { url: process.env.VITE_APP_URL || 'https://tgquizmaster.online' } }
+                        ]]
+                    }
+                });
+                sent++;
+            } catch (e: any) {
+                if (e.message?.includes('bot was blocked') || e.message?.includes('user is deactivated')) {
+                    blocked++;
+                } else {
+                    failed++;
+                    console.error(`[BROADCAST] Failed for ${userId}:`, e.message);
+                }
+            }
+            // Rate limit: Telegram allows ~30 messages/sec, but be safe
+            if (delayMs > 0) await new Promise(r => setTimeout(r, delayMs));
+        }
+
+        return { sent, failed, blocked, total: userIds.length };
+    }
 }
