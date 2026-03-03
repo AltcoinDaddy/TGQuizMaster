@@ -1,4 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import ErrorBoundary from './components/ErrorBoundary';
 import { useTonAddress } from '@tonconnect/ui-react';
 import { socket } from './utils/socket';
 import { useState, useEffect } from 'react';
@@ -155,33 +156,35 @@ function App() {
   }
 
   return (
-    <Router>
-      <WalletSyncer />
-      <NavigationController />
-      <Routes>
-        <Route path="/onboarding" element={<Onboarding onComplete={() => setShowOnboarding(false)} />} />
-        <Route path="/" element={showOnboarding ? <Navigate to="/onboarding" /> : <Home />} />
-        <Route path="/quiz" element={<QuizRoom />} />
-        <Route path="/leaderboard" element={<Leaderboard />} />
-        <Route path="/referral" element={<Referral />} />
-        <Route path="/profile" element={<Profile />} />
-        <Route path="/shop" element={<Shop />} />
-        <Route path="/quests" element={<Quests />} />
-        <Route path="/tournaments" element={<Tournaments />} />
-        <Route path="/create-tournament" element={<CreateTournament />} />
-        <Route path="/tournament-history" element={<TournamentHistory />} />
-        <Route path="/achievements" element={<Achievements />} />
-        <Route path="/level-up" element={<LevelUp />} />
-        <Route path="/withdrawal" element={<WithdrawalConfirmation />} />
-        <Route path="/withdrawal-success" element={<WithdrawalSuccess />} />
-        <Route path="/support" element={<Support />} />
-        <Route path="/bug-report" element={<BugReport />} />
-        <Route path="/purchase-confirmation" element={<PurchaseConfirmation />} />
-        <Route path="/ad-free" element={<AdFreeUpsell />} />
-        <Route path="/settings" element={<Settings />} />
-        <Route path="/admin" element={<AdminDashboard />} />
-      </Routes>
-    </Router>
+    <ErrorBoundary>
+      <Router>
+        <WalletSyncer />
+        <NavigationController />
+        <Routes>
+          <Route path="/onboarding" element={<Onboarding onComplete={() => setShowOnboarding(false)} />} />
+          <Route path="/" element={showOnboarding ? <Navigate to="/onboarding" /> : <Home />} />
+          <Route path="/quiz" element={<QuizRoom />} />
+          <Route path="/leaderboard" element={<Leaderboard />} />
+          <Route path="/referral" element={<Referral />} />
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/shop" element={<Shop />} />
+          <Route path="/quests" element={<Quests />} />
+          <Route path="/tournaments" element={<Tournaments />} />
+          <Route path="/create-tournament" element={<CreateTournament />} />
+          <Route path="/tournament-history" element={<TournamentHistory />} />
+          <Route path="/achievements" element={<Achievements />} />
+          <Route path="/level-up" element={<LevelUp />} />
+          <Route path="/withdrawal" element={<WithdrawalConfirmation />} />
+          <Route path="/withdrawal-success" element={<WithdrawalSuccess />} />
+          <Route path="/support" element={<Support />} />
+          <Route path="/bug-report" element={<BugReport />} />
+          <Route path="/purchase-confirmation" element={<PurchaseConfirmation />} />
+          <Route path="/ad-free" element={<AdFreeUpsell />} />
+          <Route path="/settings" element={<Settings />} />
+          <Route path="/admin" element={<AdminDashboard />} />
+        </Routes>
+      </Router>
+    </ErrorBoundary>
   );
 }
 

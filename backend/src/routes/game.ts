@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import { supabase } from '../config/supabase';
 import { getTonBalance } from '../utils/tonBalance';
 import { telegramAuthMiddleware } from '../middleware/auth';
+import { withdrawalRateLimit } from '../middleware/rateLimit';
 
 const router = Router();
 
@@ -97,7 +98,7 @@ router.get('/history', async (req: Request, res: Response) => {
 });
 
 // POST /api/withdraw
-router.post('/withdraw', telegramAuthMiddleware, async (req: Request, res: Response) => {
+router.post('/withdraw', withdrawalRateLimit, telegramAuthMiddleware, async (req: Request, res: Response) => {
     try {
         const userId = req.telegramUser!.id;
         const { amount, address } = req.body;

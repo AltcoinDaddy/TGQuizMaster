@@ -163,6 +163,19 @@ export class GameManager {
 
     private async fetchQuestions() {
         try {
+            const { questionCache } = await import('./QuestionCache');
+            const cached = await questionCache.getQuestions(this.questionCount);
+            if (cached.length >= this.questionCount) {
+                this.questions = cached;
+                console.log(`[GAME] Loaded ${cached.length} questions from cache (pool: ${questionCache.size} remaining)`);
+                return;
+            }
+        } catch (e) {
+            console.error('[GAME] Cache fetch failed, trying API directly:', e);
+        }
+
+        // Fallback: direct API call
+        try {
             const resp = await axios.get(`https://opentdb.com/api.php?amount=${this.questionCount}&type=multiple`);
             this.questions = resp.data.results.map((q: any, i: number) => ({
                 id: i.toString(),
@@ -172,7 +185,6 @@ export class GameManager {
             }));
         } catch (e) {
             console.error('Failed to fetch questions:', e);
-            // Fallback to robust mock set (5 questions to match practice mode count)
             this.questions = [
                 { id: 'f1', text: "Which consensus mechanism does Ethereum now use?", options: ["Proof of Work", "Proof of Stake", "Proof of History", "Proof of Authority"], correctAnswer: "Proof of Stake" },
                 { id: 'f2', text: "What is the primary token of the TON network?", options: ["ETH", "SOL", "TON", "DOT"], correctAnswer: "TON" },

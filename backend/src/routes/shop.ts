@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { supabase } from '../config/supabase';
 import { telegramAuthMiddleware } from '../middleware/auth';
+import { financialRateLimit } from '../middleware/rateLimit';
 
 const router = Router();
 
@@ -37,7 +38,7 @@ router.get('/', async (_req: Request, res: Response) => {
 });
 
 // POST /api/shop/buy-powerup
-router.post('/buy-powerup', telegramAuthMiddleware, async (req: Request, res: Response) => {
+router.post('/buy-powerup', financialRateLimit, telegramAuthMiddleware, async (req: Request, res: Response) => {
     try {
         const telegramId = req.telegramUser!.id.toString();
         const { powerUpId, cost } = req.body;
@@ -85,7 +86,7 @@ router.post('/buy-powerup', telegramAuthMiddleware, async (req: Request, res: Re
 });
 
 // POST /api/shop/buy-pro
-router.post('/buy-pro', telegramAuthMiddleware, async (req: Request, res: Response) => {
+router.post('/buy-pro', financialRateLimit, telegramAuthMiddleware, async (req: Request, res: Response) => {
     try {
         const telegramId = req.telegramUser!.id.toString();
         if (!telegramId) return res.status(400).json({ success: false, error: 'Missing telegramId' });
@@ -122,7 +123,7 @@ router.post('/buy-pro', telegramAuthMiddleware, async (req: Request, res: Respon
 });
 
 // POST /api/shop/create-payment-link
-router.post('/create-payment-link', telegramAuthMiddleware, async (req: Request, res: Response) => {
+router.post('/create-payment-link', financialRateLimit, telegramAuthMiddleware, async (req: Request, res: Response) => {
     try {
         const { title, description, payload, amount } = req.body;
 
