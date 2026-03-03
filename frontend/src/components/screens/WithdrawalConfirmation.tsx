@@ -1,5 +1,5 @@
 import React from 'react';
-import { API_URL } from '../../config/api';
+import { authPost } from '../../utils/authFetch';
 import { MainLayout } from '../layout/MainLayout';
 import { GlassCard } from '../ui/GlassCard';
 import { Button } from '../ui/Button';
@@ -28,14 +28,9 @@ export const WithdrawalConfirmation: React.FC = () => {
 
         setLoading(true);
         try {
-            const res = await fetch(`${API_URL}/api/withdraw`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    telegramId: user.telegramId,
-                    amount: withdrawableAmount,
-                    address: user.walletAddress
-                })
+            const res = await authPost('/api/withdraw', {
+                amount: withdrawableAmount,
+                address: user.walletAddress
             });
 
             const data = await res.json();

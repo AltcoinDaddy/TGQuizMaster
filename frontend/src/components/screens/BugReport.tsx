@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { API_URL } from '../../config/api';
+import { authPost } from '../../utils/authFetch';
 import { MainLayout } from '../layout/MainLayout';
 import { Button } from '../ui/Button';
 import { ChevronLeft, Camera, Send, Bug } from 'lucide-react';
@@ -24,14 +24,10 @@ export const BugReport: React.FC = () => {
 
         setSubmitting(true);
         try {
-            const res = await fetch(`${API_URL}/api/bug-report`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    telegramId: user.telegramId,
-                    type,
-                    description
-                })
+            const res = await authPost('/api/bug-report', {
+                telegramId: user.telegramId,
+                type,
+                description
             });
             const data = await res.json();
 

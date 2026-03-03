@@ -1,4 +1,5 @@
 import TelegramBot from 'node-telegram-bot-api';
+import { supabase } from '../config/supabase';
 
 export class StarsService {
     private bot: TelegramBot;
@@ -61,7 +62,8 @@ export class StarsService {
         console.log(`[PAYMENT] Verifying: User=${userId} | Paid=${telegramStarsAmount} TG Stars | Reward=${rewardAmount} Stars | Item=${payload}`);
 
         try {
-            const { supabase } = await import('../config/supabase');
+
+
             const upsertId = parseInt(userId);
 
             // 1. Check User Existence (or create)

@@ -1,5 +1,5 @@
 import React from 'react';
-import { API_URL } from '../../config/api';
+import { authPost } from '../../utils/authFetch';
 import { MainLayout } from '../layout/MainLayout';
 import { Button } from '../ui/Button';
 import { GlassCard } from '../ui/GlassCard';
@@ -25,10 +25,8 @@ export const AdFreeUpsell: React.FC = () => {
 
         setLoading(true);
         try {
-            const res = await fetch(`${API_URL}/api/buy-pro`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ telegramId: user.telegramId })
+            const res = await authPost('/api/buy-pro', {
+                telegramId: user.telegramId
             });
             const data = await res.json();
 

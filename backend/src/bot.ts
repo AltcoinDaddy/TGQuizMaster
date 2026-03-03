@@ -1,5 +1,6 @@
 import TelegramBot from 'node-telegram-bot-api';
 import dotenv from 'dotenv';
+import { supabase } from './config/supabase';
 import { StarsService } from './utils/StarsService';
 import { NotificationService } from './utils/NotificationService';
 
@@ -53,32 +54,38 @@ if (!token) {
         const chatId = msg.chat.id;
         const firstName = msg.from?.first_name || 'Champion';
         const startParam = match ? match[1] : null;
+        const telegramUserId = msg.from?.id;
+        const telegramUsername = msg.from?.username || msg.from?.first_name || 'Anon_Player';
 
-        if (startParam && startParam.startsWith('ref_')) {
-            const referrerId = startParam.replace('ref_', '');
-            console.log(`User ${msg.from?.id} joined via referral from ${referrerId}`);
+        // Always register user in the database on /start
+        try {
 
-            try {
-                const { supabase } = await import('./config/supabase');
-                // Check if user exists, if not, create them with referred_by
-                const { data: user, error: fetchError } = await supabase
-                    .from('users')
-                    .select('*')
-                    .eq('telegram_id', msg.from?.id)
-                    .single();
+            // Check if user already exists
+            const { data: existingUser, error: fetchError } = await supabase
+                .from('users')
+                .select('*')
+                .eq('telegram_id', telegramUserId)
+                .single();
 
-                if (fetchError && fetchError.code === 'PGRST116') {
+            const isNewUser = fetchError && fetchError.code === 'PGRST116';
+            const isReferral = startParam && startParam.startsWith('ref_');
+
+            if (isNewUser) {
+                if (isReferral) {
                     // New user via referral — gets 200 Stars welcome bonus
+                    const referrerId = startParam!.replace('ref_', '');
+                    console.log(`[BOT] New user ${telegramUserId} joined via referral from ${referrerId}`);
+
                     await supabase.from('users').insert({
-                        telegram_id: msg.from?.id,
-                        username: msg.from?.username || 'Anon_Player',
+                        telegram_id: telegramUserId,
+                        username: telegramUsername,
                         referred_by: parseInt(referrerId),
                         balance_stars: 200
                     });
 
                     // Log welcome bonus transaction
                     await supabase.from('transactions').insert({
-                        user_id: msg.from?.id,
+                        user_id: telegramUserId,
                         type: 'PRIZE',
                         amount: 200,
                         currency: 'STARS',
@@ -103,31 +110,59 @@ if (!token) {
                             type: 'PRIZE',
                             amount: 50,
                             currency: 'STARS',
-                            metadata: { type: 'REFERRAL_REWARD', referredUser: msg.from?.id },
+                            metadata: { type: 'REFERRAL_REWARD', referredUser: telegramUserId },
                             status: 'COMPLETED'
                         });
 
                         console.log(`[REFERRAL] Referrer ${referrerId} earned 50 Stars`);
 
-                        // Notify the referrer via Telegram
                         notificationService.notifyReferralReward(
                             parseInt(referrerId),
                             50,
-                            msg.from?.username || msg.from?.first_name || 'A friend'
+                            telegramUsername
                         );
                     }
 
-                    console.log(`[REFERRAL] New user ${msg.from?.id} got 200 Stars welcome bonus`);
-                } else if (user && !user.referred_by) {
-                    // Existing user without referrer, update it
+                    console.log(`[BOT] New referral user ${telegramUserId} registered with 200 Stars bonus`);
+                } else {
+                    // New user WITHOUT referral — gets 100 Stars welcome bonus
+                    await supabase.from('users').insert({
+                        telegram_id: telegramUserId,
+                        username: telegramUsername,
+                        balance_stars: 100
+                    });
+
+                    await supabase.from('transactions').insert({
+                        user_id: telegramUserId,
+                        type: 'PRIZE',
+                        amount: 100,
+                        currency: 'STARS',
+                        metadata: { type: 'WELCOME_BONUS' },
+                        status: 'COMPLETED'
+                    });
+
+                    console.log(`[BOT] New user ${telegramUserId} (@${telegramUsername}) registered with 100 Stars bonus`);
+                }
+            } else if (existingUser) {
+                // Existing user — update username if changed, and handle late referral
+                if (existingUser.username !== telegramUsername) {
+                    await supabase.from('users')
+                        .update({ username: telegramUsername })
+                        .eq('telegram_id', telegramUserId);
+                }
+
+                if (isReferral && !existingUser.referred_by) {
+                    const referrerId = startParam!.replace('ref_', '');
                     await supabase.from('users')
                         .update({ referred_by: parseInt(referrerId) })
-                        .eq('telegram_id', msg.from?.id);
-                    console.log(`[REFERRAL] Updated user ${msg.from?.id} with referrer ${referrerId}`);
+                        .eq('telegram_id', telegramUserId);
+                    console.log(`[REFERRAL] Updated user ${telegramUserId} with referrer ${referrerId}`);
                 }
-            } catch (e) {
-                console.error('Referral storage failed:', e);
+
+                console.log(`[BOT] Existing user ${telegramUserId} (@${telegramUsername}) pressed /start`);
             }
+        } catch (e) {
+            console.error('[BOT] User registration failed:', e);
         }
 
         bot.sendMessage(chatId, `Welcome to TGQuizMaster, ${firstName}! 🏆\n\nBattle other players in real-time, master trivia, and win real TON rewards.\n\nReady to play?`, {

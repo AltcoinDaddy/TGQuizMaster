@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { API_URL } from '../../config/api';
+import { authPost } from '../../utils/authFetch';
 import { MainLayout } from '../layout/MainLayout';
 import { Rocket, ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -36,10 +37,8 @@ export const Home: React.FC = () => {
 
     const handleClaim = async () => {
         try {
-            const res = await fetch(`${API_URL}/api/claim-daily`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ telegramId: user.telegramId })
+            const res = await authPost('/api/claim-daily', {
+                telegramId: user.telegramId
             });
             const data = await res.json();
 

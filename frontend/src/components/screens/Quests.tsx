@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { API_URL } from '../../config/api';
+import { authPost } from '../../utils/authFetch';
 import { useAppStore } from '../../store/useAppStore';
 import { MainLayout } from '../layout/MainLayout';
 import { GlassCard } from '../ui/GlassCard';
@@ -58,10 +59,8 @@ export const Quests: React.FC = () => {
     const handleClaim = async (quest: Quest) => { // Changed back to Quest object for reward modal
         setClaiming(quest.id); // Use quest.id for claiming state
         try {
-            const res = await fetch(`${API_URL}/api/claim-quest`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ telegramId: user.telegramId, questId: quest.id })
+            const res = await authPost('/api/claim-quest', {
+                telegramId: user.telegramId, questId: quest.id
             });
             const data = await res.json();
 

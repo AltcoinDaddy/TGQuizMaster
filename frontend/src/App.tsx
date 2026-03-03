@@ -93,16 +93,27 @@ function App() {
           socket.connect();
           socket.emit('sync_profile', { telegramId, username });
         } else {
-          console.warn('No Telegram User found - using fallback for local testing');
-          const testId = "123456789";
-          socket.connect();
-          socket.emit('sync_profile', { telegramId: testId, username: "@Alex_Quiz" });
+          // No Telegram user object found
+          if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+            console.warn('[DEV] No Telegram user — using test fallback');
+            const testId = "123456789";
+            socket.connect();
+            socket.emit('sync_profile', { telegramId: testId, username: "@Dev_Test" });
+          } else {
+            console.error('No Telegram user data available in production');
+            return; // Don't connect — user must open via Telegram
+          }
         }
       } else {
-        console.error('Telegram WebApp script not found! Using fallback for local testing.');
-        const testId = "123456789";
-        socket.connect();
-        socket.emit('sync_profile', { telegramId: testId, username: "@Alex_Quiz" });
+        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+          console.warn('[DEV] No Telegram WebApp script — using test fallback');
+          const testId = "123456789";
+          socket.connect();
+          socket.emit('sync_profile', { telegramId: testId, username: "@Dev_Test" });
+        } else {
+          console.error('Telegram WebApp not available in production');
+          return;
+        }
       }
 
       // Socket Listeners

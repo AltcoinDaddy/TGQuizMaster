@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { API_URL } from '../../config/api';
+import { getInitData } from '../../utils/socket';
 import { MainLayout } from '../layout/MainLayout';
 import { GlassCard } from '../ui/GlassCard';
 import { ChevronLeft, Users, Trophy, Activity, Calendar, DollarSign, TrendingUp } from 'lucide-react';
@@ -8,11 +9,12 @@ import { useAppStore } from '../../store/useAppStore';
 
 interface Stats {
     totalUsers: number;
-    monthlyUsers: number;
+    monthlySignups: number;
     activePlayers: number;
     economicallyActiveUsers: number;
     totalTournaments: number;
     totalPrizePool: string;
+    dailySignups?: Record<string, number>;
 }
 
 export const AdminDashboard: React.FC = () => {
@@ -23,11 +25,13 @@ export const AdminDashboard: React.FC = () => {
     useEffect(() => {
         const fetchStats = async () => {
             try {
-                const res = await fetch(`${API_URL}/api/admin/stats`, {
-                    headers: {
-                        'x-admin-id': useAppStore.getState().user.telegramId
-                    }
-                });
+                const initData = getInitData();
+                const headers: Record<string, string> = {
+                    'x-admin-id': useAppStore.getState().user.telegramId
+                };
+                if (initData) headers['x-telegram-init-data'] = initData;
+
+                const res = await fetch(`${API_URL}/api/admin/stats`, { headers });
                 const data = await res.json();
                 if (data.success) {
                     setStats(data.stats);
@@ -69,12 +73,14 @@ export const AdminDashboard: React.FC = () => {
                                 label="Total Users"
                                 value={stats?.totalUsers.toString() || '0'}
                                 color="text-primary"
+                                subtitle="All registered"
                             />
                             <StatCard
                                 icon={<Calendar size={20} />}
-                                label="Monthly New"
-                                value={stats?.monthlyUsers.toString() || '0'}
+                                label="Monthly Signups"
+                                value={stats?.monthlySignups.toString() || '0'}
                                 color="text-green-400"
+                                subtitle="Last 30 days"
                             />
                             <StatCard
                                 icon={<Activity size={20} />}

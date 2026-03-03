@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { API_URL } from '../../config/api';
+import { authPost } from '../../utils/authFetch';
 import { useAppStore } from '../../store/useAppStore';
 import { MainLayout } from '../layout/MainLayout';
 import { GlassCard } from '../ui/GlassCard';
@@ -62,15 +63,11 @@ export const Shop: React.FC = () => {
         console.log(`[SHOP] Initiating purchase for ${item.title} (${item.price} ${item.currency})`);
 
         try {
-            const response = await fetch(`${API_URL}/api/create-payment-link`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    title: item.title,
-                    description: item.description,
-                    payload: item.id, // Payload to identify item in webhook
-                    amount: item.price
-                })
+            const response = await authPost('/api/create-payment-link', {
+                title: item.title,
+                description: item.description,
+                payload: item.id,
+                amount: item.price
             });
 
             const data = await response.json();
@@ -115,10 +112,8 @@ export const Shop: React.FC = () => {
         }
         setIsPurchasing(item.id);
         try {
-            const res = await fetch(`${API_URL}/api/buy-powerup`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ telegramId: user.telegramId, powerUpId: item.id, cost: item.price })
+            const res = await authPost('/api/buy-powerup', {
+                powerUpId: item.id, cost: item.price
             });
             const data = await res.json();
             if (data.success) {

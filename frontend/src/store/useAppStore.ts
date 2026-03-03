@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { API_URL } from '../config/api';
+import { authPost } from '../utils/authFetch';
 
 interface UserState {
     telegramId: string;
@@ -92,13 +92,9 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
         // Sync with backend
         try {
-            await fetch(`${API_URL}/api/settings`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    telegramId: state.user.telegramId,
-                    settings: newSettings
-                })
+            await authPost('/api/settings', {
+                telegramId: state.user.telegramId,
+                settings: newSettings
             });
         } catch (e) {
             console.error('Failed to save settings:', e);

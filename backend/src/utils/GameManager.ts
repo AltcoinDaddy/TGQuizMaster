@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { decode } from 'html-entities';
+import { supabase } from '../config/supabase';
 
 export interface Player {
     id: string;
@@ -312,7 +313,7 @@ export class GameManager {
         // Practice mode — give small rewards + update daily counters
         if (this.tournamentType === 'practice') {
             try {
-                const { supabase } = await import('../config/supabase');
+
 
                 let firstWinnerDailyGames = 0;
 
@@ -374,7 +375,8 @@ export class GameManager {
                     if (!player.id) continue;
                     const userId = parseInt(player.id);
                     try {
-                        const { supabase } = await import('../config/supabase'); // Re-import if not already in scope
+
+
                         const { data: freshUser } = await supabase.from('users')
                             .select('balance_stars, stats_xp')
                             .eq('telegram_id', userId)
@@ -400,7 +402,8 @@ export class GameManager {
             }
         }
         try {
-            const { supabase } = await import('../config/supabase');
+
+
             const { data: tournamentRecord, error: tourError } = await supabase
                 .from('tournaments')
                 .insert({
@@ -509,7 +512,7 @@ export class GameManager {
             if (!player.id) continue;
             const userId = parseInt(player.id);
             try {
-                const { supabase } = await import('../config/supabase');
+
                 const { data: freshUser } = await supabase.from('users')
                     .select('balance_stars, balance_ton, stats_xp')
                     .eq('telegram_id', userId)
