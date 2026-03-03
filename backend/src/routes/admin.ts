@@ -93,12 +93,16 @@ router.post('/reengage', async (req: Request, res: Response) => {
 
         const cutoff = new Date();
         cutoff.setDate(cutoff.getDate() - daysInactive);
+        const cutoffStr = cutoff.toISOString().split('T')[0]; // YYYY-MM-DD for streak_last_claim
 
-        // Find users who haven't been active recently
+        // Find users inactive for N+ days:
+        // - streak_last_claim is null (never claimed) OR before cutoff
+        // - AND created_at is before cutoff (exclude brand new users)
         const { data: dormantUsers, error } = await supabase
             .from('users')
             .select('telegram_id, username')
-            .lt('updated_at', cutoff.toISOString());
+            .lt('created_at', cutoff.toISOString())
+            .or(`streak_last_claim.is.null,streak_last_claim.lt.${cutoffStr}`);
 
         if (error) throw error;
 
