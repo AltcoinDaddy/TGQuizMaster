@@ -272,7 +272,6 @@ io.on('connection', (socket) => {
                 const mgr = new GameManager(roomId, io, 'practice', 0, 0);
 
                 // Assign cleanup handler so room is deleted after game ends
-                const capturedPracticeRoomId = roomId;
                 mgr.onGameOver = (finishedRoomId) => {
                     rooms.delete(finishedRoomId);
                     console.log(`[CLEANUP] Practice room ${finishedRoomId} deleted after game over`);
@@ -287,7 +286,8 @@ io.on('connection', (socket) => {
                     score: 0
                 });
 
-                socket.join(roomId);
+                // Crucial: Use await to ensure client is in the room before we start emitting game events
+                await socket.join(roomId);
                 socketPlayerMap.set(socket.id, { roomId, playerId: userId.toString() });
 
                 // Increment Usage ONLY after successful join
@@ -295,8 +295,18 @@ io.on('connection', (socket) => {
                     daily_games_today: (user.daily_games_today || 0) + 1
                 }).eq('telegram_id', userId);
 
-                socket.emit('game_start'); // Instant start for practice
-                mgr.start(); // Start questions
+                // Emit room_update so frontend transitions to joined state correctly
+                socket.emit('room_update', {
+                    ...mgr.getRoomInfo(),
+                    players: mgr.getPlayers()
+                });
+
+                // Small delay to ensure frontend has processed room_update
+                setTimeout(() => {
+                    socket.emit('game_start');
+                    mgr.start();
+                }, 800);
+
                 return;
             }
 

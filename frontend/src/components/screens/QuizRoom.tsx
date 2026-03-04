@@ -160,6 +160,17 @@ export const QuizRoom: React.FC = () => {
             setTimeout(() => navigate('/'), 2000);
         };
 
+        const onSocketError = (data: any) => {
+            console.error("Socket error received:", data);
+            const tg = (window as any).Telegram?.WebApp;
+            if (tg?.showAlert) {
+                tg.showAlert(data.message || 'An error occurred. Returning to lobby.');
+            } else {
+                alert(data.message || 'An error occurred. Returning to lobby.');
+            }
+            navigate('/');
+        };
+
         socket.on('room_update', onRoomUpdate);
         socket.on('game_start', onGameStart);
         socket.on('new_question', onNewQuestion);
@@ -170,6 +181,7 @@ export const QuizRoom: React.FC = () => {
         socket.on('user_inventory_update', onInventoryUpdate);
         socket.on('game_over', onGameOver);
         socket.on('room_expired', onRoomExpired);
+        socket.on('error', onSocketError);
 
         // Power-up result handler
         const onPowerUpResult = (result: any) => {
@@ -237,6 +249,7 @@ export const QuizRoom: React.FC = () => {
             socket.off('user_inventory_update', onInventoryUpdate);
             socket.off('game_over', onGameOver);
             socket.off('room_expired', onRoomExpired);
+            socket.off('error', onSocketError);
             socket.off('powerup_result', onPowerUpResult);
             socket.off('level_up', onLevelUp);
             socket.off('powerup_result', onPowerUpResult);
