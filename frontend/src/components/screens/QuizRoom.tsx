@@ -35,7 +35,11 @@ export const QuizRoom: React.FC = () => {
     const strokeDashoffset = circumference - (timeLeft / 15) * circumference;
 
     const location = useLocation();
+    const queryParams = new URLSearchParams(location.search);
+    const roomIdFromUrl = queryParams.get('roomId');
+
     const { tournamentId, entryFee, currency, type } = location.state || {}; // Fallback if direct access
+    const finalRoomId = roomIdFromUrl || tournamentId;
 
     useEffect(() => {
         // 1. Setup Listeners
@@ -223,11 +227,11 @@ export const QuizRoom: React.FC = () => {
                 username: user.username,
                 telegramId: user.telegramId,
                 avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`,
-                roomType: type || 'tournament',
-                tournamentId,
-                entryFee,
-                currency,
-                maxPlayers: (type === 'tournament' || type === 'stars') ? (location.state?.maxPlayers || 5) : 5
+                roomType: type || (roomIdFromUrl ? 'tournament' : 'tournament'),
+                tournamentId: finalRoomId,
+                entryFee: entryFee || 0,
+                currency: currency || 'Stars',
+                maxPlayers: (type === 'tournament' || type === 'stars' || roomIdFromUrl) ? (location.state?.maxPlayers || 5) : 5
             });
         };
 

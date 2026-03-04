@@ -8,8 +8,11 @@ export class NotificationService {
     }
 
     // Notify a user about a new room being created
-    async notifyRoomOpen(userId: number, roomDetails: { entryFee: number; currency: string; playerCount: number; maxPlayers: number }) {
+    async notifyRoomOpen(userId: number, roomDetails: { roomId: string; entryFee: number; currency: string; playerCount: number; maxPlayers: number }) {
         try {
+            const baseUrl = process.env.VITE_APP_URL || 'https://tgquizmaster.online';
+            const deepLinkUrl = `${baseUrl}?startapp=room_${roomDetails.roomId}`;
+
             const message = `🎮 *New Room Open!*\n\n` +
                 `Entry: ${roomDetails.entryFee} ${roomDetails.currency}\n` +
                 `Players: ${roomDetails.playerCount}/${roomDetails.maxPlayers}\n\n` +
@@ -19,7 +22,7 @@ export class NotificationService {
                 parse_mode: 'Markdown',
                 reply_markup: {
                     inline_keyboard: [[
-                        { text: '🎮 Join Now', web_app: { url: process.env.VITE_APP_URL || 'https://tgquizmaster.online' } }
+                        { text: '🎮 Join Now', web_app: { url: deepLinkUrl } }
                     ]]
                 }
             });

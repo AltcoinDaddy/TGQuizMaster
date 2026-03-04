@@ -445,10 +445,11 @@ io.on('connection', (socket) => {
                                 console.log(`[NOTIFY] Sending room notification to ${recentUsers.length} recent players`);
                                 for (const u of recentUsers) {
                                     notificationService.notifyRoomOpen(u.telegram_id, {
+                                        roomId: roomId,
                                         entryFee: feeAmount,
                                         currency: 'Stars',
                                         playerCount: 1,
-                                        maxPlayers: 5
+                                        maxPlayers: playersLimit
                                     });
                                 }
                             }
