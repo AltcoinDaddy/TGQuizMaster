@@ -486,10 +486,10 @@ io.on('connection', (socket) => {
     });
 
     socket.on('submit_answer', (answer) => {
-        // Find which room this socket is in
-        const roomId = Array.from(socket.rooms).find(r => rooms.has(r));
-        if (roomId) {
-            rooms.get(roomId)?.submitAnswer(socket.id, answer);
+        // Find which room and player this socket is in
+        const mapping = socketPlayerMap.get(socket.id);
+        if (mapping && mapping.roomId) {
+            rooms.get(mapping.roomId)?.submitAnswer(mapping.playerId, answer);
         }
     });
 
@@ -510,7 +510,7 @@ io.on('connection', (socket) => {
             const userId = parseInt(mapping.playerId);
             const { data: user } = await supabase
                 .from('users')
-                .select('inventory, balance_stars')
+                .select('username, inventory, balance_stars')
                 .eq('telegram_id', userId)
                 .single();
 
@@ -523,7 +523,7 @@ io.on('connection', (socket) => {
             }
 
             // Use the power-up in the game
-            const result = manager.usePowerUp(socket.id, powerUpId);
+            const result = manager.usePowerUp(mapping.playerId, powerUpId);
             if (!result.success) {
                 return socket.emit('powerup_result', result);
             }
@@ -536,7 +536,7 @@ io.on('connection', (socket) => {
             // Emit result to the player
             socket.emit('powerup_result', result);
             // Notify the room about the power-up usage
-            io.to(roomId).emit('powerup_used', { playerId: socket.id, powerUpId, playerName: mapping.playerId });
+            io.to(roomId).emit('powerup_used', { playerId: mapping.playerId, powerUpId, playerName: user.username || mapping.playerId });
             // Update user inventory on frontend
             socket.emit('user_inventory_update', updatedInv);
 
