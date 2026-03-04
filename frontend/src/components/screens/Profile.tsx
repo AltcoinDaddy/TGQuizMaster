@@ -152,7 +152,7 @@ export const Profile: React.FC = () => {
                             <span className="text-4xl font-black text-white italic tracking-tighter">{user.tonBalance?.toFixed(2) || '0.00'}</span>
                             <span className="text-lg font-black text-primary italic">TON</span>
                         </div>
-                        <p className="text-xs font-bold text-white/40 uppercase tracking-widest italic animate-pulse">≈ ${(user.tonBalance * 5.15).toFixed(2)} USD</p>
+                        <p className="text-xs font-bold text-white/40 uppercase tracking-widest italic animate-pulse">≈ ${((user.tonBalance ?? 0) * 5.15).toFixed(2)} USD</p>
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">

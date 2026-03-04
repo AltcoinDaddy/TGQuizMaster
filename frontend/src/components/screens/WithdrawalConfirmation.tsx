@@ -14,7 +14,7 @@ export const WithdrawalConfirmation: React.FC = () => {
 
     // Fee logic
     const networkFee = 0.05;
-    const withdrawableAmount = Math.max(0, user.tonBalance - networkFee);
+    const withdrawableAmount = Math.max(0, (user.tonBalance ?? 0) - networkFee);
 
     const handleWithdraw = async () => {
         if (withdrawableAmount <= 0) {
@@ -74,10 +74,10 @@ export const WithdrawalConfirmation: React.FC = () => {
                     </div>
                     <p className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em] mb-2">Total Balance</p>
                     <div className="flex items-center justify-center gap-3 mb-1">
-                        <span className="text-5xl font-black text-white italic">{user.tonBalance.toFixed(2)}</span>
+                        <span className="text-5xl font-black text-white italic">{(user.tonBalance ?? 0).toFixed(2)}</span>
                         <span className="text-2xl font-black text-primary italic">TON</span>
                     </div>
-                    <p className="text-sm font-bold text-white/30 uppercase tracking-widest">≈ ${(user.tonBalance * 5.15).toFixed(2)} USD</p>
+                    <p className="text-sm font-bold text-white/30 uppercase tracking-widest">≈ ${((user.tonBalance ?? 0) * 5.15).toFixed(2)} USD</p>
                 </div>
 
                 {/* Details */}

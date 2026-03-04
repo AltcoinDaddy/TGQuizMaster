@@ -84,7 +84,7 @@ export const Header: React.FC = () => {
                 >
                     <div className="flex flex-col items-start">
                         <span className="text-[10px] uppercase tracking-wider opacity-50 font-black italic">TON Balance</span>
-                        <span className="text-lg font-black italic flex items-center gap-1">{user.tonBalance.toFixed(2)} <span className="text-sm">💎</span></span>
+                        <span className="text-lg font-black italic flex items-center gap-1">{(user.tonBalance ?? 0).toFixed(2)} <span className="text-sm">💎</span></span>
                     </div>
                     <div className="w-8 h-8 rounded-full bg-blue-400/10 flex items-center justify-center">
                         <span className="text-blue-400 text-lg leading-none">♦</span>
