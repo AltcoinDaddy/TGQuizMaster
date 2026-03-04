@@ -390,13 +390,15 @@ export class GameManager {
 
 
                         const { data: freshUser } = await supabase.from('users')
-                            .select('balance_stars, stats_xp')
+                            .select('balance_stars, stats_xp, balance_ton, balance_qp')
                             .eq('telegram_id', userId)
                             .single();
                         if (freshUser) {
                             this.io.to(this.roomId).emit('balance_update', {
                                 stars: freshUser.balance_stars,
-                                xp: freshUser.stats_xp
+                                xp: freshUser.stats_xp,
+                                ton: freshUser.balance_ton || 0,
+                                balanceQP: freshUser.balance_qp || 0
                             });
                         }
                     } catch (e) {
@@ -530,14 +532,15 @@ export class GameManager {
             try {
 
                 const { data: freshUser } = await supabase.from('users')
-                    .select('balance_stars, balance_ton, stats_xp')
+                    .select('balance_stars, balance_ton, stats_xp, balance_qp')
                     .eq('telegram_id', userId)
                     .single();
                 if (freshUser) {
                     this.io.to(this.roomId).emit('balance_update', {
                         stars: freshUser.balance_stars,
-                        ton: freshUser.balance_ton,
-                        xp: freshUser.stats_xp
+                        ton: freshUser.balance_ton || 0,
+                        xp: freshUser.stats_xp,
+                        balanceQP: freshUser.balance_qp || 0
                     });
                 }
             } catch (e) {

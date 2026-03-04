@@ -99,10 +99,14 @@ export const QuizRoom: React.FC = () => {
             if (balance) {
                 const currentUser = useAppStore.getState().user;
                 useAppStore.getState().setUser({
+                    ...currentUser,
                     stars: balance.stars ?? currentUser.stars,
                     tonBalance: balance.ton ?? currentUser.tonBalance,
-                    xp: balance.xp ?? currentUser.xp
+                    xp: balance.xp ?? currentUser.xp,
+                    balanceQP: balance.balanceQP ?? currentUser.balanceQP
                 });
+                // Also update global store correctly
+                useAppStore.getState().syncFromBackend(balance);
             }
         };
 
@@ -365,7 +369,7 @@ export const QuizRoom: React.FC = () => {
                     </div>
                     <div className="flex items-center gap-2 bg-primary/10 px-4 py-2 rounded-full border border-primary/20">
                         <i className="material-icons text-primary text-sm">star</i>
-                        <span className="text-sm font-black italic tracking-tighter">{user.stars.toLocaleString()} <span className="text-xs">⭐</span></span>
+                        <span className="text-sm font-black italic tracking-tighter">{(user.stars || 0).toLocaleString()} <span className="text-xs">⭐</span></span>
                     </div>
                 </div>
                 <div className="w-full h-2.5 bg-white/10 rounded-full overflow-hidden">

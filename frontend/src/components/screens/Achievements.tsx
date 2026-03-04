@@ -90,7 +90,7 @@ export const Achievements: React.FC = () => {
                         <div className="flex justify-between items-start mb-6">
                             <div>
                                 <p className="text-[10px] font-black uppercase tracking-widest text-primary mb-1">Total Score</p>
-                                <h2 className="text-4xl font-black text-white italic tracking-tighter">{scoreData.total.toLocaleString()}</h2>
+                                <h2 className="text-4xl font-black text-white italic tracking-tighter">{(scoreData.total || 0).toLocaleString()}</h2>
                             </div>
                             <div className="text-right">
                                 <p className="text-[10px] font-black uppercase tracking-widest text-white/40 mb-1">Rank</p>

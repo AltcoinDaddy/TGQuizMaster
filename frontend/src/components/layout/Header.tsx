@@ -72,7 +72,7 @@ export const Header: React.FC = () => {
                 >
                     <div className="flex flex-col items-start">
                         <span className="text-[10px] uppercase tracking-wider opacity-50 font-black italic">Stars</span>
-                        <span className="text-lg font-black italic flex items-center gap-1">{user.stars.toLocaleString()} <span className="text-sm">⭐️</span></span>
+                        <span className="text-lg font-black italic flex items-center gap-1">{(user.stars || 0).toLocaleString()} <span className="text-sm">⭐️</span></span>
                     </div>
                     <div className="w-8 h-8 rounded-full bg-yellow-400/10 flex items-center justify-center">
                         <span className="text-yellow-400 text-lg leading-none">★</span>

@@ -149,7 +149,7 @@ export const Shop: React.FC = () => {
                     </div>
                     <div className="flex items-center bg-primary/10 rounded-full pl-3 pr-1 py-1 border border-primary/20">
                         <span className="text-primary font-black mr-2 text-xs uppercase tracking-wider flex items-center gap-1">
-                            <Star size={12} className="fill-primary" /> {user.stars.toLocaleString()}
+                            <Star size={12} className="fill-primary" /> {(user.stars || 0).toLocaleString()}
                         </span>
                         <button className="bg-primary text-background-dark h-8 w-8 rounded-full flex items-center justify-center hover:scale-105 active:scale-95 transition-transform shadow-lg shadow-primary/20">
                             <i className="material-icons text-lg">add</i>

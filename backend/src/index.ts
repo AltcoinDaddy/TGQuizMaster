@@ -463,7 +463,7 @@ io.on('connection', (socket) => {
             // Send updated user balance to client
             socket.emit('balance_update', {
                 stars: user.balance_stars,
-                ton: 0,
+                ton: user.balance_ton || 0,
                 balanceQP: user.balance_qp || 0
             });
 
@@ -652,7 +652,9 @@ io.on('connection', (socket) => {
 
                     // Emit update
                     socket.emit('balance_update', {
-                        ton: liveBalance
+                        ton: liveBalance,
+                        stars: user.balance_stars,
+                        balanceQP: user.balance_qp || 0
                     });
                     console.log(`[SYNC] Updated live TON balance for ${userId}: ${liveBalance}`);
                 }
