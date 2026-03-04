@@ -22,6 +22,8 @@ export const KnowledgeYield: React.FC = () => {
             const data = await res.json();
             setStatus(data);
             setDisplayAccumulated(data.accumulated || 0);
+            // Sync to global store
+            useAppStore.getState().setUser({ balanceQP: Number(data.balance) });
         } catch (e) {
             console.error('Failed to fetch QP status:', e);
         } finally {
@@ -63,11 +65,19 @@ export const KnowledgeYield: React.FC = () => {
                 const tg = (window as any).Telegram?.WebApp;
                 if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
 
-                // Refresh status
+                // Update global store
+                useAppStore.getState().setUser({ balanceQP: Number(data.newBalance) });
+
+                // Refresh local status
                 await fetchStatus();
+            } else {
+                const tg = (window as any).Telegram?.WebApp;
+                if (tg?.showAlert) tg.showAlert(data.error || 'Claim failed');
             }
-        } catch (e) {
+        } catch (e: any) {
             console.error('Claim failed:', e);
+            const tg = (window as any).Telegram?.WebApp;
+            if (tg?.showAlert) tg.showAlert('Server error. Please try again.');
         } finally {
             setClaiming(false);
         }
@@ -121,6 +131,13 @@ export const KnowledgeYield: React.FC = () => {
                     <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mb-4 mx-auto border border-primary/30">
                         <Brain size={40} className={`text-primary ${progress > 90 ? 'animate-pulse' : ''}`} />
                     </div>
+
+                    {/* Total Balance Mini Display */}
+                    <div className="flex items-center justify-center gap-1.5 mb-2 opacity-40">
+                        <Sparkles size={10} className="text-primary" />
+                        <span className="text-[9px] font-black uppercase tracking-widest">Total: {(user.balanceQP || 0).toLocaleString()} QP</span>
+                    </div>
+
                     <div className="text-5xl font-black text-white tracking-tighter mb-1">
                         {Math.floor(displayAccumulated).toLocaleString()}
                     </div>
