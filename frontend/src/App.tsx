@@ -26,6 +26,7 @@ import { AdFreeUpsell } from './components/screens/AdFreeUpsell';
 import { Settings } from './components/screens/Settings';
 import { NavigationController } from './components/layout/NavigationController';
 import { AdminDashboard } from './components/screens/AdminDashboard';
+import { KnowledgeYield } from './components/screens/KnowledgeYield';
 
 function WalletSyncer() {
   const userFriendlyAddress = useTonAddress();
@@ -182,6 +183,7 @@ function App() {
           <Route path="/ad-free" element={<AdFreeUpsell />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/yield" element={<KnowledgeYield />} />
         </Routes>
       </Router>
     </ErrorBoundary>

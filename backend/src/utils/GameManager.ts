@@ -480,6 +480,10 @@ export class GameManager {
                     if (index === 0) {
                         updates.stats_wins = (user.stats_wins || 0) + 1;
                         updates.daily_wins_today = (user.daily_wins_today || 0) + 1;
+                        // Grant 1-hour QP Booster for 1st place
+                        const boostUntil = new Date();
+                        boostUntil.setHours(boostUntil.getHours() + 1);
+                        updates.qp_boost_until = boostUntil.toISOString();
                     }
 
                     if (prize > 0) {

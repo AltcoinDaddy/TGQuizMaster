@@ -38,11 +38,11 @@ export const BottomNav: React.FC = () => {
                 </div>
 
                 <button
-                    onClick={() => navigate('/leaderboard')}
-                    className={`flex flex-col items-center gap-1 transition-all ${isActive('/leaderboard') ? 'text-primary' : 'opacity-40 hover:opacity-100'}`}
+                    onClick={() => navigate('/yield')}
+                    className={`flex flex-col items-center gap-1 transition-all ${isActive('/yield') ? 'text-primary' : 'opacity-40 hover:opacity-100'}`}
                 >
-                    <span className="material-icons">leaderboard</span>
-                    <span className="text-[9px] font-black uppercase tracking-widest italic leading-none">Ranks</span>
+                    <span className="material-icons">psychology</span>
+                    <span className="text-[9px] font-black uppercase tracking-widest italic leading-none">Yield</span>
                 </button>
 
                 <button
