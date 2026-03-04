@@ -23,7 +23,8 @@ export const Support: React.FC = () => {
             id: '2',
             category: 'Gameplay Rules',
             questions: [
-                { q: 'How are points calculated?', a: 'Points are based on accuracy and speed. Faster answers get more points!' }
+                { q: 'How are points calculated?', a: 'Points are based on accuracy and speed. Faster answers get more points!' },
+                { q: 'What is Knowledge Yield?', a: 'A passive earning mechanism where you accumulate $QUIZ Airdrop Points hourly. Collect them in the "Yield" tab.' }
             ]
         }
     ];

@@ -234,7 +234,10 @@ Want custom stakes? Create your own Star room and set the entry fee (10-500⭐).
 • Invite friends: earn 50⭐ per referral
 
 🎁 *Daily Rewards*
-Open the app daily to claim free Stars. Keep your streak alive for bigger rewards!`, { parse_mode: 'Markdown' });
+Open the app daily to claim free Stars. Keep your streak alive for bigger rewards!
+
+🧠 *Knowledge Yield*
+Earn $QUIZ Airdrop Points passively! Open the 'Yield' tab in the app to start harvesting. Higher total QP = bigger potential airdrop.`, { parse_mode: 'Markdown' });
         }
     });
 

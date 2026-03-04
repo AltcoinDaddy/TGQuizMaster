@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { MainLayout } from '../layout/MainLayout';
 import { Button } from '../ui/Button';
-import { Trophy, ArrowRight, Zap, Sparkles } from 'lucide-react';
+import { Trophy, ArrowRight, Zap, Sparkles, Brain } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const onboardingSteps = [
@@ -22,6 +22,12 @@ const onboardingSteps = [
         title: "Refer & Earn",
         description: "Invite your friends and earn a lifetime 5% commission on all their tournament winnings!",
         color: "from-blue-400"
+    },
+    {
+        icon: <Brain size={64} className="text-cyan-400" />,
+        title: "Passive Yield",
+        description: "Harvest $QUIZ Airdrop Points hourly based on your activity. High QP yields higher potential rewards!",
+        color: "from-cyan-400"
     }
 ];
 
