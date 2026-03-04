@@ -463,7 +463,8 @@ io.on('connection', (socket) => {
             // Send updated user balance to client
             socket.emit('balance_update', {
                 stars: user.balance_stars,
-                ton: 0 // TON balance is fetched live from blockchain via /api/daily-reward or profile sync
+                ton: 0,
+                balanceQP: user.balance_qp || 0
             });
 
             io.to(roomId).emit('room_update', {

@@ -126,7 +126,11 @@ function App() {
 
       socket.on('balance_update', (data) => {
         console.log('Balance update received:', data);
-        useAppStore.getState().setUser({ tonBalance: data.ton });
+        useAppStore.getState().setUser({
+          tonBalance: data.ton,
+          stars: data.stars,
+          balanceQP: data.balanceQP
+        });
       });
 
       // Re-sync on reconnection
