@@ -12,7 +12,10 @@ interface UserState {
     stars: number;
     tonBalance: number;
     balanceQP: number;
+    balanceShards: number;
     inventory: string[];
+    inventoryPowerups: Record<string, number>;
+    unlockedAvatars: string[];
     walletConnected: boolean;
     walletAddress?: string;
     isAdmin: boolean;
@@ -47,7 +50,10 @@ export const useAppStore = create<AppStore>((set, get) => ({
         stars: 0,
         tonBalance: 0,
         balanceQP: 0,
+        balanceShards: 0,
         inventory: [],
+        inventoryPowerups: {},
+        unlockedAvatars: [],
         walletConnected: false,
         isAdmin: false,
         referrals: [],
@@ -77,6 +83,9 @@ export const useAppStore = create<AppStore>((set, get) => ({
                 wins: data.wins ?? state.user.wins,
                 totalGames: data.totalGames ?? state.user.totalGames,
                 balanceQP: data.balanceQP ?? state.user.balanceQP,
+                balanceShards: data.balanceShards ?? state.user.balanceShards,
+                inventoryPowerups: data.inventoryPowerups ?? state.user.inventoryPowerups,
+                unlockedAvatars: data.unlockedAvatars ?? state.user.unlockedAvatars,
                 walletConnected: data.walletConnected ?? state.user.walletConnected,
                 walletAddress: data.walletAddress ?? state.user.walletAddress,
                 isAdmin: data.isAdmin ?? state.user.isAdmin,

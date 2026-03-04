@@ -5,7 +5,25 @@ import { telegramAuthMiddleware } from '../middleware/auth';
 const router = Router();
 
 // Streak Rewards Map
-const STREAK_REWARDS = [0, 50, 75, 100, 150, 200, 300, 500]; // index 0 unused, day 1-7
+// Streak Rewards Map
+// Type can be 'STARS' or 'CHEST'
+const STREAK_REWARDS = [
+    { day: 0, reward: 0, type: 'STARS' },
+    { day: 1, reward: 50, type: 'STARS' },
+    { day: 2, reward: 75, type: 'STARS' },
+    { day: 3, reward: 0, type: 'CHEST' }, // Mystery Chest
+    { day: 4, reward: 125, type: 'STARS' },
+    { day: 5, reward: 150, type: 'STARS' },
+    { day: 6, reward: 200, type: 'STARS' },
+    { day: 7, reward: 0, type: 'CHEST' }, // Rare Chest
+    { day: 8, reward: 300, type: 'STARS' },
+    { day: 9, reward: 350, type: 'STARS' },
+    { day: 10, reward: 400, type: 'STARS' },
+    { day: 11, reward: 450, type: 'STARS' },
+    { day: 12, reward: 500, type: 'STARS' },
+    { day: 13, reward: 600, type: 'STARS' },
+    { day: 14, reward: 0, type: 'CHEST' }, // Legendary Chest
+];
 
 function getTodayDate(): string {
     return new Date().toISOString().split('T')[0]; // YYYY-MM-DD
@@ -15,6 +33,33 @@ function getYesterdayDate(): string {
     const d = new Date();
     d.setDate(d.getDate() - 1);
     return d.toISOString().split('T')[0];
+}
+
+function generateChestReward(day: number) {
+    const random = Math.random();
+    let stars = 0;
+    let shards = 0;
+    let powerup: string | null = null;
+
+    if (day === 3) {
+        // Common Chest: 50-100 Stars, 10% Shard
+        stars = Math.floor(Math.random() * 51) + 50;
+        if (random < 0.1) shards = 1;
+    } else if (day === 7) {
+        // Rare Chest: 100-200 Stars, 1 Shard guaranteed, 20% Power-Up
+        stars = Math.floor(Math.random() * 101) + 100;
+        shards = 1;
+        if (random < 0.2) {
+            powerup = Math.random() > 0.5 ? 'SHIELD' : 'TIME_FREEZE';
+        }
+    } else if (day === 14) {
+        // Legendary Chest: 200-500 Stars, 2-3 Shards guaranteed, 1 Power-Up guaranteed
+        stars = Math.floor(Math.random() * 301) + 200;
+        shards = Math.floor(Math.random() * 2) + 2;
+        powerup = Math.random() > 0.5 ? 'SHIELD' : 'TIME_FREEZE';
+    }
+
+    return { stars, shards, powerup };
 }
 
 // GET /api/daily-reward — Check streak status
@@ -40,7 +85,7 @@ router.get('/daily-reward', async (req: Request, res: Response) => {
 
         if (!alreadyClaimed) {
             if (lastClaim === getYesterdayDate()) {
-                streakDay = Math.min((streakDay || 0) + 1, 7);
+                streakDay = Math.min((streakDay || 0) + 1, 14); // Extended to 14
             } else if (!lastClaim) {
                 streakDay = 1;
             } else {
@@ -48,11 +93,13 @@ router.get('/daily-reward', async (req: Request, res: Response) => {
             }
         }
 
-        const reward = STREAK_REWARDS[streakDay] || 50;
+        const streakConfig = STREAK_REWARDS[streakDay] || STREAK_REWARDS[1];
+        const { reward, type } = streakConfig;
 
         res.json({
             streakDay,
             reward,
+            rewardType: type,
             claimable: !alreadyClaimed,
             alreadyClaimed,
             nextResetHours: alreadyClaimed ? Math.max(0, 24 - new Date().getUTCHours()) : 0
@@ -86,20 +133,53 @@ router.post('/claim-daily', telegramAuthMiddleware, async (req: Request, res: Re
 
         let newStreak = 1;
         if (user.streak_last_claim === getYesterdayDate()) {
-            newStreak = Math.min((user.streak_current || 0) + 1, 7);
+            newStreak = Math.min((user.streak_current || 0) + 1, 14);
         } else {
             newStreak = 1;
         }
 
-        const reward = STREAK_REWARDS[newStreak] || 50;
-        const newBalance = (user.balance_stars || 0) + reward;
+        const streakConfig = STREAK_REWARDS[newStreak] || STREAK_REWARDS[1];
+        let rewardAmount = streakConfig.reward;
+        let chestItems: any = null;
+
+        if (streakConfig.type === 'CHEST') {
+            chestItems = generateChestReward(newStreak);
+            rewardAmount = chestItems.stars;
+        }
+
+        // Fetch current values to update them correctly
+        const { data: userData } = await supabase
+            .from('users')
+            .select('balance_stars, balance_shards, inventory_powerups, unlocked_avatars')
+            .eq('telegram_id', userId)
+            .single();
+
+        if (!userData) throw new Error('User data missing');
+
+        const newStars = (userData.balance_stars || 0) + rewardAmount;
+        const newShards = (userData.balance_shards || 0) + (chestItems?.shards || 0);
+        const newPowerups = { ...(userData.inventory_powerups || {}) };
+        if (chestItems?.powerup) {
+            newPowerups[chestItems.powerup] = (newPowerups[chestItems.powerup] || 0) + 1;
+        }
+
+        // Shard Logic for Avatar Unlock
+        let unlockedAvatars = [...(userData.unlocked_avatars || [])];
+        let shardsConsumed = 0;
+        if (newShards >= 10 && !unlockedAvatars.includes('PREMIUM_CYBER_AVATAR')) {
+            unlockedAvatars.push('PREMIUM_CYBER_AVATAR');
+            shardsConsumed = 10;
+        }
 
         const { error: updateError } = await supabase
             .from('users')
             .update({
                 streak_current: newStreak,
                 streak_last_claim: today,
-                balance_stars: newBalance
+                balance_stars: newStars,
+                balance_shards: newShards - shardsConsumed,
+                inventory_powerups: newPowerups,
+                unlocked_avatars: unlockedAvatars
             })
             .eq('telegram_id', userId);
 
@@ -108,19 +188,28 @@ router.post('/claim-daily', telegramAuthMiddleware, async (req: Request, res: Re
         await supabase.from('transactions').insert({
             user_id: userId,
             type: 'DAILY_REWARD',
-            amount: reward,
+            amount: rewardAmount,
             currency: 'STARS',
-            metadata: { streakDay: newStreak },
+            metadata: {
+                streakDay: newStreak,
+                rewardType: streakConfig.type,
+                chestItems,
+                avatarUnlocked: shardsConsumed > 0
+            },
             status: 'COMPLETED'
         });
 
-        console.log(`[DAILY] User ${userId} claimed Day ${newStreak} reward: ${reward} Stars`);
+        console.log(`[DAILY] User ${userId} claimed Day ${newStreak} reward. Type: ${streakConfig.type}`);
 
         res.json({
             success: true,
             streakDay: newStreak,
-            reward,
-            newBalance
+            rewardType: streakConfig.type,
+            reward: rewardAmount,
+            chestItems,
+            newBalance: newStars,
+            newShards: newShards - shardsConsumed,
+            avatarUnlocked: shardsConsumed > 0
         });
     } catch (error: any) {
         console.error('Claim Daily Error:', error.message);

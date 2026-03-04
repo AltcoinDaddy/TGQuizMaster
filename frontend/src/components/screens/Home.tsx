@@ -12,6 +12,8 @@ export const Home: React.FC = () => {
     const [showStreak, setShowStreak] = useState(false);
     const [streakDay, setStreakDay] = useState(1);
     const [streakReward, setStreakReward] = useState('50');
+    const [rewardType, setRewardType] = useState<'STARS' | 'CHEST'>('STARS');
+    const [chestItems, setChestItems] = useState<any>(null);
     const [leaderboardPreview, setLeaderboardPreview] = useState<any[]>([]);
     const { user } = useAppStore();
 
@@ -26,6 +28,7 @@ export const Home: React.FC = () => {
                 if (data.claimable) {
                     setStreakDay(data.streakDay);
                     setStreakReward(String(data.reward));
+                    setRewardType(data.rewardType || 'STARS');
                     setTimeout(() => setShowStreak(true), 1500);
                 }
             } catch (e) {
@@ -43,14 +46,30 @@ export const Home: React.FC = () => {
             const data = await res.json();
 
             if (data.success) {
-                // Update local Stars balance
-                useAppStore.getState().setUser({ stars: data.newBalance });
-                setShowStreak(false);
+                // Update local balances in store
+                useAppStore.getState().setUser({
+                    stars: data.newBalance,
+                    balanceShards: data.newShards,
+                    inventoryPowerups: data.inventoryPowerups, // Assuming backend returns the full object
+                    unlockedAvatars: data.unlockedAvatars
+                });
+
+                if (data.rewardType === 'CHEST') {
+                    setChestItems(data.chestItems);
+                    // Keep popup open for a moment to show chest items if they were randomized
+                } else {
+                    setShowStreak(false);
+                }
 
                 const tg = (window as any).Telegram?.WebApp;
                 if (tg?.showAlert) {
-                    tg.showAlert(`Day ${data.streakDay} reward claimed! +${data.reward} ⭐`);
+                    const msg = data.rewardType === 'CHEST'
+                        ? `Mystery Chest Opened! +${data.reward} ⭐ and more!`
+                        : `Day ${data.streakDay} reward claimed! +${data.reward} ⭐`;
+                    tg.showAlert(msg);
                 }
+
+                if (data.rewardType !== 'CHEST') setShowStreak(false);
             } else {
                 console.warn('Daily claim failed:', data.error);
                 setShowStreak(false);
@@ -188,6 +207,8 @@ export const Home: React.FC = () => {
                 <StreakPopup
                     day={streakDay}
                     reward={streakReward}
+                    rewardType={rewardType}
+                    chestItems={chestItems}
                     onClaim={handleClaim}
                     onClose={() => setShowStreak(false)}
                 />

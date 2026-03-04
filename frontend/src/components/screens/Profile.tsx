@@ -91,7 +91,9 @@ export const Profile: React.FC = () => {
                     <div className="relative mb-6">
                         <div className="absolute inset-0 bg-primary/20 rounded-full blur-2xl scale-125"></div>
                         <img
-                            src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`}
+                            src={user.unlockedAvatars?.includes('PREMIUM_CYBER_AVATAR')
+                                ? `https://api.dicebear.com/7.x/bottts-neutral/svg?seed=${user.username}`
+                                : `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`}
                             className="relative w-32 h-32 rounded-full border-4 border-primary shadow-[0_0_40px_rgba(13,242,89,0.4)] object-cover bg-background-dark p-1"
                             alt="Profile"
                         />
@@ -134,9 +136,28 @@ export const Profile: React.FC = () => {
                         </div>
                         <div className="w-[1px] h-8 bg-white/10"></div>
                         <div className="flex flex-col items-center">
-                            <span className="text-lg font-black italic text-primary">{(user.balanceQP || 0).toLocaleString()}</span>
-                            <span className="text-[8px] font-black uppercase tracking-widest opacity-40">QP</span>
+                            <span className="text-lg font-black italic text-cyan-400">{user.balanceShards || 0}</span>
+                            <span className="text-[8px] font-black uppercase tracking-widest opacity-40">Shards</span>
                         </div>
+                    </div>
+
+                    {/* Shard Progress */}
+                    <div className="w-full max-w-[240px] mt-8 p-4 bg-cyan-400/5 border border-cyan-400/20 rounded-2xl text-center">
+                        <div className="flex justify-between items-center mb-2">
+                            <span className="text-[9px] font-black uppercase tracking-widest text-cyan-400 italic">Cyber Shards</span>
+                            <span className="text-[10px] font-black text-white">{user.balanceShards || 0}/10</span>
+                        </div>
+                        <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
+                            <div
+                                className="h-full bg-cyan-400 shadow-[0_0_10px_rgba(34,211,238,0.5)] transition-all duration-1000"
+                                style={{ width: `${Math.min((user.balanceShards || 0) * 10, 100)}%` }}
+                            ></div>
+                        </div>
+                        <p className="text-[8px] font-bold text-white/30 uppercase mt-2 tracking-tighter italic">
+                            {user.unlockedAvatars?.includes('PREMIUM_CYBER_AVATAR')
+                                ? '✨ PREMIUM AVATAR UNLOCKED'
+                                : 'Collect 10 shards to unlock Premium Avatar'}
+                        </p>
                     </div>
                 </div>
 
@@ -183,6 +204,31 @@ export const Profile: React.FC = () => {
                         </button>
                     </div>
                 </GlassCard>
+
+                {/* Power-Ups Inventory */}
+                <div className="mb-10">
+                    <h3 className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em] italic px-2 mb-4">Power-Ups Inventory</h3>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="bg-white/5 border border-white/5 p-4 rounded-2xl flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-400">
+                                    <Zap size={20} />
+                                </div>
+                                <span className="text-[10px] font-black uppercase tracking-tighter">Shield</span>
+                            </div>
+                            <span className="text-sm font-black italic text-blue-400">x{user.inventoryPowerups?.SHIELD || 0}</span>
+                        </div>
+                        <div className="bg-white/5 border border-white/5 p-4 rounded-2xl flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-400">
+                                    <PlayCircle size={20} />
+                                </div>
+                                <span className="text-[10px] font-black uppercase tracking-tighter">Freeze</span>
+                            </div>
+                            <span className="text-sm font-black italic text-purple-400">x{user.inventoryPowerups?.TIME_FREEZE || 0}</span>
+                        </div>
+                    </div>
+                </div>
 
                 {/* Recent Activity V2 */}
                 <div className="mb-12">
