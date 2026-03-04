@@ -465,6 +465,7 @@ io.on('connection', (socket) => {
             });
 
             io.to(roomId).emit('room_update', {
+                ...manager.getRoomInfo(),
                 players: manager.getPlayers()
             });
 
@@ -559,7 +560,10 @@ io.on('connection', (socket) => {
         // Same cleanup logic as disconnect
         if (!manager.isStarted() && !manager.isExpired()) {
             manager.removePlayer(playerId);
-            io.to(roomId).emit('room_update', manager.getRoomInfo());
+            io.to(roomId).emit('room_update', {
+                ...manager.getRoomInfo(),
+                players: manager.getPlayers()
+            });
 
             if (manager.getPlayers().length === 0) {
                 manager.cancelTimeout();
@@ -816,7 +820,10 @@ io.on('connection', (socket) => {
             }
 
             // Update room for remaining players
-            io.to(roomId).emit('room_update', manager.getRoomInfo());
+            io.to(roomId).emit('room_update', {
+                ...manager.getRoomInfo(),
+                players: manager.getPlayers()
+            });
 
             // Clean up empty rooms
             if (manager.getPlayers().length === 0) {

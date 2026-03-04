@@ -116,18 +116,33 @@ export const QuizRoom: React.FC = () => {
             gameEndedRef.current = true;
             setGameStatus('ended');
             setPlayers(data.winners);
-            const amIWinner = data.winners[0]?.username === user.username;
 
-            // Store results for display
+            const myIndex = data.winners.findIndex((p: any) => p.username === user.username);
+            const amIWinner = myIndex === 0;
+
+            // Determine XP and Reward
+            let myXp = 0;
+            let myReward = 0;
+
             if (location.state?.type === 'practice' || !location.state?.type) {
-                // For practice mode, use the data sent from backend
-                setGameResults({
-                    score: data.winners.find((p: any) => p.username === user.username)?.score || 0,
-                    xp: amIWinner ? 10 : 5,
-                    reward: amIWinner ? 5 : 0,
-                    currency: 'Stars'
-                });
+                myXp = data.xpEarned || (amIWinner ? 10 : 5);
+                myReward = data.reward !== undefined ? data.reward : (amIWinner ? 5 : 0);
+            } else {
+                // Tournament calculation
+                myXp = data.winners[myIndex]?.score || 0;
+                if (data.prizes) {
+                    if (myIndex === 0) myReward = data.prizes.first || 0;
+                    else if (myIndex === 1) myReward = data.prizes.second || 0;
+                    else if (myIndex === 2) myReward = data.prizes.third || 0;
+                }
             }
+
+            setGameResults({
+                score: data.winners[myIndex]?.score || 0,
+                xp: myXp,
+                reward: myReward,
+                currency: data.currency || (location.state?.currency === 'none' ? 'Stars' : (location.state?.currency || 'Stars'))
+            });
 
             if (amIWinner) soundManager.play('win');
         };
