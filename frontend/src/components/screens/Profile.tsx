@@ -132,6 +132,11 @@ export const Profile: React.FC = () => {
                             <span className="text-lg font-black italic">{user.totalGames}</span>
                             <span className="text-[8px] font-black uppercase tracking-widest opacity-40">Games</span>
                         </div>
+                        <div className="w-[1px] h-8 bg-white/10"></div>
+                        <div className="flex flex-col items-center">
+                            <span className="text-lg font-black italic text-primary">{(user.balanceQP || 0).toLocaleString()}</span>
+                            <span className="text-[8px] font-black uppercase tracking-widest opacity-40">QP</span>
+                        </div>
                     </div>
                 </div>
 
