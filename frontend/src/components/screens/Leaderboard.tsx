@@ -13,7 +13,7 @@ export const Leaderboard: React.FC = () => {
     useEffect(() => {
         const fetchLeaderboard = async () => {
             try {
-                const res = await fetch(`${API_URL}/api/leaderboard`);
+                const res = await fetch(`${API_URL}/api/leaderboard?period=${activeTab}`);
                 const data = await res.json();
                 if (data.leaderboard) {
                     const formattedDetails = data.leaderboard.map((p: any) => ({
@@ -30,7 +30,7 @@ export const Leaderboard: React.FC = () => {
             }
         };
         fetchLeaderboard();
-    }, [user.telegramId]);
+    }, [user.telegramId, activeTab]);
 
     const topPlayers = loading
         ? [{ rank: 1, name: "Loading...", reward: "---", score: "---" }]
@@ -149,9 +149,15 @@ export const Leaderboard: React.FC = () => {
                                 </div>
                                 <div className="min-w-0">
                                     <p className={`font-black text-sm uppercase italic tracking-tighter truncate w-32 ${player.isUser ? 'text-primary' : 'text-white'}`}>{player.name}</p>
-                                    <div className="flex items-center gap-1 opacity-40">
-                                        <Star size={8} className="text-primary fill-primary" />
-                                        <span className="text-[8px] uppercase font-black italic tracking-widest">{player.score}</span>
+                                    <div className="flex items-center gap-3 opacity-40">
+                                        <div className="flex items-center gap-1">
+                                            <Star size={8} className="text-primary fill-primary" />
+                                            <span className="text-[8px] uppercase font-black italic tracking-widest">{player.score}</span>
+                                        </div>
+                                        <div className="flex items-center gap-1">
+                                            <Trophy size={8} className="text-primary" />
+                                            <span className="text-[8px] uppercase font-black italic tracking-widest">{player.totalWins} Wins</span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>

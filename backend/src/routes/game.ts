@@ -8,11 +8,15 @@ const router = Router();
 
 // GET /api/leaderboard
 router.get('/leaderboard', async (req: Request, res: Response) => {
+    const { period } = req.query; // 'daily', 'weekly', 'allTime'
+
     try {
+        // For now we sort by global stats_xp. 
+        // In the future, this can be mapped to stats_xp_daily, stats_xp_weekly, etc.
         const { data: topPlayers, error } = await supabase
             .from('users')
             .select('*')
-            .order('stats_wins', { ascending: false })
+            .order('stats_xp', { ascending: false })
             .limit(50);
 
         if (error) throw error;
@@ -20,11 +24,12 @@ router.get('/leaderboard', async (req: Request, res: Response) => {
         const leaderboard = topPlayers.map((p, index) => ({
             rank: index + 1,
             name: p.username || `Player ${p.telegram_id}`,
-            score: `${p.stats_wins || 0} Wins`,
+            score: `${p.stats_xp || 0} XP`,
             isTop: index === 0,
             xp: p.stats_xp || 0,
             reward: `${p.stats_xp || 0} XP`,
-            telegramId: p.telegram_id.toString()
+            telegramId: p.telegram_id.toString(),
+            totalWins: p.stats_wins || 0
         }));
 
         res.json({ leaderboard });
