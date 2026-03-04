@@ -5,6 +5,18 @@ export const NavigationController = () => {
     const navigate = useNavigate();
     const location = useLocation();
 
+    // Single Effect to handle Deep Linking on Mount
+    useEffect(() => {
+        const tg = (window as any).Telegram?.WebApp;
+        const startParam = tg?.initDataUnsafe?.start_param;
+
+        if (startParam && startParam.startsWith('room_')) {
+            const roomId = startParam.replace('room_', '');
+            console.log('[NAVIGATION] Deep link detected, redirecting to room:', roomId);
+            navigate(`/quiz?roomId=${roomId}`, { replace: true });
+        }
+    }, [navigate]);
+
     useEffect(() => {
         const tg = (window as any).Telegram?.WebApp;
         if (!tg) return;

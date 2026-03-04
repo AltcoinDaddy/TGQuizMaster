@@ -118,17 +118,6 @@ function App() {
         }
       }
 
-      // Deep Linking: Handle start_param from Telegram (e.g., room_xxx)
-      const startParam = tg?.initDataUnsafe?.start_param;
-      if (startParam && startParam.startsWith('room_')) {
-        const roomId = startParam.replace('room_', '');
-        console.log('[DEEP-LINK] Room join requested:', roomId);
-        // Small delay to ensure navigation is ready
-        setTimeout(() => {
-          window.location.hash = `#/quiz?roomId=${roomId}`;
-        }, 500);
-      }
-
       // Socket Listeners
       socket.on('profile_synced', (data) => {
         console.log('Profile synced with backend:', data);
