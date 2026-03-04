@@ -97,10 +97,11 @@ export const QuizRoom: React.FC = () => {
 
         const onBalanceUpdate = (balance: any) => {
             if (balance) {
+                const currentUser = useAppStore.getState().user;
                 useAppStore.getState().setUser({
-                    stars: balance.stars,
-                    tonBalance: balance.ton,
-                    xp: balance.xp ?? useAppStore.getState().user.xp
+                    stars: balance.stars ?? currentUser.stars,
+                    tonBalance: balance.ton ?? currentUser.tonBalance,
+                    xp: balance.xp ?? currentUser.xp
                 });
             }
         };
