@@ -105,26 +105,34 @@ export const KnowledgeYield: React.FC = () => {
             </div>
 
             {/* Main Gauge */}
-            <GlassCard className="p-8 relative overflow-hidden flex flex-col items-center justify-center aspect-square rounded-[3rem] border-primary/20 bg-gradient-to-b from-primary/5 to-transparent">
-                {/* Background Ring */}
-                <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="w-64 h-64 rounded-full border-[12px] border-white/5 relative">
-                        {/* Progress Ring Overlay (CSS Circle) */}
-                        <svg className="absolute -inset-[12px] w-[288px] h-[288px] -rotate-90">
-                            <circle
-                                cx="144"
-                                cy="144"
-                                r="132"
-                                fill="transparent"
-                                stroke="currentColor"
-                                strokeWidth="12"
-                                strokeDasharray={2 * Math.PI * 132}
-                                strokeDashoffset={2 * Math.PI * 132 * (1 - progress / 100)}
-                                className="text-primary transition-all duration-1000 ease-linear"
-                                strokeLinecap="round"
-                            />
-                        </svg>
-                    </div>
+            <GlassCard className="p-6 relative overflow-hidden flex flex-col items-center justify-center aspect-square rounded-[3rem] border-primary/20 bg-gradient-to-b from-primary/5 to-transparent">
+                {/* Unified SVG Ring */}
+                <div className="absolute inset-0 flex items-center justify-center p-6">
+                    <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90 drop-shadow-[0_0_15px_rgba(34,211,238,0.2)]">
+                        {/* Background Ring */}
+                        <circle
+                            cx="50"
+                            cy="50"
+                            r="44"
+                            fill="transparent"
+                            stroke="currentColor"
+                            strokeWidth="6"
+                            className="text-white/5"
+                        />
+                        {/* Progress Ring */}
+                        <circle
+                            cx="50"
+                            cy="50"
+                            r="44"
+                            fill="transparent"
+                            stroke="currentColor"
+                            strokeWidth="6"
+                            strokeDasharray={2 * Math.PI * 44}
+                            strokeDashoffset={2 * Math.PI * 44 * (1 - progress / 100)}
+                            strokeLinecap="round"
+                            className="text-primary transition-all duration-1000 ease-linear"
+                        />
+                    </svg>
                 </div>
 
                 <div className="relative z-10 text-center">
