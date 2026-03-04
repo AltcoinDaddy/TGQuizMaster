@@ -5,7 +5,7 @@ import { useAppStore } from '../../store/useAppStore';
 import { MainLayout } from '../layout/MainLayout';
 import { GlassCard } from '../ui/GlassCard';
 import { Button } from '../ui/Button';
-import { Zap, Gift, Lock, Trophy, Sparkles, Loader2, ChevronLeft } from 'lucide-react';
+import { Zap, Gift, Lock, Trophy, Sparkles, Loader2, ChevronLeft, Twitter, Send } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 interface Quest {
@@ -38,10 +38,16 @@ export const Quests: React.FC = () => {
                 const data = await res.json();
                 if (data.quests) {
                     // Map API status to UI icons (re-added this logic as it was removed in the snippet but needed for Quest interface)
-                    const mappedQuests = data.quests.map((q: any) => ({
-                        ...q,
-                        icon: q.id === '1' ? <Zap size={24} /> : (q.id === '2' ? <Trophy size={24} /> : <Gift size={24} />)
-                    }));
+                    const mappedQuests = data.quests.map((q: any) => {
+                        let icon = <Gift size={24} />;
+                        if (q.id === '1') icon = <Zap size={24} />;
+                        else if (q.id === '2') icon = <Trophy size={24} />;
+                        else if (q.id === '3') icon = <Gift size={24} />;
+                        else if (q.id === '4') icon = <Send size={24} />;
+                        else if (q.id === '5') icon = <Twitter size={24} />;
+
+                        return { ...q, icon };
+                    });
                     setQuests(mappedQuests);
                 }
                 if (data.weeklyMilestone) {
@@ -185,6 +191,10 @@ export const Quests: React.FC = () => {
                                     </button>
                                 ) : (
                                     <button
+                                        onClick={() => {
+                                            if (quest.id === '4') window.open('https://t.me/TGQuizMaster', '_blank');
+                                            else if (quest.id === '5') window.open('https://x.com/TGQuizMaster', '_blank');
+                                        }}
                                         disabled={quest.status === 'locked' || quest.status === 'completed'}
                                         className={`py-2 px-4 rounded-full text-[10px] font-black uppercase transition-all ${quest.status === 'locked' ? 'bg-white/5 text-white/20' : (quest.status === 'completed' ? 'bg-white/5 text-primary opacity-50' : 'bg-white/10 hover:bg-white/20 text-white')}`}
                                     >

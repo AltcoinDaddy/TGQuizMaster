@@ -172,7 +172,10 @@ if (!token) {
                         { text: '🎮 Play Now', web_app: { url: webAppUrl } }
                     ],
                     [
-                        { text: '📣 Join Community', url: 'https://t.me/TGQuizMaster' },
+                        { text: '📣 Join Telegram', url: 'https://t.me/TGQuizMaster' },
+                        { text: '🐦 Follow X (Twitter)', url: 'https://x.com/TGQuizMaster' }
+                    ],
+                    [
                         { text: '❓ How to Play', callback_data: 'how_to_play' }
                     ]
                 ]

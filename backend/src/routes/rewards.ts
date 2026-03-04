@@ -162,16 +162,19 @@ router.get('/quests', async (req: Request, res: Response) => {
             .select('*', { count: 'exact', head: true })
             .eq('referred_by', userId);
 
-        const todayStart = new Date(today + 'T00:00:00Z').toISOString();
-        const { data: claims } = await supabase
+        // Fetch all quest claims to distinguish between daily and one-time
+        const { data: allClaims } = await supabase
             .from('transactions')
             .select('metadata, created_at')
             .eq('user_id', userId)
             .eq('type', 'PRIZE')
-            .gte('created_at', todayStart);
+            .filter('metadata->>type', 'eq', 'QUEST_REWARD');
 
-        const claimedIds = (claims || [])
-            .filter(tx => tx.metadata?.questId && tx.metadata?.type === 'QUEST_REWARD')
+        const claimedIdsToday = (allClaims || [])
+            .filter(tx => tx.created_at.startsWith(today))
+            .map(tx => tx.metadata.questId);
+
+        const claimedIdsEver = (allClaims || [])
             .map(tx => tx.metadata.questId);
 
         const dailyGames = user.daily_games_today || 0;
@@ -182,19 +185,31 @@ router.get('/quests', async (req: Request, res: Response) => {
                 id: '1', title: 'Play 3 Quizzes Today',
                 progress: Math.min(dailyGames, 3), total: 3,
                 reward: '20 Stars', type: 'stars',
-                status: claimedIds.includes('1') ? 'completed' : (dailyGames >= 3 ? 'claimable' : 'in-progress')
+                status: claimedIdsToday.includes('1') ? 'completed' : (dailyGames >= 3 ? 'claimable' : 'in-progress')
             },
             {
                 id: '2', title: 'Win a Game Today',
                 progress: Math.min(dailyWins, 1), total: 1,
                 reward: '100 XP', type: 'xp',
-                status: claimedIds.includes('2') ? 'completed' : (dailyWins >= 1 ? 'claimable' : 'in-progress')
+                status: claimedIdsToday.includes('2') ? 'completed' : (dailyWins >= 1 ? 'claimable' : 'in-progress')
             },
             {
                 id: '3', title: 'Invite 1 Friend',
                 progress: Math.min(referralCount || 0, 1), total: 1,
                 reward: '50 Stars', type: 'stars',
-                status: claimedIds.includes('3') ? 'completed' : ((referralCount || 0) >= 1 ? 'claimable' : 'in-progress')
+                status: claimedIdsToday.includes('3') ? 'completed' : ((referralCount || 0) >= 1 ? 'claimable' : 'in-progress')
+            },
+            {
+                id: '4', title: 'Join TG Community',
+                progress: 0, total: 1,
+                reward: '100 Stars', type: 'stars',
+                status: claimedIdsEver.includes('4') ? 'completed' : 'claimable' // Simple click-to-claim
+            },
+            {
+                id: '5', title: 'Follow on X (Twitter)',
+                progress: 0, total: 1,
+                reward: '100 Stars', type: 'stars',
+                status: claimedIdsEver.includes('5') ? 'completed' : 'claimable'
             }
         ];
 
@@ -230,20 +245,27 @@ router.post('/claim-quest', telegramAuthMiddleware, async (req: Request, res: Re
         const { data: user } = await supabase.from('users').select('*').eq('telegram_id', userId).single();
         if (!user) return res.status(404).json({ error: 'User not found' });
 
+        // One-time quest check
+        const isOneTime = ['4', '5'].includes(questId);
+
         // Double-claim prevention
-        const todayStart = new Date();
-        todayStart.setHours(0, 0, 0, 0);
-        const { data: existingClaim } = await supabase
+        const query = supabase
             .from('transactions')
             .select('id')
             .eq('user_id', userId)
             .eq('type', 'PRIZE')
-            .gte('created_at', todayStart.toISOString())
-            .filter('metadata->>questId', 'eq', questId)
-            .limit(1);
+            .filter('metadata->>questId', 'eq', questId);
+
+        if (!isOneTime) {
+            const todayStart = new Date();
+            todayStart.setHours(0, 0, 0, 0);
+            query.gte('created_at', todayStart.toISOString());
+        }
+
+        const { data: existingClaim } = await query.limit(1);
 
         if (existingClaim && existingClaim.length > 0) {
-            return res.status(400).json({ error: 'Quest already claimed today' });
+            return res.status(400).json({ error: isOneTime ? 'Quest already claimed' : 'Quest already claimed today' });
         }
 
         // Server-side verification
@@ -257,7 +279,9 @@ router.post('/claim-quest', telegramAuthMiddleware, async (req: Request, res: Re
         const questVerification: Record<string, boolean> = {
             '1': dailyGames >= 3,
             '2': dailyWins >= 1,
-            '3': (referralCount || 0) >= 1
+            '3': (referralCount || 0) >= 1,
+            '4': true, // Social follow (click-to-verify)
+            '5': true  // Social follow (click-to-verify)
         };
 
         if (!questVerification[questId]) {
@@ -267,7 +291,9 @@ router.post('/claim-quest', telegramAuthMiddleware, async (req: Request, res: Re
         const questRewards: Record<string, { type: 'stars' | 'xp'; amount: number }> = {
             '1': { type: 'stars', amount: 20 },
             '2': { type: 'xp', amount: 100 },
-            '3': { type: 'stars', amount: 50 }
+            '3': { type: 'stars', amount: 50 },
+            '4': { type: 'stars', amount: 100 },
+            '5': { type: 'stars', amount: 100 }
         };
 
         const reward = questRewards[questId];
