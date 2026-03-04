@@ -33,7 +33,7 @@ const POWERUP_COSTS: Record<string, number> = {
 const PRO_COST = 500;
 
 // GET /api/shop
-router.get('/', async (_req: Request, res: Response) => {
+router.get('/shop', async (_req: Request, res: Response) => {
     res.json({ shopItems: SHOP_ITEMS });
 });
 
