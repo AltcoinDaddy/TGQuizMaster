@@ -136,6 +136,11 @@ export const Profile: React.FC = () => {
                         </div>
                         <div className="w-[1px] h-8 bg-white/10"></div>
                         <div className="flex flex-col items-center">
+                            <span className="text-lg font-black italic text-primary">{(user.balanceQP || 0).toLocaleString()}</span>
+                            <span className="text-[8px] font-black uppercase tracking-widest opacity-40">QP</span>
+                        </div>
+                        <div className="w-[1px] h-8 bg-white/10"></div>
+                        <div className="flex flex-col items-center">
                             <span className="text-lg font-black italic text-cyan-400">{user.balanceShards || 0}</span>
                             <span className="text-[8px] font-black uppercase tracking-widest opacity-40">Shards</span>
                         </div>
