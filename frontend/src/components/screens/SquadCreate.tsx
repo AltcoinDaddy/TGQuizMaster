@@ -8,7 +8,6 @@ import { ChevronLeft, Rocket, Shield, Info } from 'lucide-react';
 
 export const SquadCreate = () => {
     const navigate = useNavigate();
-    const { user } = useAppStore();
     const [name, setName] = useState('');
     const [telegramLink, setTelegramLink] = useState('');
     const [loading, setLoading] = useState(false);
