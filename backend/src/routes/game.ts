@@ -15,7 +15,7 @@ router.get('/leaderboard', async (req: Request, res: Response) => {
         // In the future, this can be mapped to stats_xp_daily, stats_xp_weekly, etc.
         const { data: topPlayers, error } = await supabase
             .from('users')
-            .select('*')
+            .select('*, squads(name)')
             .order('stats_xp', { ascending: false })
             .limit(50);
 

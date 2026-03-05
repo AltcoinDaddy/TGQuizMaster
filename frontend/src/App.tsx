@@ -27,6 +27,9 @@ import { Settings } from './components/screens/Settings';
 import { NavigationController } from './components/layout/NavigationController';
 import { AdminDashboard } from './components/screens/AdminDashboard';
 import { KnowledgeYield } from './components/screens/KnowledgeYield';
+import { Squads } from './components/screens/Squads';
+import { SquadDetail } from './components/screens/SquadDetail';
+import { SquadCreate } from './components/screens/SquadCreate';
 
 function WalletSyncer() {
   const userFriendlyAddress = useTonAddress();
@@ -185,6 +188,9 @@ function App() {
           <Route path="/settings" element={<Settings />} />
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/yield" element={<KnowledgeYield />} />
+          <Route path="/squads" element={<Squads />} />
+          <Route path="/squad/:id" element={<SquadDetail />} />
+          <Route path="/squad/create" element={<SquadCreate />} />
         </Routes>
       </Router>
     </ErrorBoundary>

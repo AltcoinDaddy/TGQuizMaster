@@ -335,7 +335,7 @@ export class GameManager {
 
                     const { data: user } = await supabase
                         .from('users')
-                        .select('balance_stars, stats_total_games, stats_wins, stats_xp, daily_games_today, daily_wins_today')
+                        .select('balance_stars, stats_total_games, stats_wins, stats_xp, daily_games_today, daily_wins_today, squad_id')
                         .eq('telegram_id', userId)
                         .single();
 
@@ -359,6 +359,34 @@ export class GameManager {
                         };
 
                         await supabase.from('users').update(updates).eq('telegram_id', userId);
+
+                        // Update Squad XP if user is in a squad
+                        if (user.squad_id) {
+                            try {
+                                const { data: squad } = await supabase.from('squads').select('total_xp, weekly_xp, creator_id').eq('id', user.squad_id).single();
+                                if (squad) {
+                                    // 5% Bonus for Leaders
+                                    let actualXp = xpReward;
+                                    if (squad.creator_id && squad.creator_id.toString() === userId.toString()) {
+                                        actualXp = Math.ceil(xpReward * 1.05);
+                                    }
+
+                                    await supabase.from('squads').update({
+                                        total_xp: (squad.total_xp || 0) + actualXp,
+                                        weekly_xp: (squad.weekly_xp || 0) + actualXp
+                                    }).eq('id', user.squad_id);
+
+                                    // Apply bonus to user too if leader
+                                    if (actualXp > xpReward) {
+                                        await supabase.from('users').update({
+                                            stats_xp: user.stats_xp + (actualXp - xpReward)
+                                        }).eq('telegram_id', userId);
+                                    }
+                                }
+                            } catch (e) {
+                                console.error(`[SQUAD] Failed to update XP for squad ${user.squad_id}:`, e);
+                            }
+                        }
 
                         // Emit level-up event if player leveled up
                         if (newLevel.level > oldLevel.level) {
@@ -504,6 +532,35 @@ export class GameManager {
                     }
 
                     await supabase.from('users').update(updates).eq('telegram_id', userId);
+
+                    // Update Squad XP if user is in a squad
+                    if (user.squad_id) {
+                        try {
+                            const { data: squad } = await supabase.from('squads').select('total_xp, weekly_xp, creator_id').eq('id', user.squad_id).single();
+                            if (squad) {
+                                // 5% Bonus for Leaders
+                                let actualXp = player.score;
+                                if (squad.creator_id && squad.creator_id.toString() === userId.toString()) {
+                                    actualXp = Math.ceil(player.score * 1.05);
+                                }
+
+                                await supabase.from('squads').update({
+                                    total_xp: (squad.total_xp || 0) + actualXp,
+                                    weekly_xp: (squad.weekly_xp || 0) + actualXp
+                                }).eq('id', user.squad_id);
+
+                                // Apply bonus to user too if leader
+                                if (actualXp > player.score) {
+                                    await supabase.from('users').update({
+                                        stats_xp: updates.stats_xp + (actualXp - player.score)
+                                    }).eq('telegram_id', userId);
+                                }
+                            }
+                        } catch (e) {
+                            console.error(`[SQUAD] Failed to update XP for squad ${user.squad_id}:`, e);
+                        }
+                    }
+
 
                     // Emit level-up event if player leveled up
                     if (newLevel.level > oldLevel.level) {

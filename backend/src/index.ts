@@ -88,12 +88,14 @@ import shopRoutes from './routes/shop';
 import rewardsRoutes from './routes/rewards';
 import gameRoutes from './routes/game';
 import qpRoutes from './routes/qp';
+import squadRoutes from './routes/squads';
 
 app.use('/api/admin', adminRoutes);
 app.use('/api', shopRoutes);      // /api/shop, /api/buy-powerup, /api/buy-pro, /api/create-payment-link
 app.use('/api', rewardsRoutes);   // /api/daily-reward, /api/claim-daily, /api/quests, /api/claim-quest, /api/achievements
 app.use('/api', gameRoutes);      // /api/leaderboard, /api/history, /api/withdraw, /api/settings, /api/bug-report
 app.use('/api', qpRoutes);        // /api/qp-status, /api/claim-qp
+app.use('/api', squadRoutes);     // /api/squads, /api/squad/:id, /api/squad/my, /api/squad/join, /api/squad/leave
 
 // Referral Tier Thresholds
 function calculateReferralTier(count: number): 'NONE' | 'BRONZE' | 'SILVER' | 'GOLD' {

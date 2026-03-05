@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { API_URL } from '../../config/api';
 import { authPost } from '../../utils/authFetch';
 import { MainLayout } from '../layout/MainLayout';
-import { Rocket, ArrowRight } from 'lucide-react';
+import { Rocket, ArrowRight, Users } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { StreakPopup } from '../ui/StreakPopup';
 import { useAppStore } from '../../store/useAppStore';
@@ -138,6 +138,31 @@ export const Home: React.FC = () => {
                             <p className="text-[10px] text-white/40 font-bold mt-0.5">Real TON prizes • Coming Soon</p>
                         </div>
                         <span className="bg-blue-500/20 text-blue-300 text-[8px] font-black px-2 py-1 rounded-full uppercase">Soon</span>
+                    </div>
+
+                    {/* Squads Global Battle */}
+                    <div
+                        onClick={() => navigate('/squads')}
+                        className="bg-gradient-to-br from-primary/10 via-black/40 to-black/60 border border-primary/20 rounded-3xl p-6 relative overflow-hidden group cursor-pointer"
+                    >
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full -mr-16 -mt-16 blur-3xl group-hover:bg-primary/20 transition-all duration-500" />
+                        <div className="flex items-center gap-5 relative z-10">
+                            <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center text-primary border border-primary/20">
+                                <Users size={32} />
+                            </div>
+                            <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-1">
+                                    <h3 className="font-black text-xl uppercase italic tracking-tighter text-white">Squads</h3>
+                                    <span className="bg-amber-500 text-black text-[8px] font-black px-2 py-0.5 rounded italic">100 TON POOL</span>
+                                </div>
+                                <p className="text-[10px] text-white/40 font-bold uppercase tracking-widest leading-none">
+                                    Join/Create a squad and battle for the global weekly prize.
+                                </p>
+                            </div>
+                            <div className="flex flex-col items-center">
+                                <ArrowRight size={24} className="text-primary opacity-40 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
+                            </div>
+                        </div>
                     </div>
                 </div>
 

@@ -147,8 +147,17 @@ export const Leaderboard: React.FC = () => {
                                     <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${player.name}`} className="w-12 h-12 rounded-full border-2 border-white/10 p-0.5 bg-background-dark" alt={player.name} />
                                     {player.isUser && <div className="absolute -top-1 -right-1 w-3 h-3 bg-primary rounded-full border-2 border-background-dark"></div>}
                                 </div>
-                                <div className="min-w-0">
-                                    <p className={`font-black text-sm uppercase italic tracking-tighter truncate w-32 ${player.hasGoldName ? 'text-amber-400' : player.isUser ? 'text-primary' : 'text-white'}`}>{player.name}{player.hasGoldName && ' ✨'}</p>
+                                <div className="min-w-0 flex-1">
+                                    <div className="flex items-center gap-2">
+                                        <p className={`font-black text-sm uppercase italic tracking-tighter truncate ${player.hasGoldName ? 'text-amber-400' : player.isUser ? 'text-primary' : 'text-white'}`}>
+                                            {player.name}{player.hasGoldName && ' ✨'}
+                                        </p>
+                                        {player.squads?.name && (
+                                            <span className="text-[8px] font-black bg-white/10 text-white/40 px-1.5 py-0.5 rounded italic uppercase shrink-0 border border-white/5">
+                                                [{player.squads.name}]
+                                            </span>
+                                        )}
+                                    </div>
                                     <div className="flex items-center gap-3 opacity-40">
                                         <div className="flex items-center gap-1">
                                             <Star size={8} className="text-primary fill-primary" />

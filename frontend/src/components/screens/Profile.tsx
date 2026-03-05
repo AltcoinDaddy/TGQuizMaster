@@ -286,6 +286,29 @@ export const Profile: React.FC = () => {
                         <ChevronRight size={14} className="text-primary/50" />
                     </button>
 
+                    <button
+                        onClick={() => navigate('/squads')}
+                        className={`w-full flex items-center justify-between p-5 rounded-2xl border transition-all ${user.squadId ? 'bg-amber-500/10 border-amber-500/20 active:bg-amber-500/20' : 'bg-white/5 border-white/5 active:bg-white/10'}`}
+                    >
+                        <div className="flex items-center gap-3">
+                            <Users size={18} className={user.squadId ? 'text-amber-500' : 'text-white/40'} />
+                            <div className="text-left">
+                                <span className={`text-[10px] font-black uppercase tracking-widest italic block ${user.squadId ? 'text-amber-500' : 'text-white/80'}`}>
+                                    {user.squadId ? 'My Squad' : 'Squads & Battles'}
+                                </span>
+                                {user.squadId && (
+                                    <span className="text-[8px] font-bold text-white/40 uppercase tracking-widest italic tracking-tighter">
+                                        [{user.squadName}] • Global Rank #4
+                                    </span>
+                                )}
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            {!user.squadId && <span className="text-[8px] font-black bg-amber-500 text-black px-1.5 py-0.5 rounded italic">100 TON</span>}
+                            <ChevronRight size={14} className={user.squadId ? 'text-amber-500/50' : 'text-white/20'} />
+                        </div>
+                    </button>
+
                     <button className="w-full flex items-center justify-between p-5 rounded-2xl bg-white/5 border border-white/5 active:bg-white/10 transition-all">
                         <div className="flex items-center gap-3">
                             <HelpCircle size={18} className="text-white/40" />

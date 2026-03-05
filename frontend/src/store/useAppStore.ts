@@ -23,6 +23,8 @@ interface UserState {
     referralEarnings?: number;
     referralTier?: string;
     referrals?: any[]; // { username, date, earned }
+    squadId?: string;
+    squadName?: string;
     transactions?: any[]; // { id, title, date, amount, type }
     settings?: {
         soundEnabled: boolean;
@@ -95,6 +97,8 @@ export const useAppStore = create<AppStore>((set, get) => ({
                 referralEarnings: data.referralEarnings ?? state.user.referralEarnings,
                 referralTier: data.referralTier ?? state.user.referralTier,
                 referrals: data.recentReferrals ?? state.user.referrals,
+                squadId: data.squadId ?? state.user.squadId,
+                squadName: data.squadName ?? state.user.squadName,
                 transactions: data.recentTransactions ?? state.user.transactions
             }
         })),
