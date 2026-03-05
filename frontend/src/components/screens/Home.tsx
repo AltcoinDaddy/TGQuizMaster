@@ -96,6 +96,29 @@ export const Home: React.FC = () => {
         fetchPreview();
     }, []);
 
+    const handleStartPractice = async () => {
+        const gamesLeft = Math.max(0, 10 - (user.dailyGamesToday || 0));
+        if (gamesLeft > 0) {
+            navigate('/quiz', { state: { type: 'practice', entryFee: 'Free' } });
+        } else {
+            // Show Ad to refill
+            const success = await adsService.showRewardedVideo();
+            if (success) {
+                try {
+                    const res = await authPost('/api/refill-energy', { telegramId: user.telegramId });
+                    const data = await res.json();
+                    if (data.success) {
+                        useAppStore.getState().setUser({ dailyGamesToday: data.dailyGamesToday });
+                        const tg = (window as any).Telegram?.WebApp;
+                        if (tg?.showAlert) tg.showAlert('Energy refilled! +5 games added. ⚡');
+                    }
+                } catch (e) {
+                    console.error('Failed to refill energy:', e);
+                }
+            }
+        }
+    };
+
     return (
         <MainLayout>
             <div className="bg-mesh min-h-full">
@@ -105,13 +128,21 @@ export const Home: React.FC = () => {
 
                     {/* Free Practice */}
                     <div
-                        onClick={() => navigate('/quiz', { state: { type: 'practice', entryFee: 'Free' } })}
-                        className="bg-gradient-to-r from-green-500/15 to-green-600/5 border border-green-500/20 rounded-2xl p-5 flex items-center gap-4 active:scale-[0.98] transition-all cursor-pointer"
+                        onClick={handleStartPractice}
+                        className="bg-gradient-to-r from-green-500/15 to-green-600/5 border border-green-500/20 rounded-2xl p-5 flex items-center gap-4 active:scale-[0.98] transition-all cursor-pointer relative overflow-hidden"
                     >
-                        <div className="text-4xl">🎮</div>
+                        {Math.max(0, 10 - (user.dailyGamesToday || 0)) === 0 && (
+                            <div className="absolute top-0 right-0 bg-primary text-black text-[8px] font-black px-2 py-0.5 rounded-bl-lg uppercase tracking-tighter z-10">Refill Ready</div>
+                        )}
+                        <div className="text-4xl text-primary drop-shadow-[0_0_10px_rgba(13,242,89,0.3)]">🎮</div>
                         <div className="flex-1">
-                            <h3 className="font-black text-base uppercase italic tracking-tighter text-green-400">Free Practice</h3>
-                            <p className="text-[10px] text-white/40 font-bold mt-0.5">5 questions • Win 5⭐ + XP</p>
+                            <h3 className="font-black text-base uppercase italic tracking-tighter text-green-400 flex items-center gap-2">
+                                Free Practice
+                                {Math.max(0, 10 - (user.dailyGamesToday || 0)) === 0 && <span className="text-[10px] text-primary">(Ads Refill)</span>}
+                            </h3>
+                            <p className="text-[10px] text-white/40 font-bold mt-0.5">
+                                {Math.max(0, 10 - (user.dailyGamesToday || 0))}/10 Energy • Win 5⭐ + XP
+                            </p>
                         </div>
                         <ArrowRight size={20} className="text-green-400" />
                     </div>
@@ -171,28 +202,7 @@ export const Home: React.FC = () => {
                 <div className="grid grid-cols-2 gap-4 mt-6">
                     {/* Free Quiz */}
                     <div
-                        onClick={async () => {
-                            const gamesLeft = Math.max(0, 10 - (user.dailyGamesToday || 0));
-                            if (gamesLeft > 0) {
-                                navigate('/quiz', { state: { type: 'practice', entryFee: 'Free' } });
-                            } else {
-                                // Show Ad to refill
-                                const success = await adsService.showRewardedVideo();
-                                if (success) {
-                                    try {
-                                        const res = await authPost('/api/refill-energy', { telegramId: user.telegramId });
-                                        const data = await res.json();
-                                        if (data.success) {
-                                            useAppStore.getState().setUser({ dailyGamesToday: data.dailyGamesToday });
-                                            const tg = (window as any).Telegram?.WebApp;
-                                            if (tg?.showAlert) tg.showAlert('Energy refilled! +5 games added. ⚡');
-                                        }
-                                    } catch (e) {
-                                        console.error('Failed to refill energy:', e);
-                                    }
-                                }
-                            }
-                        }}
+                        onClick={handleStartPractice}
                         className="bg-white/5 border border-white/10 p-5 rounded-3xl active:scale-[0.98] transition-all flex flex-col justify-between aspect-square cursor-pointer hover:border-primary/30"
                     >
                         <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center mb-4 relative">

@@ -22,17 +22,23 @@ class AdsService {
     private initialized = false;
 
     init() {
-        if (typeof window === 'undefined' || !(window as any).Adsgram) {
-            console.warn('AdsGram SDK not found. Make sure https://adsgram.ai/sdk.js is included in index.html');
+        if (typeof window === 'undefined') return;
+
+        // The AdsGram SDK exposes window.Adsgram
+        const adsgram = (window as any).Adsgram;
+
+        if (!adsgram) {
+            console.warn('AdsGram SDK not found. Make sure https://sad.adsgram.ai/js/sad.min.js is included in index.html');
             return;
         }
 
         if (this.initialized) return;
 
         try {
-            this.controller = (window as any).Adsgram.init({ blockId: SQUAD_APP_BLOCK_ID });
+            // Initialize with the provided UnitID
+            this.controller = adsgram.init({ blockId: SQUAD_APP_BLOCK_ID });
             this.initialized = true;
-            console.log('[ADS] AdsGram initialized');
+            console.log(`[ADS] AdsGram initialized with blockId: ${SQUAD_APP_BLOCK_ID}`);
         } catch (e) {
             console.error('[ADS] Failed to initialize AdsGram:', e);
         }
