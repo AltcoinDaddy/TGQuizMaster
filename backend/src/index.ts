@@ -729,7 +729,7 @@ io.on('connection', (socket) => {
         const recentReferrals = (referrals || []).map(ref => ({
             username: ref.username,
             date: ref.created_at,
-            earned: "+0.00 TON"
+            earned: "+50 Stars"
         }));
 
         try {

@@ -264,7 +264,7 @@ const ReferralItem = ({ name, date, earned }: any) => (
         </div>
         <div className="text-right">
             <span className="text-primary font-black block">{earned}</span>
-            <span className="text-[8px] opacity-40 uppercase font-bold tracking-widest">Share Earned</span>
+            <span className="text-[8px] opacity-40 uppercase font-bold tracking-widest">Referral Bonus</span>
         </div>
     </GlassCard>
 );
