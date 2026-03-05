@@ -21,6 +21,7 @@ interface UserState {
     isAdmin: boolean;
     referralCount?: number;
     referralEarnings?: number;
+    referralTier?: string;
     referrals?: any[]; // { username, date, earned }
     transactions?: any[]; // { id, title, date, amount, type }
     settings?: {
@@ -56,6 +57,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
         unlockedAvatars: [],
         walletConnected: false,
         isAdmin: false,
+        referralTier: 'NONE',
         referrals: [],
         transactions: [],
         settings: {
@@ -91,6 +93,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
                 isAdmin: data.isAdmin ?? state.user.isAdmin,
                 referralCount: data.referralCount ?? state.user.referralCount,
                 referralEarnings: data.referralEarnings ?? state.user.referralEarnings,
+                referralTier: data.referralTier ?? state.user.referralTier,
                 referrals: data.recentReferrals ?? state.user.referrals,
                 transactions: data.recentTransactions ?? state.user.transactions
             }

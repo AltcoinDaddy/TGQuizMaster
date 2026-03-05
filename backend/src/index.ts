@@ -95,6 +95,14 @@ app.use('/api', rewardsRoutes);   // /api/daily-reward, /api/claim-daily, /api/q
 app.use('/api', gameRoutes);      // /api/leaderboard, /api/history, /api/withdraw, /api/settings, /api/bug-report
 app.use('/api', qpRoutes);        // /api/qp-status, /api/claim-qp
 
+// Referral Tier Thresholds
+function calculateReferralTier(count: number): 'NONE' | 'BRONZE' | 'SILVER' | 'GOLD' {
+    if (count >= 20) return 'GOLD';
+    if (count >= 5) return 'SILVER';
+    if (count >= 1) return 'BRONZE';
+    return 'NONE';
+}
+
 // Game State (in-memory, shared with socket handlers below)
 const rooms = new Map<string, GameManager>();
 const socketPlayerMap = new Map<string, { roomId: string; playerId: string }>();
@@ -615,6 +623,7 @@ io.on('connection', (socket) => {
                         isAdmin: (process.env.ADMIN_IDS || '').split(',').map(id => id.trim()).includes(userId.toString()),
                         referralCount: 0,
                         referralEarnings: 0,
+                        referralTier: 'NONE',
                         recentReferrals: [],
                         recentTransactions: []
                     });
@@ -693,6 +702,17 @@ io.on('connection', (socket) => {
             console.error('[SYNC] Failed to fetch referrals:', e);
         }
 
+        // Calculate and persist referral tier
+        const referralTier = calculateReferralTier(referralCount);
+        if (user.referral_tier !== referralTier) {
+            try {
+                await supabase.from('users').update({ referral_tier: referralTier }).eq('telegram_id', userId);
+                console.log(`[REFERRAL] User ${userId} tier updated: ${user.referral_tier} → ${referralTier}`);
+            } catch (e) {
+                console.error('[SYNC] Failed to update referral tier:', e);
+            }
+        }
+
         try {
             // Fetch Earnings
             const { data: earningsData } = await supabase
@@ -737,6 +757,7 @@ io.on('connection', (socket) => {
             isAdmin: (process.env.ADMIN_IDS || '').split(',').map(id => id.trim()).includes(userId.toString()),
             referralCount: referralCount,
             referralEarnings: referralEarnings,
+            referralTier: calculateReferralTier(referralCount),
             recentReferrals,
             recentTransactions
         });
@@ -777,6 +798,7 @@ io.on('connection', (socket) => {
                     walletAddress: updatedUser.wallet_address,
                     referralCount: 0,
                     referralEarnings: 0,
+                    referralTier: updatedUser.referral_tier || 'NONE',
                     recentReferrals: [],
                     recentTransactions: []
                 });

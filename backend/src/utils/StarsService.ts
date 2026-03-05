@@ -113,6 +113,39 @@ export class StarsService {
                 status: 'COMPLETED'
             });
 
+            // 3. Gold-tier referral commission (5% of purchased Stars)
+            try {
+                if (user && user.referred_by) {
+                    const { data: referrer } = await supabase
+                        .from('users')
+                        .select('telegram_id, balance_stars, referral_tier')
+                        .eq('telegram_id', user.referred_by)
+                        .single();
+
+                    if (referrer && referrer.referral_tier === 'GOLD') {
+                        const commission = Math.floor(rewardAmount * 0.05);
+                        if (commission > 0) {
+                            await supabase.from('users')
+                                .update({ balance_stars: (referrer.balance_stars || 0) + commission })
+                                .eq('telegram_id', referrer.telegram_id);
+
+                            await supabase.from('transactions').insert({
+                                user_id: referrer.telegram_id,
+                                type: 'REFERRAL_COMMISSION',
+                                amount: commission,
+                                currency: 'STARS',
+                                metadata: { fromUser: upsertId, purchaseAmount: rewardAmount, rate: '5%' },
+                                status: 'COMPLETED'
+                            });
+
+                            console.log(`[COMMISSION] Gold referrer ${referrer.telegram_id} earned ${commission} Stars (5% of ${rewardAmount}) from user ${upsertId}`);
+                        }
+                    }
+                }
+            } catch (commErr) {
+                console.error('[COMMISSION] Failed to process referral commission:', commErr);
+            }
+
             return {
                 success: true,
                 unlockedItem: payload,

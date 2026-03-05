@@ -29,7 +29,8 @@ router.get('/leaderboard', async (req: Request, res: Response) => {
             xp: p.stats_xp || 0,
             reward: `${p.stats_xp || 0} XP`,
             telegramId: p.telegram_id.toString(),
-            totalWins: p.stats_wins || 0
+            totalWins: p.stats_wins || 0,
+            hasGoldName: ['SILVER', 'GOLD'].includes(p.referral_tier || '')
         }));
 
         res.json({ leaderboard });

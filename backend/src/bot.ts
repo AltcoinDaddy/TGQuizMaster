@@ -121,6 +121,47 @@ if (!token) {
                             50,
                             telegramUsername
                         );
+
+                        // Check for referral tier milestone
+                        try {
+                            const { count: refCount } = await supabase
+                                .from('users')
+                                .select('*', { count: 'exact', head: true })
+                                .eq('referred_by', parseInt(referrerId));
+
+                            const totalRefs = refCount || 0;
+                            let newTier: string = 'NONE';
+                            if (totalRefs >= 20) newTier = 'GOLD';
+                            else if (totalRefs >= 5) newTier = 'SILVER';
+                            else if (totalRefs >= 1) newTier = 'BRONZE';
+
+                            const oldTier = (referrer as any).referral_tier || 'NONE';
+                            if (newTier !== oldTier) {
+                                await supabase.from('users')
+                                    .update({ referral_tier: newTier })
+                                    .eq('telegram_id', parseInt(referrerId));
+                                console.log(`[REFERRAL] Referrer ${referrerId} unlocked ${newTier} tier!`);
+
+                                const tierMessages: Record<string, string> = {
+                                    'BRONZE': '🥉 You unlocked Bronze Referrer! You earned 50 Stars as a milestone bonus.',
+                                    'SILVER': '🥈 You unlocked Silver Referrer! Your name now glows GOLD on the leaderboard! ✨',
+                                    'GOLD': '🥇 You unlocked Gold Referrer! You now earn 5% lifetime commission on your referrals\' Star purchases! 💰'
+                                };
+
+                                if (tierMessages[newTier]) {
+                                    try {
+                                        const bot = (notificationService as any).bot;
+                                        if (bot) {
+                                            bot.sendMessage(parseInt(referrerId), `🏆 **Referral Milestone Unlocked!**\n\n${tierMessages[newTier]}\n\nTotal Referrals: ${totalRefs}`, { parse_mode: 'Markdown' });
+                                        }
+                                    } catch (e) {
+                                        console.error('[REFERRAL] Tier notification failed:', e);
+                                    }
+                                }
+                            }
+                        } catch (e) {
+                            console.error('[REFERRAL] Tier check failed:', e);
+                        }
                     }
 
                     console.log(`[BOT] New referral user ${telegramUserId} registered with 200 Stars bonus`);

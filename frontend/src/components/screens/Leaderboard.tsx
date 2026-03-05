@@ -83,7 +83,7 @@ export const Leaderboard: React.FC = () => {
                                             <div className="absolute -bottom-1 -right-1 bg-slate-400 text-[8px] font-black text-white px-2 py-0.5 rounded-full border-2 border-background-dark">2nd</div>
                                         </div>
                                         <div className="w-full bg-gradient-to-b from-slate-400/20 to-transparent h-24 rounded-t-3xl flex flex-col items-center pt-4 border-t-2 border-slate-400/40">
-                                            <span className="text-[9px] font-black uppercase italic tracking-tighter truncate w-16 text-center text-slate-300">{topPlayers[1].name}</span>
+                                            <span className={`text-[9px] font-black uppercase italic tracking-tighter truncate w-16 text-center ${topPlayers[1].hasGoldName ? 'text-amber-400' : 'text-slate-300'}`}>{topPlayers[1].name}{topPlayers[1].hasGoldName && ' ✨'}</span>
                                             <span className="text-xs font-black text-white italic">{topPlayers[1].reward}</span>
                                         </div>
                                     </>
@@ -101,7 +101,7 @@ export const Leaderboard: React.FC = () => {
                                             <div className="absolute -bottom-1 -right-1 bg-accent-gold text-[8px] font-black text-background-dark px-2 py-0.5 rounded-full border-2 border-background-dark">1st</div>
                                         </div>
                                         <div className="w-full bg-gradient-to-b from-accent-gold/30 to-transparent h-36 rounded-t-[2.5rem] flex flex-col items-center pt-6 border-t-4 border-accent-gold/50 bonus-glow">
-                                            <span className="text-[10px] font-black uppercase italic tracking-tighter truncate w-20 text-center text-accent-gold">{topPlayers[0].name}</span>
+                                            <span className={`text-[10px] font-black uppercase italic tracking-tighter truncate w-20 text-center ${topPlayers[0].hasGoldName ? 'text-amber-400' : 'text-accent-gold'}`}>{topPlayers[0].name}{topPlayers[0].hasGoldName && ' ✨'}</span>
                                             <span className="text-sm font-black text-white italic">{topPlayers[0].reward}</span>
                                         </div>
                                     </>
@@ -117,7 +117,7 @@ export const Leaderboard: React.FC = () => {
                                             <div className="absolute -bottom-1 -right-1 bg-orange-600 text-[8px] font-black text-white px-2 py-0.5 rounded-full border-2 border-background-dark">3rd</div>
                                         </div>
                                         <div className="w-full bg-gradient-to-b from-orange-500/20 to-transparent h-20 rounded-t-3xl flex flex-col items-center pt-4 border-t-2 border-orange-500/40">
-                                            <span className="text-[9px] font-black uppercase italic tracking-tighter truncate w-16 text-center text-orange-200">{topPlayers[2].name}</span>
+                                            <span className={`text-[9px] font-black uppercase italic tracking-tighter truncate w-16 text-center ${topPlayers[2].hasGoldName ? 'text-amber-400' : 'text-orange-200'}`}>{topPlayers[2].name}{topPlayers[2].hasGoldName && ' ✨'}</span>
                                             <span className="text-xs font-black text-white italic">{topPlayers[2].reward}</span>
                                         </div>
                                     </>
@@ -148,7 +148,7 @@ export const Leaderboard: React.FC = () => {
                                     {player.isUser && <div className="absolute -top-1 -right-1 w-3 h-3 bg-primary rounded-full border-2 border-background-dark"></div>}
                                 </div>
                                 <div className="min-w-0">
-                                    <p className={`font-black text-sm uppercase italic tracking-tighter truncate w-32 ${player.isUser ? 'text-primary' : 'text-white'}`}>{player.name}</p>
+                                    <p className={`font-black text-sm uppercase italic tracking-tighter truncate w-32 ${player.hasGoldName ? 'text-amber-400' : player.isUser ? 'text-primary' : 'text-white'}`}>{player.name}{player.hasGoldName && ' ✨'}</p>
                                     <div className="flex items-center gap-3 opacity-40">
                                         <div className="flex items-center gap-1">
                                             <Star size={8} className="text-primary fill-primary" />
