@@ -761,7 +761,8 @@ io.on('connection', (socket) => {
             referralEarnings: referralEarnings,
             referralTier: calculateReferralTier(referralCount),
             recentReferrals,
-            recentTransactions
+            recentTransactions,
+            dailyGamesToday: user.daily_games_today || 0
         });
     });
 

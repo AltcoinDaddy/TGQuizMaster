@@ -460,4 +460,79 @@ router.get('/achievements', async (req: Request, res: Response) => {
     }
 });
 
+// POST /api/refill-energy — Refill practice energy via Ad
+router.post('/refill-energy', telegramAuthMiddleware, async (req: Request, res: Response) => {
+    try {
+        const userId = req.telegramUser!.id;
+
+        // Fetch user to check current energy
+        const { data: user, error } = await supabase
+            .from('users')
+            .select('daily_games_today')
+            .eq('telegram_id', userId)
+            .single();
+
+        if (error || !user) return res.status(404).json({ error: 'User not found' });
+
+        // Decrease the counter by 5 (refilling 5 games)
+        // Ensure it doesn't go below 0
+        const currentGames = user.daily_games_today || 0;
+        const newCount = Math.max(0, currentGames - 5);
+
+        await supabase.from('users')
+            .update({ daily_games_today: newCount })
+            .eq('telegram_id', userId);
+
+        console.log(`[ENERGY] User ${userId} refilled energy via ad. New daily_games_today: ${newCount}`);
+
+        res.json({ success: true, dailyGamesToday: newCount });
+    } catch (e: any) {
+        console.error('Refill energy error:', e.message);
+        res.status(500).json({ error: 'Failed to refill energy' });
+    }
+});
+
+/**
+ * GET /api/ads/callback
+ * Public endpoint for AdsGram Server-to-Server (S2S) rewards.
+ * AdsGram replaces [userId] with the actual Telegram ID.
+ */
+router.get('/ads/callback', async (req: Request, res: Response) => {
+    try {
+        const { userId } = req.query;
+
+        if (!userId) {
+            return res.status(400).send('Missing userId');
+        }
+
+        const telegramId = userId.toString();
+
+        // Reward the user (refill energy)
+        const { data: user, error } = await supabase
+            .from('users')
+            .select('daily_games_today')
+            .eq('telegram_id', telegramId)
+            .single();
+
+        if (error || !user) {
+            return res.status(404).send('User not found');
+        }
+
+        const currentGames = user.daily_games_today || 0;
+        const newCount = Math.max(0, currentGames - 5);
+
+        await supabase.from('users')
+            .update({ daily_games_today: newCount })
+            .eq('telegram_id', telegramId);
+
+        console.log(`[ADS-CALLBACK] User ${telegramId} rewarded via S2S callback. New count: ${newCount}`);
+
+        // AdsGram expects a simple text response or 200 OK
+        res.status(200).send('OK');
+    } catch (e) {
+        console.error('[ADS-CALLBACK] Error:', e);
+        res.status(500).send('Internal Error');
+    }
+});
+
 export default router;

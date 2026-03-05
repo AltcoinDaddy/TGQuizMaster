@@ -6,6 +6,7 @@ import { Rocket, ArrowRight, Users } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { StreakPopup } from '../ui/StreakPopup';
 import { useAppStore } from '../../store/useAppStore';
+import { adsService } from '../../utils/AdsService';
 
 export const Home: React.FC = () => {
     const navigate = useNavigate();
@@ -170,18 +171,49 @@ export const Home: React.FC = () => {
                 <div className="grid grid-cols-2 gap-4 mt-6">
                     {/* Free Quiz */}
                     <div
-                        onClick={() => navigate('/quiz', { state: { type: 'practice', entryFee: 'Free' } })}
+                        onClick={async () => {
+                            const gamesLeft = Math.max(0, 10 - (user.dailyGamesToday || 0));
+                            if (gamesLeft > 0) {
+                                navigate('/quiz', { state: { type: 'practice', entryFee: 'Free' } });
+                            } else {
+                                // Show Ad to refill
+                                const success = await adsService.showRewardedVideo();
+                                if (success) {
+                                    try {
+                                        const res = await authPost('/api/refill-energy', { telegramId: user.telegramId });
+                                        const data = await res.json();
+                                        if (data.success) {
+                                            useAppStore.getState().setUser({ dailyGamesToday: data.dailyGamesToday });
+                                            const tg = (window as any).Telegram?.WebApp;
+                                            if (tg?.showAlert) tg.showAlert('Energy refilled! +5 games added. ⚡');
+                                        }
+                                    } catch (e) {
+                                        console.error('Failed to refill energy:', e);
+                                    }
+                                }
+                            }
+                        }}
                         className="bg-white/5 border border-white/10 p-5 rounded-3xl active:scale-[0.98] transition-all flex flex-col justify-between aspect-square cursor-pointer hover:border-primary/30"
                     >
-                        <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center mb-4">
+                        <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center mb-4 relative">
                             <Rocket size={24} className="text-primary" />
+                            {Math.max(0, 10 - (user.dailyGamesToday || 0)) === 0 && (
+                                <div className="absolute -top-2 -right-2 bg-primary text-background-dark text-[8px] font-black px-1.5 py-0.5 rounded-full uppercase tracking-tighter">Refill</div>
+                            )}
                         </div>
                         <div>
-                            <h3 className="font-black text-lg uppercase italic tracking-tighter leading-none mb-1">Daily Practice</h3>
+                            <div className="flex items-center justify-between mb-1">
+                                <h3 className="font-black text-lg uppercase italic tracking-tighter leading-none">Daily Practice</h3>
+                                <span className="text-[10px] text-primary font-black opacity-80">{Math.max(0, 10 - (user.dailyGamesToday || 0))}/10 ⚡</span>
+                            </div>
                             <p className="text-[10px] opacity-60 font-bold leading-tight uppercase tracking-tighter">Master your skills and earn free XP daily.</p>
                         </div>
                         <div className="mt-4 flex items-center text-primary text-[10px] font-black uppercase tracking-widest gap-2 italic">
-                            Start Free <ArrowRight size={14} />
+                            {Math.max(0, 10 - (user.dailyGamesToday || 0)) > 0 ? (
+                                <>Start Free <ArrowRight size={14} /></>
+                            ) : (
+                                <>Watch Ad to Refill <Rocket size={14} /></>
+                            )}
                         </div>
                     </div>
 

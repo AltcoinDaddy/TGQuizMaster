@@ -6,6 +6,8 @@ import { GlassCard } from '../ui/GlassCard';
 import { socket } from '../../utils/socket';
 import { useAppStore } from '../../store/useAppStore';
 import { soundManager } from '../../utils/SoundManager';
+import { ReviveModal } from '../ui/ReviveModal';
+import { adsService } from '../../utils/AdsService';
 
 export const QuizRoom: React.FC = () => {
     const { user } = useAppStore();
@@ -28,6 +30,8 @@ export const QuizRoom: React.FC = () => {
     const [eliminatedOptions, setEliminatedOptions] = useState<string[]>([]);
     const [doublePointsActive, setDoublePointsActive] = useState(false);
     const [powerUpLoading, setPowerUpLoading] = useState<string | null>(null);
+    const [hasRevived, setHasRevived] = useState(false);
+    const [showReviveModal, setShowReviveModal] = useState(false);
 
     // Timer calculation for SVG Circle
     const radius = 50;
@@ -86,8 +90,13 @@ export const QuizRoom: React.FC = () => {
                 const isWin = selectedAnswer === correctAnswer;
                 setIsCorrect(isWin);
                 soundManager.play(isWin ? 'correct' : 'wrong');
+
                 if (!isWin) {
                     (window as any).Telegram?.WebApp?.HapticFeedback?.notificationOccurred('error');
+                    // Practice Mode Revive Logic
+                    if (type === 'practice' && !hasRevived) {
+                        setShowReviveModal(true);
+                    }
                 } else {
                     (window as any).Telegram?.WebApp?.HapticFeedback?.notificationOccurred('success');
                 }
@@ -281,6 +290,18 @@ export const QuizRoom: React.FC = () => {
         setPowerUpLoading(powerUpId);
         setUsedPowerUps(prev => [...prev, powerUpId]);
         socket.emit('use_powerup', powerUpId);
+    };
+
+    const handleRevive = async () => {
+        setShowReviveModal(false);
+        const success = await adsService.showRewardedVideo();
+        if (success) {
+            setHasRevived(true);
+            setIsCorrect(true);
+            soundManager.play('correct');
+            // Notify server to award points for this question
+            socket.emit('submit_answer', revealedAnswer); // Resubmit correct answer
+        }
     };
 
     if (gameStatus === 'waiting') {
@@ -541,6 +562,19 @@ export const QuizRoom: React.FC = () => {
                     </div>
                 </div>
             </footer>
+
+            {type === 'practice' && (
+                <div className="fixed bottom-24 left-6 right-6 flex items-center justify-between opacity-30 pointer-events-none">
+                    <span className="text-[8px] font-black uppercase tracking-widest italic">Practice Mode</span>
+                    <span className="text-[8px] font-black uppercase tracking-widest italic">{hasRevived ? 'Used Revive' : 'Revive Available'}</span>
+                </div>
+            )}
+
+            <ReviveModal
+                isOpen={showReviveModal}
+                onRevive={handleRevive}
+                onSkip={() => setShowReviveModal(false)}
+            />
         </MainLayout>
     );
 };
