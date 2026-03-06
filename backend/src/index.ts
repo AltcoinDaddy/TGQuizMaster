@@ -739,7 +739,7 @@ io.on('connection', (socket) => {
                 .from('transactions')
                 .select('amount, metadata, created_at')
                 .eq('user_id', userId)
-                .eq('type', 'REFERRAL_BONUS');
+                .or('type.eq.REFERRAL_BONUS,type.eq.REFERRAL_REWARD');
             referralEarnings = (earningsData || []).reduce((sum, tx) => sum + tx.amount, 0);
         } catch (e) {
             console.error('[SYNC] Failed to fetch referral earnings:', e);
@@ -775,9 +775,9 @@ io.on('connection', (socket) => {
             walletConnected: !!user.wallet_address,
             walletAddress: user.wallet_address,
             isAdmin: (process.env.ADMIN_IDS || '').split(',').map(id => id.trim()).includes(userId.toString()),
-            referralCount: referralCount,
+            referralCount: user.stats_referrals || 0, // Use stored DB column
             referralEarnings: referralEarnings,
-            referralTier: calculateReferralTier(referralCount),
+            referralTier: calculateReferralTier(user.stats_referrals || 0),
             recentReferrals,
             recentTransactions,
             dailyGamesToday: user.daily_games_today || 0,

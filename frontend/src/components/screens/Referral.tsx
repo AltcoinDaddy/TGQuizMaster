@@ -2,8 +2,9 @@ import React from 'react';
 import { MainLayout } from '../layout/MainLayout';
 import { GlassCard } from '../ui/GlassCard';
 import { Button } from '../ui/Button';
-import { Share2, Users, Receipt, Copy, Gift, Award, Crown, Gem, Lock, Check } from 'lucide-react';
+import { Share2, Users, Copy, Gift, Award, Crown, Gem, Lock, Check, Star, Trophy, ChevronRight } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
+import { useNavigate } from 'react-router-dom';
 
 const TIERS = [
     {
@@ -48,6 +49,7 @@ const TIER_ORDER = ['NONE', 'BRONZE', 'SILVER', 'GOLD'];
 
 export const Referral: React.FC = () => {
     const { user } = useAppStore();
+    const navigate = useNavigate();
     const botUsername = import.meta.env.VITE_BOT_USERNAME || 'TGQuizMasters_bot';
     const referralLink = `https://t.me/${botUsername}?start=ref_${user.telegramId || 'unknown'}`;
     const referralCount = user.referralCount || 0;
@@ -91,9 +93,9 @@ export const Referral: React.FC = () => {
                         <span className="text-[9px] uppercase font-black opacity-40 tracking-widest">Referrals</span>
                     </GlassCard>
                     <GlassCard className="flex flex-col items-center p-5 bg-gradient-to-b from-blue-400/10 to-transparent">
-                        <Receipt size={24} className="text-blue-400 mb-2" />
-                        <span className="text-2xl font-black italic">{(user.referralEarnings || 0).toFixed(2)}</span>
-                        <span className="text-[9px] uppercase font-black opacity-40 tracking-widest">TON Earned</span>
+                        <Star size={24} className="text-blue-400 mb-2" />
+                        <span className="text-2xl font-black italic">{Math.round(user.referralEarnings || 0)}</span>
+                        <span className="text-[9px] uppercase font-black opacity-40 tracking-widest">Stars Earned</span>
                     </GlassCard>
                 </div>
 
@@ -110,6 +112,25 @@ export const Referral: React.FC = () => {
                         </div>
                     </div>
                 )}
+
+                {/* Leaderboard Link */}
+                <div className="mb-10 px-2">
+                    <button
+                        onClick={() => navigate('/leaderboard')}
+                        className="w-full flex items-center justify-between p-4 bg-white/5 border border-white/10 rounded-2xl hover:bg-white/10 transition-colors group"
+                    >
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 bg-primary/20 rounded-xl flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+                                <Trophy size={20} />
+                            </div>
+                            <div className="text-left">
+                                <span className="block text-xs font-black uppercase italic tracking-tighter">Referral Leaderboard</span>
+                                <span className="block text-[10px] opacity-40 uppercase font-bold">See where you rank globally</span>
+                            </div>
+                        </div>
+                        <ChevronRight size={18} className="opacity-20 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
+                    </button>
+                </div>
 
                 {/* Milestone Progress Tracker */}
                 <div className="mb-10">

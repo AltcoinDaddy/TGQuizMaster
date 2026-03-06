@@ -8,12 +8,13 @@ export const Leaderboard: React.FC = () => {
     const { user } = useAppStore();
     const [leaderboardData, setLeaderboardData] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState<'daily' | 'weekly' | 'allTime'>('weekly'); // Keeping for UI compliance
+    const [activeTab, setActiveTab] = useState<'daily' | 'weekly' | 'allTime'>('weekly');
+    const [rankingType, setRankingType] = useState<'xp' | 'referrals'>('xp');
 
     useEffect(() => {
         const fetchLeaderboard = async () => {
             try {
-                const res = await fetch(`${API_URL}/api/leaderboard?period=${activeTab}`);
+                const res = await fetch(`${API_URL}/api/leaderboard?period=${activeTab}&type=${rankingType}`);
                 const data = await res.json();
                 if (data.leaderboard) {
                     const formattedDetails = data.leaderboard.map((p: any) => ({
@@ -30,7 +31,7 @@ export const Leaderboard: React.FC = () => {
             }
         };
         fetchLeaderboard();
-    }, [user.telegramId, activeTab]);
+    }, [user.telegramId, activeTab, rankingType]);
 
     const topPlayers = loading
         ? [{ rank: 1, name: "Loading...", reward: "---", score: "---" }]
@@ -52,8 +53,26 @@ export const Leaderboard: React.FC = () => {
                     </div>
                 </header>
 
-                {/* Segmented Time Filter */}
-                <div className="flex bg-white/5 p-1 rounded-[1.5rem] mb-10 border border-white/5">
+                {/* Main Ranking Type Tabs */}
+                <div className="grid grid-cols-2 gap-2 mb-6 p-1 bg-white/5 rounded-2xl border border-white/5">
+                    <button
+                        onClick={() => setRankingType('xp')}
+                        className={`py-3 rounded-[0.8rem] text-[10px] font-black uppercase tracking-widest transition-all italic flex items-center justify-center gap-2 ${rankingType === 'xp' ? 'bg-primary text-background-dark shadow-lg shadow-primary/20' : 'opacity-40'}`}
+                    >
+                        <Star size={12} fill={rankingType === 'xp' ? 'currentColor' : 'none'} />
+                        Top XP
+                    </button>
+                    <button
+                        onClick={() => setRankingType('referrals')}
+                        className={`py-3 rounded-[0.8rem] text-[10px] font-black uppercase tracking-widest transition-all italic flex items-center justify-center gap-2 ${rankingType === 'referrals' ? 'bg-primary text-background-dark shadow-lg shadow-primary/20' : 'opacity-40'}`}
+                    >
+                        <Star size={12} fill={rankingType === 'referrals' ? 'currentColor' : 'none'} />
+                        Top Referrals
+                    </button>
+                </div>
+
+                {/* Time Filter - Hide for Referrals if not supported yet, but keeping for layout consistency */}
+                <div className={`flex bg-white/5 p-1 rounded-[1.5rem] mb-10 border border-white/5 transition-opacity ${rankingType === 'referrals' ? 'opacity-30 pointer-events-none' : ''}`}>
                     {['daily', 'weekly', 'allTime'].map((tab) => (
                         <button
                             key={tab}

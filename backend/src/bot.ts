@@ -93,17 +93,18 @@ if (!token) {
                         status: 'COMPLETED'
                     });
 
-                    // Reward the referrer with 50 Stars
+                    // Reward the referrer with 50 Stars and increment referral count
                     const { data: referrer } = await supabase
                         .from('users')
-                        .select('balance_stars')
+                        .select('balance_stars, stats_referrals')
                         .eq('telegram_id', parseInt(referrerId))
                         .single();
 
                     if (referrer) {
-                        await supabase.from('users')
-                            .update({ balance_stars: (referrer.balance_stars || 0) + 50 })
-                            .eq('telegram_id', parseInt(referrerId));
+                        await supabase.from('users').update({
+                            balance_stars: (referrer.balance_stars || 0) + 50,
+                            stats_referrals: (referrer.stats_referrals || 0) + 1
+                        }).eq('telegram_id', parseInt(referrerId));
 
                         await supabase.from('transactions').insert({
                             user_id: parseInt(referrerId),
@@ -129,7 +130,7 @@ if (!token) {
                                 .select('*', { count: 'exact', head: true })
                                 .eq('referred_by', parseInt(referrerId));
 
-                            const totalRefs = refCount || 0;
+                            const totalRefs = (refCount || 0);
                             let newTier: string = 'NONE';
                             if (totalRefs >= 20) newTier = 'GOLD';
                             else if (totalRefs >= 5) newTier = 'SILVER';

@@ -8,15 +8,15 @@ const router = Router();
 
 // GET /api/leaderboard
 router.get('/leaderboard', async (req: Request, res: Response) => {
-    const { period } = req.query; // 'daily', 'weekly', 'allTime'
+    const { period, type } = req.query; // 'daily', 'weekly', 'allTime' | 'xp', 'referrals'
 
     try {
-        // For now we sort by global stats_xp. 
-        // In the future, this can be mapped to stats_xp_daily, stats_xp_weekly, etc.
+        const sortColumn = type === 'referrals' ? 'stats_referrals' : 'stats_xp';
+
         const { data: topPlayers, error } = await supabase
             .from('users')
             .select('*, squads(name)')
-            .order('stats_xp', { ascending: false })
+            .order(sortColumn, { ascending: false })
             .limit(50);
 
         if (error) throw error;
@@ -24,10 +24,15 @@ router.get('/leaderboard', async (req: Request, res: Response) => {
         const leaderboard = topPlayers.map((p, index) => ({
             rank: index + 1,
             name: p.username || `Player ${p.telegram_id}`,
-            score: `${p.stats_xp || 0} XP`,
+            score: type === 'referrals'
+                ? `${p.stats_referrals || 0} Invites`
+                : `${p.stats_xp || 0} XP`,
             isTop: index === 0,
             xp: p.stats_xp || 0,
-            reward: `${p.stats_xp || 0} XP`,
+            referrals: p.stats_referrals || 0,
+            reward: type === 'referrals'
+                ? `${p.stats_referrals || 0} Invites`
+                : `${p.stats_xp || 0} XP`,
             telegramId: p.telegram_id.toString(),
             totalWins: p.stats_wins || 0,
             hasGoldName: ['SILVER', 'GOLD'].includes(p.referral_tier || '')
