@@ -174,7 +174,7 @@ io.on('connection', (socket) => {
     console.log('User connected:', socket.id);
 
     socket.on('join_room', async (data) => {
-        const { username, avatar, telegramId, tournamentId, entryFee, currency } = data;
+        const { username, avatar, telegramId, tournamentId, entryFee, currency, category } = data;
         const userId = telegramId ? parseInt(telegramId) : 0; // 0 for anon/dev, but really should strictly enforce
 
         console.log(`[JOIN] ${username} (${userId}) attempting to join. Fee: ${entryFee}`);
@@ -267,7 +267,7 @@ io.on('connection', (socket) => {
                 }
 
                 roomId = crypto.randomUUID();
-                const mgr = new GameManager(roomId, io, 'practice', 0, 0);
+                const mgr = new GameManager(roomId, io, 'practice', 0, 0, 5, category || 'General');
 
                 // Assign cleanup handler so room is deleted after game ends
                 mgr.onGameOver = (finishedRoomId) => {
@@ -350,7 +350,7 @@ io.on('connection', (socket) => {
 
                 if (!roomId) {
                     roomId = crypto.randomUUID();
-                    rooms.set(roomId, new GameManager(roomId, io, 'stars', 0, quickFee, 5));
+                    rooms.set(roomId, new GameManager(roomId, io, 'stars', 0, quickFee, 5, 'General'));
                 }
 
                 feeAmount = quickFee;
@@ -374,7 +374,7 @@ io.on('connection', (socket) => {
                 roomId = crypto.randomUUID();
                 // Use provided maxPlayers but clamp between 2 and 20 for safety
                 const playersLimit = data.maxPlayers ? Math.min(Math.max(parseInt(data.maxPlayers), 2), 20) : 5;
-                const newManager = new GameManager(roomId, io, feeCurrency === 'TON' ? 'ton' : 'stars', 0, feeAmount, playersLimit);
+                const newManager = new GameManager(roomId, io, feeCurrency === 'TON' ? 'ton' : 'stars', 0, feeAmount, playersLimit, category || 'General');
 
                 // Handle room timeout: refund all players and clean up
                 const capturedRoomId = roomId;

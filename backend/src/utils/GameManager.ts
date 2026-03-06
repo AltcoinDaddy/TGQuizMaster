@@ -59,8 +59,18 @@ export class GameManager {
     private roomTimeout: NodeJS.Timeout | null = null;
     private expired = false;
     public onExpire?: (manager: GameManager) => void; // Callback for timeout
+    private category: string;
+    private categoryId: number | null = null;
 
-    constructor(roomId: string, io: any, type: 'free' | 'stars' | 'ton' | 'practice' = 'free', prize = 0, fee = 0, maxPlayers = 5) {
+    private readonly CATEGORY_MAP: Record<string, number> = {
+        'General': 9,
+        'Crypto': 18, // Science: Computers
+        'Movies': 11,
+        'Sports': 21,
+        'Gaming': 15
+    };
+
+    constructor(roomId: string, io: any, type: 'free' | 'stars' | 'ton' | 'practice' = 'free', prize = 0, fee = 0, maxPlayers = 5, category = 'General') {
         this.roomId = roomId;
         this.players = [];
         this.io = io;
@@ -68,6 +78,8 @@ export class GameManager {
         this.prizePool = prize;
         this.entryFee = fee;
         this.maxPlayers = maxPlayers;
+        this.category = category;
+        this.categoryId = this.CATEGORY_MAP[category] || null;
         this.questionCount = type === 'practice' ? 5 : 10;
 
         // Auto-expire rooms after 5 minutes if not filled (skip for practice — instant start)
@@ -162,38 +174,53 @@ export class GameManager {
     }
 
     private async fetchQuestions() {
+        // Only use cache for General category
+        if (!this.categoryId || this.categoryId === 9) {
+            try {
+                const { questionCache } = await import('./QuestionCache');
+                const cached = await questionCache.getQuestions(this.questionCount);
+                if (cached.length >= this.questionCount) {
+                    this.questions = cached;
+                    console.log(`[GAME] Loaded ${cached.length} questions from cache (pool: ${questionCache.size} remaining)`);
+                    return;
+                }
+            } catch (e) {
+                console.error('[GAME] Cache fetch failed, trying API directly:', e);
+            }
+        }
+
+        // Fetch from API (either specific category or cache/fallback)
         try {
-            const { questionCache } = await import('./QuestionCache');
-            const cached = await questionCache.getQuestions(this.questionCount);
-            if (cached.length >= this.questionCount) {
-                this.questions = cached;
-                console.log(`[GAME] Loaded ${cached.length} questions from cache (pool: ${questionCache.size} remaining)`);
+            const url = this.categoryId
+                ? `https://opentdb.com/api.php?amount=${this.questionCount}&category=${this.categoryId}&type=multiple`
+                : `https://opentdb.com/api.php?amount=${this.questionCount}&type=multiple`;
+
+            console.log(`[GAME] Fetching questions from: ${url}`);
+            const resp = await axios.get(url);
+
+            if (resp.data.results && resp.data.results.length > 0) {
+                this.questions = resp.data.results.map((q: any, i: number) => ({
+                    id: `q_${Date.now()}_${i}`,
+                    text: decode(q.question),
+                    options: [...q.incorrect_answers.map((a: any) => decode(a)), decode(q.correct_answer)].sort(() => Math.random() - 0.5),
+                    correctAnswer: decode(q.correct_answer)
+                }));
+                console.log(`[GAME] Successfully fetched ${this.questions.length} questions for category ${this.category}`);
                 return;
             }
         } catch (e) {
-            console.error('[GAME] Cache fetch failed, trying API directly:', e);
+            console.error('Failed to fetch questions:', e);
         }
 
-        // Fallback: direct API call
-        try {
-            const resp = await axios.get(`https://opentdb.com/api.php?amount=${this.questionCount}&type=multiple`);
-            this.questions = resp.data.results.map((q: any, i: number) => ({
-                id: i.toString(),
-                text: decode(q.question),
-                options: [...q.incorrect_answers.map((a: any) => decode(a)), decode(q.correct_answer)].sort(() => Math.random() - 0.5),
-                correctAnswer: decode(q.correct_answer)
-            }));
-        } catch (e) {
-            console.error('Failed to fetch questions:', e);
-            this.questions = [
-                { id: 'f1', text: "Which consensus mechanism does Ethereum now use?", options: ["Proof of Work", "Proof of Stake", "Proof of History", "Proof of Authority"], correctAnswer: "Proof of Stake" },
-                { id: 'f2', text: "What is the primary token of the TON network?", options: ["ETH", "SOL", "TON", "DOT"], correctAnswer: "TON" },
-                { id: 'f3', text: "Who is the founder of Telegram?", options: ["Pavel Durov", "Mark Zuckerberg", "Jack Dorsey", "Vitalik Buterin"], correctAnswer: "Pavel Durov" },
-                { id: 'f4', text: "What does 'HODL' originally stand for in crypto?", options: ["Hold On for Dear Life", "Highly Optimized Digital Ledger", "Home of Digital Liberty", "It was a typo for 'HOLD'"], correctAnswer: "It was a typo for 'HOLD'" },
-                { id: 'f5', text: "In which year was Bitcoin created?", options: ["2008", "2009", "2010", "2011"], correctAnswer: "2009" }
-            ];
-            console.log(`[GAME] API failed, used ${this.questions.length} fallback questions`);
-        }
+        // Fallback: static crypto/tech questions if everything fails
+        this.questions = [
+            { id: 'f1', text: "Which consensus mechanism does Ethereum now use?", options: ["Proof of Work", "Proof of Stake", "Proof of History", "Proof of Authority"], correctAnswer: "Proof of Stake" },
+            { id: 'f2', text: "What is the primary token of the TON network?", options: ["ETH", "SOL", "TON", "DOT"], correctAnswer: "TON" },
+            { id: 'f3', text: "Who is the founder of Telegram?", options: ["Pavel Durov", "Mark Zuckerberg", "Jack Dorsey", "Vitalik Buterin"], correctAnswer: "Pavel Durov" },
+            { id: 'f4', text: "What does 'HODL' originally stand for in crypto?", options: ["Hold On for Dear Life", "Highly Optimized Digital Ledger", "Home of Digital Liberty", "It was a typo for 'HOLD'"], correctAnswer: "It was a typo for 'HOLD'" },
+            { id: 'f5', text: "In which year was Bitcoin created?", options: ["2008", "2009", "2010", "2011"], correctAnswer: "2009" }
+        ];
+        console.log(`[GAME] API failed, used ${this.questions.length} fallback questions`);
     }
 
     private sendQuestion() {
