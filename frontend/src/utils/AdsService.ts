@@ -26,9 +26,11 @@ class AdsService {
 
         // The AdsGram SDK exposes window.Adsgram
         const adsgram = (window as any).Adsgram;
+        const tg = (window as any).Telegram?.WebApp;
 
         if (!adsgram) {
             console.warn('AdsGram SDK not found. Make sure https://sad.adsgram.ai/js/sad.min.js is included in index.html');
+            if (tg?.showAlert) tg.showAlert('Ads service is still loading or blocked. Please try again in a moment! 📺');
             return;
         }
 
@@ -41,6 +43,7 @@ class AdsService {
             console.log(`[ADS] AdsGram initialized with blockId: ${SQUAD_APP_BLOCK_ID}`);
         } catch (e) {
             console.error('[ADS] Failed to initialize AdsGram:', e);
+            if (tg?.showAlert) tg.showAlert('Failed to connect to ads provider. Check your internet connection.');
         }
     }
 

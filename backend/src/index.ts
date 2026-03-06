@@ -260,19 +260,7 @@ io.on('connection', (socket) => {
             let roomId: string | undefined;
 
             if (data.roomType === 'practice') {
-                // DAILY LIMIT CHECK
-                const today = new Date().toISOString().split('T')[0];
-                if (user.daily_reset_date !== today) {
-                    // Reset if new day
-                    await supabase.from('users').update({
-                        daily_games_today: 0,
-                        daily_wins_today: 0,
-                        daily_reset_date: today
-                    }).eq('telegram_id', userId);
-                    user.daily_games_today = 0;
-                    user.daily_reset_date = today;
-                }
-
+                // DAILY LIMIT CHECK (Already reset in sync_profile if needed)
                 if ((user.daily_games_today || 0) >= 10) {
                     socket.emit('error', { message: 'Daily limit reached! Come back tomorrow.' }); // 10 games max
                     return;
@@ -650,12 +638,32 @@ io.on('connection', (socket) => {
             }
         }, 5000);
 
-        let user;
+        let user: any;
         try {
             user = await fetchPromise;
             if (!user) {
                 console.error(`[SYNC] No user data returned for ${userId}`);
                 return;
+            }
+
+            // DAILY RESET CHECK
+            const today = new Date().toISOString().split('T')[0];
+            if (user.daily_reset_date !== today) {
+                console.log(`[SYNC] Resetting daily limits for user ${userId} (${today})`);
+                const { data: updatedUser, error: resetError } = await supabase
+                    .from('users')
+                    .update({
+                        daily_games_today: 0,
+                        daily_wins_today: 0,
+                        daily_reset_date: today
+                    })
+                    .eq('telegram_id', userId)
+                    .select()
+                    .single();
+
+                if (!resetError && updatedUser) {
+                    user = updatedUser;
+                }
             }
         } catch (error: any) {
             console.warn(`[SYNC-WARN] All retries failed for user ${userId}: ${error.message?.substring(0, 100)}`);

@@ -16,6 +16,7 @@ export const Home: React.FC = () => {
     const [rewardType, setRewardType] = useState<'STARS' | 'CHEST'>('STARS');
     const [chestItems, setChestItems] = useState<any>(null);
     const [leaderboardPreview, setLeaderboardPreview] = useState<any[]>([]);
+    const [loadingAd, setLoadingAd] = useState(false);
     const { user } = useAppStore();
 
     useEffect(() => {
@@ -97,14 +98,17 @@ export const Home: React.FC = () => {
     }, []);
 
     const handleStartPractice = async () => {
+        if (loadingAd) return;
+
         const gamesLeft = Math.max(0, 10 - (user.dailyGamesToday || 0));
         if (gamesLeft > 0) {
             navigate('/quiz', { state: { type: 'practice', entryFee: 'Free' } });
         } else {
             // Show Ad to refill
-            const success = await adsService.showRewardedVideo();
-            if (success) {
-                try {
+            setLoadingAd(true);
+            try {
+                const success = await adsService.showRewardedVideo();
+                if (success) {
                     const res = await authPost('/api/refill-energy', { telegramId: user.telegramId });
                     const data = await res.json();
                     if (data.success) {
@@ -112,9 +116,11 @@ export const Home: React.FC = () => {
                         const tg = (window as any).Telegram?.WebApp;
                         if (tg?.showAlert) tg.showAlert('Energy refilled! +5 games added. ⚡');
                     }
-                } catch (e) {
-                    console.error('Failed to refill energy:', e);
                 }
+            } catch (e) {
+                console.error('Failed to refill energy:', e);
+            } finally {
+                setLoadingAd(false);
             }
         }
     };
@@ -134,14 +140,20 @@ export const Home: React.FC = () => {
                         {Math.max(0, 10 - (user.dailyGamesToday || 0)) === 0 && (
                             <div className="absolute top-0 right-0 bg-primary text-black text-[8px] font-black px-2 py-0.5 rounded-bl-lg uppercase tracking-tighter z-10">Refill Ready</div>
                         )}
-                        <div className="text-4xl text-primary drop-shadow-[0_0_10px_rgba(13,242,89,0.3)]">🎮</div>
+                        <div className="text-4xl text-primary drop-shadow-[0_0_10px_rgba(13,242,89,0.3)]">
+                            {loadingAd ? (
+                                <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                            ) : (
+                                "🎮"
+                            )}
+                        </div>
                         <div className="flex-1">
-                            <h3 className="font-black text-base uppercase italic tracking-tighter text-green-400 flex items-center gap-2">
-                                Free Practice
-                                {Math.max(0, 10 - (user.dailyGamesToday || 0)) === 0 && <span className="text-[10px] text-primary">(Ads Refill)</span>}
+                            <h3 className={`font-black text-base uppercase italic tracking-tighter ${loadingAd ? 'text-white/20' : 'text-green-400'} flex items-center gap-2`}>
+                                {loadingAd ? 'Loading Ad...' : 'Free Practice'}
+                                {Math.max(0, 10 - (user.dailyGamesToday || 0)) === 0 && !loadingAd && <span className="text-[10px] text-primary">(Ads Refill)</span>}
                             </h3>
                             <p className="text-[10px] text-white/40 font-bold mt-0.5">
-                                {Math.max(0, 10 - (user.dailyGamesToday || 0))}/10 Energy • Win 5⭐ + XP
+                                {loadingAd ? 'Please wait while we prepare your video' : `${Math.max(0, 10 - (user.dailyGamesToday || 0))}/10 Energy • Win 5⭐ + XP`}
                             </p>
                         </div>
                         <ArrowRight size={20} className="text-green-400" />
