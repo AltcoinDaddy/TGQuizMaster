@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { API_URL } from '../../config/api';
 import { authPost } from '../../utils/authFetch';
 import { MainLayout } from '../layout/MainLayout';
-import { Rocket, ArrowRight, Users } from 'lucide-react';
+import { ArrowRight, Users, Gamepad2, Star, Gem, Trophy } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { StreakPopup } from '../ui/StreakPopup';
 import { useAppStore } from '../../store/useAppStore';
@@ -142,56 +142,61 @@ export const Home: React.FC = () => {
                 <div className="space-y-3">
                     <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-white/40 px-1">Play Now</h2>
 
-                    {/* Free Practice */}
                     <div
                         onClick={handleStartPractice}
-                        className="bg-gradient-to-r from-green-500/15 to-green-600/5 border border-green-500/20 rounded-2xl p-5 flex items-center gap-4 active:scale-[0.98] transition-all cursor-pointer relative overflow-hidden"
+                        className="bg-white/5 border border-white/10 rounded-[32px] p-4 flex items-center gap-4 active:scale-[0.98] transition-all cursor-pointer relative overflow-hidden group hover:bg-white/[0.07]"
                     >
                         {Math.max(0, 10 - (user.dailyGamesToday || 0)) === 0 && (
-                            <div className="absolute top-0 right-0 bg-primary text-black text-[8px] font-black px-2 py-0.5 rounded-bl-lg uppercase tracking-tighter z-10">Refill Ready</div>
+                            <div className="absolute top-0 right-0 bg-primary text-black text-[8px] font-black px-3 py-1 rounded-bl-xl uppercase tracking-tighter z-10 shadow-lg shadow-primary/20">Refill Ready</div>
                         )}
-                        <div className="text-4xl text-primary drop-shadow-[0_0_10px_rgba(13,242,89,0.3)]">
+
+                        <div className="w-16 h-16 rounded-2xl bg-green-500/10 flex items-center justify-center text-green-400 border border-green-500/20 group-hover:scale-110 transition-transform">
                             {loadingAd ? (
                                 <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
                             ) : (
-                                "🎮"
+                                <Gamepad2 size={32} fill="currentColor" fillOpacity={0.1} className="drop-shadow-[0_0_10px_rgba(74,222,128,0.4)]" />
                             )}
                         </div>
+
                         <div className="flex-1">
-                            <h3 className={`font-black text-base uppercase italic tracking-tighter ${loadingAd ? 'text-white/20' : 'text-green-400'} flex items-center gap-2`}>
+                            <h3 className={`font-black text-lg uppercase italic tracking-tighter ${loadingAd ? 'text-white/20' : 'text-white'} flex items-center gap-2 mb-0.5`}>
                                 {loadingAd ? 'Loading Ad...' : 'Free Practice'}
-                                {Math.max(0, 10 - (user.dailyGamesToday || 0)) === 0 && !loadingAd && <span className="text-[10px] text-primary">(Ads Refill)</span>}
+                                {Math.max(0, 10 - (user.dailyGamesToday || 0)) === 0 && !loadingAd && <span className="text-[10px] text-primary/60 font-black tracking-widest uppercase">(AD REFILL)</span>}
                             </h3>
-                            <p className="text-[10px] text-white/40 font-bold mt-0.5">
-                                {loadingAd ? 'Please wait while we prepare your video' : `${Math.max(0, 10 - (user.dailyGamesToday || 0))}/10 Energy • Win 5⭐ + XP`}
+                            <p className="text-[10px] text-white/40 font-bold uppercase tracking-widest leading-none">
+                                {loadingAd ? 'Please wait...' : `${Math.max(0, 10 - (user.dailyGamesToday || 0))}/10 Energy • Win 5★ + XP`}
                             </p>
                         </div>
-                        <ArrowRight size={20} className="text-green-400" />
+                        <ArrowRight size={20} className="text-white/20 group-hover:text-primary group-hover:translate-x-1 transition-all" />
                     </div>
 
                     {/* Star Battle */}
                     <div
                         onClick={() => navigate('/tournaments')}
-                        className="bg-gradient-to-r from-yellow-500/15 to-amber-600/5 border border-yellow-500/20 rounded-2xl p-5 flex items-center gap-4 active:scale-[0.98] transition-all cursor-pointer"
+                        className="bg-white/5 border border-white/10 rounded-[32px] p-4 flex items-center gap-4 active:scale-[0.98] transition-all cursor-pointer group hover:bg-white/[0.07]"
                     >
-                        <div className="text-4xl">⭐</div>
-                        <div className="flex-1">
-                            <h3 className="font-black text-base uppercase italic tracking-tighter text-yellow-400">Star Battle</h3>
-                            <p className="text-[10px] text-white/40 font-bold mt-0.5">Join or create rooms • Win Stars</p>
+                        <div className="w-16 h-16 rounded-2xl bg-yellow-500/10 flex items-center justify-center text-yellow-400 border border-yellow-500/20 group-hover:scale-110 transition-transform">
+                            <Star size={32} fill="currentColor" fillOpacity={0.1} className="drop-shadow-[0_0_10px_rgba(250,204,21,0.4)]" />
                         </div>
-                        <ArrowRight size={20} className="text-yellow-400" />
+                        <div className="flex-1">
+                            <h3 className="font-black text-lg uppercase italic tracking-tighter text-white mb-0.5">Star Battle</h3>
+                            <p className="text-[10px] text-white/40 font-bold uppercase tracking-widest leading-none">Join rooms • Win Stars</p>
+                        </div>
+                        <ArrowRight size={20} className="text-white/20 group-hover:text-yellow-400 group-hover:translate-x-1 transition-all" />
                     </div>
 
                     {/* TON Arena */}
                     <div
-                        className="bg-gradient-to-r from-blue-500/10 to-blue-600/5 border border-blue-500/15 rounded-2xl p-5 flex items-center gap-4 opacity-60"
+                        className="bg-white/5 border border-white/10 rounded-[32px] p-4 flex items-center gap-4 opacity-50 relative overflow-hidden group transition-all"
                     >
-                        <div className="text-4xl">💎</div>
-                        <div className="flex-1">
-                            <h3 className="font-black text-base uppercase italic tracking-tighter text-blue-400">TON Arena</h3>
-                            <p className="text-[10px] text-white/40 font-bold mt-0.5">Real TON prizes • Coming Soon</p>
+                        <div className="w-16 h-16 rounded-2xl bg-blue-500/10 flex items-center justify-center text-blue-400 border border-blue-500/20 group-hover:scale-110 transition-transform">
+                            <Gem size={32} fill="currentColor" fillOpacity={0.1} className="drop-shadow-[0_0_10px_rgba(96,165,250,0.4)]" />
                         </div>
-                        <span className="bg-blue-500/20 text-blue-300 text-[8px] font-black px-2 py-1 rounded-full uppercase">Soon</span>
+                        <div className="flex-1">
+                            <h3 className="font-black text-lg uppercase italic tracking-tighter text-white mb-0.5">TON Arena</h3>
+                            <p className="text-[10px] text-white/40 font-bold uppercase tracking-widest leading-none">Real TON prizes • Coming Soon</p>
+                        </div>
+                        <span className="bg-blue-500/20 text-blue-300 text-[8px] font-black px-3 py-1 rounded-full uppercase italic tracking-tighter border border-blue-500/20 mr-2">Soon</span>
                     </div>
 
                     {/* Squads Global Battle */}
@@ -225,38 +230,38 @@ export const Home: React.FC = () => {
                     {/* Free Quiz */}
                     <div
                         onClick={handleStartPractice}
-                        className="bg-white/5 border border-white/10 p-5 rounded-3xl active:scale-[0.98] transition-all flex flex-col justify-between aspect-square cursor-pointer hover:border-primary/30"
+                        className="bg-white/5 border border-white/10 p-5 rounded-[32px] active:scale-[0.98] transition-all flex flex-col justify-between aspect-square cursor-pointer hover:bg-white/[0.07] group relative overflow-hidden"
                     >
-                        <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center mb-4 relative">
+                        <div className="w-12 h-12 bg-green-500/10 rounded-2xl flex items-center justify-center mb-4 relative border border-green-500/20 text-green-400 group-hover:scale-110 transition-transform">
                             {loadingAd ? (
                                 <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
                             ) : (
-                                <Rocket size={24} className="text-primary" />
+                                <Gamepad2 size={24} fill="currentColor" fillOpacity={0.1} />
                             )}
                             {Math.max(0, 10 - (user.dailyGamesToday || 0)) === 0 && !loadingAd && (
-                                <div className="absolute -top-2 -right-2 bg-primary text-background-dark text-[8px] font-black px-1.5 py-0.5 rounded-full uppercase tracking-tighter shadow-lg shadow-primary/20 animate-pulse">Refill</div>
+                                <div className="absolute -top-2 -right-2 bg-primary text-background-dark text-[8px] font-black px-2 py-0.5 rounded-full uppercase tracking-tighter shadow-lg shadow-primary/20 animate-pulse">Refill</div>
                             )}
                         </div>
                         <div>
                             <div className="flex items-center justify-between mb-1">
-                                <h3 className={`font-black text-lg uppercase italic tracking-tighter leading-none ${loadingAd ? 'text-white/20' : ''}`}>
-                                    {loadingAd ? 'Refilling...' : 'Daily Practice'}
+                                <h3 className={`font-black text-lg uppercase italic tracking-tighter leading-none ${loadingAd ? 'text-white/20' : 'text-white'}`}>
+                                    {loadingAd ? 'Refilling...' : 'Daily Training'}
                                 </h3>
-                                <span className={`text-[10px] font-black ${loadingAd ? 'text-white/20' : 'text-primary opacity-80'}`}>
+                                <span className={`text-[10px] font-black ${loadingAd ? 'text-white/20' : 'text-primary'}`}>
                                     {Math.max(0, 10 - (user.dailyGamesToday || 0))}/10 ⚡
                                 </span>
                             </div>
-                            <p className="text-[10px] opacity-60 font-bold leading-tight uppercase tracking-tighter">
-                                {loadingAd ? 'Please wait...' : 'Master your skills and earn free XP daily.'}
+                            <p className="text-[10px] opacity-40 font-bold leading-tight uppercase tracking-widest leading-none">
+                                {loadingAd ? 'Station connection...' : 'Earn free XP and Stars every day.'}
                             </p>
                         </div>
-                        <div className="mt-4 flex items-center text-primary text-[10px] font-black uppercase tracking-widest gap-2 italic">
+                        <div className="mt-4 flex items-center text-primary text-[10px] font-black uppercase tracking-widest gap-2 italic group-hover:translate-x-1 transition-all">
                             {loadingAd ? (
                                 <span className="animate-pulse">Loading Ad...</span>
                             ) : Math.max(0, 10 - (user.dailyGamesToday || 0)) > 0 ? (
-                                <>Start Free <ArrowRight size={14} /></>
+                                <>Enter Arena <ArrowRight size={14} /></>
                             ) : (
-                                <>Watch Ad <Rocket size={14} /></>
+                                <>Watch & Refill <Gamepad2 size={14} /></>
                             )}
                         </div>
                     </div>
@@ -264,16 +269,16 @@ export const Home: React.FC = () => {
                     {/* Daily Quests */}
                     <div
                         onClick={() => navigate('/quests')}
-                        className="bg-white/5 border border-white/10 p-5 rounded-3xl active:scale-[0.98] transition-all flex flex-col justify-between aspect-square cursor-pointer hover:border-primary/30"
+                        className="bg-white/5 border border-white/10 p-5 rounded-[32px] active:scale-[0.98] transition-all flex flex-col justify-between aspect-square cursor-pointer hover:bg-white/[0.07] group"
                     >
-                        <div className="w-12 h-12 bg-yellow-400/10 rounded-2xl flex items-center justify-center mb-4">
-                            <Rocket size={24} className="text-yellow-400" />
+                        <div className="w-12 h-12 bg-yellow-400/10 rounded-2xl flex items-center justify-center mb-4 border border-yellow-400/20 text-yellow-400 group-hover:scale-110 transition-transform">
+                            <Trophy size={24} fill="currentColor" fillOpacity={0.1} />
                         </div>
                         <div>
-                            <h3 className="font-black text-lg uppercase italic tracking-tighter leading-none mb-1">Daily Quests</h3>
-                            <p className="text-[10px] opacity-60 font-bold leading-tight uppercase tracking-tighter">Complete tasks to earn huge rewards.</p>
+                            <h3 className="font-black text-lg uppercase italic tracking-tighter leading-none mb-1 text-white">Daily Quests</h3>
+                            <p className="text-[10px] opacity-40 font-bold leading-tight uppercase tracking-widest leading-none">Complete challenges for rewards.</p>
                         </div>
-                        <div className="mt-4 flex items-center text-yellow-400 text-[10px] font-black uppercase tracking-widest gap-2 italic">
+                        <div className="mt-4 flex items-center text-yellow-400 text-[10px] font-black uppercase tracking-widest gap-2 italic group-hover:translate-x-1 transition-all">
                             View Quests <ArrowRight size={14} />
                         </div>
                     </div>

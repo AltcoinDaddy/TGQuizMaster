@@ -4,7 +4,7 @@ import { authPost } from '../../utils/authFetch';
 import { useAppStore } from '../../store/useAppStore';
 import { MainLayout } from '../layout/MainLayout';
 import { GlassCard } from '../ui/GlassCard';
-import { Star, Zap, Shield, ShoppingBag, Loader2 } from 'lucide-react';
+import { Star, Zap, Shield, ShoppingBag, Loader2, Target, Timer, Palette } from 'lucide-react';
 
 interface ShopItem {
     id: string;
@@ -163,9 +163,15 @@ export const Shop: React.FC = () => {
                         <button
                             key={cat}
                             onClick={() => setCategory(cat as any)}
-                            className={`flex-shrink-0 px-6 py-2.5 rounded-full font-black text-[10px] uppercase tracking-[0.2em] transition-all italic ${category === cat ? 'bg-primary text-background-dark shadow-lg shadow-primary/20' : 'bg-white/5 text-white/40 border border-white/5'}`}
+                            className={`flex-shrink-0 px-6 py-2.5 rounded-full font-black text-[10px] uppercase tracking-[0.2em] transition-all italic flex items-center gap-2 ${category === cat ? 'bg-primary text-background-dark shadow-lg shadow-primary/20' : 'bg-white/5 text-white/40 border border-white/5'}`}
                         >
-                            {cat === 'stars' ? '⭐ Stars' : cat === 'powerups' ? '⚡ Power-Ups' : '🎨 Avatars'}
+                            {cat === 'stars' ? (
+                                <><Star size={12} fill="currentColor" fillOpacity={0.2} /> Stars</>
+                            ) : cat === 'powerups' ? (
+                                <><Zap size={12} fill="currentColor" fillOpacity={0.2} /> Power-Ups</>
+                            ) : (
+                                <><Palette size={12} fill="currentColor" fillOpacity={0.2} /> Avatars</>
+                            )}
                         </button>
                     ))}
                 </nav>
@@ -217,8 +223,8 @@ export const Shop: React.FC = () => {
                                     const ownedCount = user.inventoryPowerups?.[item.id] || 0;
                                     return (
                                         <GlassCard key={item.id} className="p-5 flex items-center gap-4 border-white/5 relative overflow-hidden group">
-                                            <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center border border-primary/20 text-3xl">
-                                                {item.id === 'pu_5050' ? '🎯' : item.id === 'pu_time' ? '⏰' : '⚡'}
+                                            <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center border border-primary/20 text-primary group-hover:scale-110 transition-transform">
+                                                {item.id === 'pu_5050' ? <Target size={28} /> : item.id === 'pu_time' ? <Timer size={28} /> : <Zap size={28} />}
                                             </div>
                                             <div className="flex-1">
                                                 <h4 className="font-black text-sm uppercase italic tracking-tighter leading-none mb-1">{item.title}</h4>

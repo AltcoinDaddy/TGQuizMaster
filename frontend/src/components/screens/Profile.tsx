@@ -1,7 +1,7 @@
 import React from 'react';
 import { MainLayout } from '../layout/MainLayout';
 import { GlassCard } from '../ui/GlassCard';
-import { Wallet, Settings, ChevronRight, LogOut, Award, PlayCircle, Zap, HelpCircle, ExternalLink, Users } from 'lucide-react';
+import { Wallet, Settings, ChevronRight, LogOut, Award, PlayCircle, Zap, HelpCircle, ExternalLink, Users, Target, Timer } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../../store/useAppStore';
 import { useTonConnectUI } from '@tonconnect/ui-react';
@@ -214,28 +214,28 @@ export const Profile: React.FC = () => {
                 <div className="mb-10">
                     <h3 className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em] italic px-2 mb-4">Power-Ups Inventory</h3>
                     <div className="grid grid-cols-2 gap-4">
-                        <div className="bg-white/5 border border-white/5 p-4 rounded-2xl flex items-center justify-between">
+                        <div className="bg-white/5 border border-white/5 p-4 rounded-2xl flex items-center justify-between group">
                             <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
-                                    <span className="text-xl">🎯</span>
+                                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary border border-primary/20 group-hover:scale-110 transition-transform">
+                                    <Target size={20} />
                                 </div>
                                 <span className="text-[10px] font-black uppercase tracking-tighter">50/50</span>
                             </div>
                             <span className="text-sm font-black italic text-primary">x{user.inventoryPowerups?.pu_5050 || 0}</span>
                         </div>
-                        <div className="bg-white/5 border border-white/5 p-4 rounded-2xl flex items-center justify-between">
+                        <div className="bg-white/5 border border-white/5 p-4 rounded-2xl flex items-center justify-between group">
                             <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-xl bg-yellow-400/10 flex items-center justify-center text-yellow-400">
-                                    <span className="text-xl">⏰</span>
+                                <div className="w-10 h-10 rounded-xl bg-yellow-400/10 flex items-center justify-center text-yellow-400 border border-yellow-400/20 group-hover:scale-110 transition-transform">
+                                    <Timer size={20} />
                                 </div>
                                 <span className="text-[10px] font-black uppercase tracking-tighter">Extra Time</span>
                             </div>
                             <span className="text-sm font-black italic text-yellow-400">x{user.inventoryPowerups?.pu_time || 0}</span>
                         </div>
-                        <div className="bg-white/5 border border-white/5 p-4 rounded-2xl flex items-center justify-between">
+                        <div className="bg-white/5 border border-white/5 p-4 rounded-2xl flex items-center justify-between group">
                             <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-xl bg-accent-purple/10 flex items-center justify-center text-accent-purple">
-                                    <span className="text-xl">⚡</span>
+                                <div className="w-10 h-10 rounded-xl bg-accent-purple/10 flex items-center justify-center text-accent-purple border border-accent-purple/20 group-hover:scale-110 transition-transform">
+                                    <Zap size={20} />
                                 </div>
                                 <span className="text-[10px] font-black uppercase tracking-tighter">2x Points</span>
                             </div>

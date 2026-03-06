@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { MainLayout } from '../layout/MainLayout';
 import { GlassCard } from '../ui/GlassCard';
+import { Target, Timer, Zap, Loader2 } from 'lucide-react';
 
 import { socket } from '../../utils/socket';
 import { useAppStore } from '../../store/useAppStore';
@@ -495,13 +496,13 @@ export const QuizRoom: React.FC = () => {
                     })}
                 </div>
 
-                {/* Power-Up Bar */}
+                {/* Power-Up Bar - Premium V2 */}
                 {gameStatus === 'playing' && (
-                    <div className="w-full flex justify-center gap-3 mt-2">
+                    <div className="w-full flex justify-center gap-4 mt-4 px-2">
                         {[
-                            { id: 'pu_5050', icon: '🎯', label: '50/50' },
-                            { id: 'pu_time', icon: '⏰', label: '+10s' },
-                            { id: 'pu_double', icon: '⚡', label: '2x' },
+                            { id: 'pu_5050', icon: Target, label: '50/50', color: 'primary' },
+                            { id: 'pu_time', icon: Timer, label: '+10s', color: 'yellow-400' },
+                            { id: 'pu_double', icon: Zap, label: '2x Points', color: 'accent-purple' },
                         ].map(pu => {
                             const isUsed = usedPowerUps.includes(pu.id);
                             const isLoading = powerUpLoading === pu.id;
@@ -509,26 +510,34 @@ export const QuizRoom: React.FC = () => {
                             const count = invMap[pu.id] || 0;
                             const hasInInventory = count > 0 || (user.inventory || []).includes(pu.id);
                             const isActive = pu.id === 'pu_double' && doublePointsActive;
+
+                            const Icon = pu.icon;
+                            const colorClass = pu.color === 'primary' ? 'primary' : pu.color;
+
                             return (
                                 <button
                                     key={pu.id}
                                     onClick={() => handlePowerUp(pu.id)}
-                                    disabled={isUsed || isLoading}
-                                    className={`flex flex-col items-center gap-1 px-4 py-2 rounded-xl border transition-all active:scale-95 ${isActive
-                                        ? 'bg-primary/20 border-primary shadow-[0_0_15px_rgba(13,242,89,0.4)] animate-pulse'
-                                        : isUsed
-                                            ? 'bg-white/5 border-white/5 opacity-30'
-                                            : !hasInInventory
-                                                ? 'bg-white/5 border-white/5 opacity-60'
-                                                : 'bg-white/10 border-white/10 hover:border-primary/30'
-                                        }`}
+                                    disabled={isUsed || isLoading || !hasInInventory}
+                                    className={`relative flex flex-col items-center gap-1.5 p-3 rounded-2xl border transition-all active:scale-95 group flex-1
+                                        ${isActive ? 'bg-primary/20 border-primary shadow-[0_0_20px_rgba(13,242,89,0.4)] animate-pulse' :
+                                            isUsed ? 'bg-white/5 border-white/10 opacity-30 grayscale' :
+                                                !hasInInventory ? 'bg-white/2 border-white/5 opacity-40' :
+                                                    'bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20'}`}
                                 >
-                                    <span className="text-xl">{isLoading ? '⏳' : pu.icon}</span>
-                                    <span className="text-[9px] font-black uppercase tracking-wider">{pu.label}</span>
-                                    {!isUsed && (
-                                        <span className={`text-[8px] font-bold ${hasInInventory ? 'text-primary' : 'opacity-50'}`}>
-                                            {count}x
-                                        </span>
+                                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all
+                                        ${isActive ? 'text-primary' :
+                                            isUsed ? 'text-white/20' :
+                                                !hasInInventory ? 'text-white/20' :
+                                                    `text-${colorClass} bg-${colorClass}/10 group-hover:scale-110`}`}>
+                                        {isLoading ? <Loader2 size={24} className="animate-spin" /> : <Icon size={24} fill="currentColor" fillOpacity={isUsed ? 0 : 0.1} />}
+                                    </div>
+                                    <span className="text-[9px] font-black uppercase tracking-tighter opacity-60 leading-none">{pu.label}</span>
+
+                                    {!isUsed && hasInInventory && (
+                                        <div className="absolute -top-1 -right-1 bg-background-dark border border-white/10 rounded-full px-1.5 py-0.5 min-w-[18px] flex items-center justify-center">
+                                            <span className="text-[8px] font-black text-primary">{count}</span>
+                                        </div>
                                     )}
                                 </button>
                             );
