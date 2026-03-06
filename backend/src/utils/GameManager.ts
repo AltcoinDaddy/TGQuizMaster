@@ -355,7 +355,6 @@ export class GameManager {
                             stats_wins: (user.stats_wins || 0) + (isWinner ? 1 : 0),
                             stats_xp: newXp,
                             stats_level: newLevel.level,
-                            daily_games_today: (user.daily_games_today || 0) + 1,
                             daily_wins_today: (user.daily_wins_today || 0) + (isWinner ? 1 : 0)
                         };
 
@@ -505,8 +504,7 @@ export class GameManager {
                     const updates: any = {
                         stats_total_games: (user.stats_total_games || 0) + 1,
                         stats_xp: newXp,
-                        stats_level: newLevel.level,
-                        daily_games_today: (user.daily_games_today || 0) + 1
+                        stats_level: newLevel.level
                     };
                     if (index === 0) {
                         updates.stats_wins = (user.stats_wins || 0) + 1;
