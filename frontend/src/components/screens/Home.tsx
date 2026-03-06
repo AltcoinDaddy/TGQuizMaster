@@ -38,6 +38,16 @@ export const Home: React.FC = () => {
             }
         };
         checkDailyReward();
+
+        // Trigger profile sync to ensure fresh energy/stars data
+        const socket = (window as any).socket;
+        const tg = (window as any).Telegram?.WebApp;
+        if (socket && user.telegramId) {
+            socket.emit('sync_profile', {
+                userId: user.telegramId,
+                initData: tg?.initData
+            });
+        }
     }, [user.telegramId]);
 
     const handleClaim = async () => {
@@ -218,23 +228,35 @@ export const Home: React.FC = () => {
                         className="bg-white/5 border border-white/10 p-5 rounded-3xl active:scale-[0.98] transition-all flex flex-col justify-between aspect-square cursor-pointer hover:border-primary/30"
                     >
                         <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center mb-4 relative">
-                            <Rocket size={24} className="text-primary" />
-                            {Math.max(0, 10 - (user.dailyGamesToday || 0)) === 0 && (
-                                <div className="absolute -top-2 -right-2 bg-primary text-background-dark text-[8px] font-black px-1.5 py-0.5 rounded-full uppercase tracking-tighter">Refill</div>
+                            {loadingAd ? (
+                                <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                            ) : (
+                                <Rocket size={24} className="text-primary" />
+                            )}
+                            {Math.max(0, 10 - (user.dailyGamesToday || 0)) === 0 && !loadingAd && (
+                                <div className="absolute -top-2 -right-2 bg-primary text-background-dark text-[8px] font-black px-1.5 py-0.5 rounded-full uppercase tracking-tighter shadow-lg shadow-primary/20 animate-pulse">Refill</div>
                             )}
                         </div>
                         <div>
                             <div className="flex items-center justify-between mb-1">
-                                <h3 className="font-black text-lg uppercase italic tracking-tighter leading-none">Daily Practice</h3>
-                                <span className="text-[10px] text-primary font-black opacity-80">{Math.max(0, 10 - (user.dailyGamesToday || 0))}/10 ⚡</span>
+                                <h3 className={`font-black text-lg uppercase italic tracking-tighter leading-none ${loadingAd ? 'text-white/20' : ''}`}>
+                                    {loadingAd ? 'Refilling...' : 'Daily Practice'}
+                                </h3>
+                                <span className={`text-[10px] font-black ${loadingAd ? 'text-white/20' : 'text-primary opacity-80'}`}>
+                                    {Math.max(0, 10 - (user.dailyGamesToday || 0))}/10 ⚡
+                                </span>
                             </div>
-                            <p className="text-[10px] opacity-60 font-bold leading-tight uppercase tracking-tighter">Master your skills and earn free XP daily.</p>
+                            <p className="text-[10px] opacity-60 font-bold leading-tight uppercase tracking-tighter">
+                                {loadingAd ? 'Please wait...' : 'Master your skills and earn free XP daily.'}
+                            </p>
                         </div>
                         <div className="mt-4 flex items-center text-primary text-[10px] font-black uppercase tracking-widest gap-2 italic">
-                            {Math.max(0, 10 - (user.dailyGamesToday || 0)) > 0 ? (
+                            {loadingAd ? (
+                                <span className="animate-pulse">Loading Ad...</span>
+                            ) : Math.max(0, 10 - (user.dailyGamesToday || 0)) > 0 ? (
                                 <>Start Free <ArrowRight size={14} /></>
                             ) : (
-                                <>Watch Ad to Refill <Rocket size={14} /></>
+                                <>Watch Ad <Rocket size={14} /></>
                             )}
                         </div>
                     </div>

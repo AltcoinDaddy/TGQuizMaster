@@ -293,6 +293,11 @@ io.on('connection', (socket) => {
                     daily_games_today: (user.daily_games_today || 0) + 1
                 }).eq('telegram_id', userId);
 
+                // Notify client immediately of the new energy count
+                socket.emit('balance_update', {
+                    dailyGamesToday: (user.daily_games_today || 0) + 1
+                });
+
                 // Emit room_update so frontend transitions to joined state correctly
                 socket.emit('room_update', {
                     ...mgr.getRoomInfo(),
