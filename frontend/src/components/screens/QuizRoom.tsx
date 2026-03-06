@@ -281,11 +281,17 @@ export const QuizRoom: React.FC = () => {
 
     const handlePowerUp = (powerUpId: string) => {
         if (usedPowerUps.includes(powerUpId) || gameStatus !== 'playing' || powerUpLoading) return;
-        // Check inventory
-        const inv = useAppStore.getState().user.inventory || [];
-        if (!inv.includes(powerUpId)) {
-            (window as any).Telegram?.WebApp?.showAlert?.('You don\'t have this power-up! Buy it from the Shop.');
-            return;
+        // Check inventory (Map with quantities)
+        const inv = useAppStore.getState().user.inventoryPowerups || {};
+        const count = inv[powerUpId] || 0;
+
+        if (count <= 0) {
+            // Check legacy inventory array
+            const invArr = useAppStore.getState().user.inventory || [];
+            if (!invArr.includes(powerUpId)) {
+                (window as any).Telegram?.WebApp?.showAlert?.('You don\'t have this power-up! Buy it from the Shop.');
+                return;
+            }
         }
         setPowerUpLoading(powerUpId);
         setUsedPowerUps(prev => [...prev, powerUpId]);
@@ -499,7 +505,9 @@ export const QuizRoom: React.FC = () => {
                         ].map(pu => {
                             const isUsed = usedPowerUps.includes(pu.id);
                             const isLoading = powerUpLoading === pu.id;
-                            const hasInInventory = (user.inventory || []).includes(pu.id);
+                            const invMap = user.inventoryPowerups || {};
+                            const count = invMap[pu.id] || 0;
+                            const hasInInventory = count > 0 || (user.inventory || []).includes(pu.id);
                             const isActive = pu.id === 'pu_double' && doublePointsActive;
                             return (
                                 <button
@@ -517,8 +525,10 @@ export const QuizRoom: React.FC = () => {
                                 >
                                     <span className="text-xl">{isLoading ? '⏳' : pu.icon}</span>
                                     <span className="text-[9px] font-black uppercase tracking-wider">{pu.label}</span>
-                                    {!hasInInventory && !isUsed && (
-                                        <span className="text-[8px] opacity-50">none</span>
+                                    {!isUsed && (
+                                        <span className={`text-[8px] font-bold ${hasInInventory ? 'text-primary' : 'opacity-50'}`}>
+                                            {hasInInventory ? `${(user.inventoryPowerups || {})[pu.id] || 0}x` : 'none'}
+                                        </span>
                                     )}
                                 </button>
                             );

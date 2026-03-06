@@ -51,7 +51,7 @@ router.post('/buy-powerup', financialRateLimit, telegramAuthMiddleware, async (r
 
         const { data: user, error } = await supabase
             .from('users')
-            .select('balance_stars, inventory')
+            .select('balance_stars, inventory_powerups')
             .eq('telegram_id', userId)
             .single();
 
@@ -61,11 +61,14 @@ router.post('/buy-powerup', financialRateLimit, telegramAuthMiddleware, async (r
         }
 
         const newBalance = (user.balance_stars || 0) - expectedCost;
-        const newInventory = [...(user.inventory || []), powerUpId];
+
+        // Update JSONB inventory_powerups (Map)
+        const newInvPowerups = { ...(user.inventory_powerups || {}) };
+        newInvPowerups[powerUpId] = (newInvPowerups[powerUpId] || 0) + 1;
 
         await supabase.from('users').update({
             balance_stars: newBalance,
-            inventory: newInventory
+            inventory_powerups: newInvPowerups
         }).eq('telegram_id', userId);
 
         await supabase.from('transactions').insert({
@@ -78,7 +81,7 @@ router.post('/buy-powerup', financialRateLimit, telegramAuthMiddleware, async (r
         });
 
         console.log(`[SHOP] User ${telegramId} bought ${powerUpId} for ${expectedCost} Stars`);
-        res.json({ success: true, newBalance, inventory: newInventory });
+        res.json({ success: true, newBalance, inventoryPowerups: newInvPowerups });
     } catch (e) {
         console.error('Buy power-up error:', e);
         res.status(500).json({ success: false, error: 'Server error' });

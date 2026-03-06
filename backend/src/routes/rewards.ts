@@ -49,14 +49,12 @@ function generateChestReward(day: number) {
         // Rare Chest: 100-200 Stars, 1 Shard guaranteed, 20% Power-Up
         stars = Math.floor(Math.random() * 101) + 100;
         shards = 1;
-        if (random < 0.2) {
-            powerup = Math.random() > 0.5 ? 'SHIELD' : 'TIME_FREEZE';
-        }
+        powerup = Math.random() > 0.5 ? 'pu_5050' : 'pu_time';
     } else if (day === 14) {
         // Legendary Chest: 200-500 Stars, 2-3 Shards guaranteed, 1 Power-Up guaranteed
         stars = Math.floor(Math.random() * 301) + 200;
         shards = Math.floor(Math.random() * 2) + 2;
-        powerup = Math.random() > 0.5 ? 'SHIELD' : 'TIME_FREEZE';
+        powerup = Math.random() > 0.5 ? 'pu_5050' : 'pu_time';
     }
 
     return { stars, shards, powerup };

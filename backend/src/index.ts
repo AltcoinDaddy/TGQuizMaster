@@ -520,39 +520,44 @@ io.on('connection', (socket) => {
             const mapping = socketPlayerMap.get(socket.id);
             if (!mapping) return socket.emit('powerup_result', { success: false, error: 'Player not mapped' });
 
-
             const userId = parseInt(mapping.playerId);
             const { data: user } = await supabase
                 .from('users')
-                .select('username, inventory, balance_stars')
+                .select('username, inventory, inventory_powerups, balance_stars')
                 .eq('telegram_id', userId)
                 .single();
 
             if (!user) return socket.emit('powerup_result', { success: false, error: 'User not found' });
 
-            const inv: string[] = user.inventory || [];
-            const puIndex = inv.indexOf(powerUpId);
-            if (puIndex === -1) {
-                return socket.emit('powerup_result', { success: false, error: 'Power-up not in inventory' });
-            }
-
-            // Use the power-up in the game
+            // Use the power-up in the game first
             const result = manager.usePowerUp(mapping.playerId, powerUpId);
             if (!result.success) {
                 return socket.emit('powerup_result', result);
             }
 
-            // Deduct from inventory in DB
-            const updatedInv = [...inv];
-            updatedInv.splice(puIndex, 1);
-            await supabase.from('users').update({ inventory: updatedInv }).eq('telegram_id', userId);
+            // Deduct from inventory in DB (JSONB map)
+            const currentItemCount = user.inventory_powerups?.[powerUpId] || 0;
+            if (currentItemCount <= 0) {
+                // Check legacy inventory array as fallback
+                const invArr: string[] = user.inventory || [];
+                const puIndex = invArr.indexOf(powerUpId);
+                if (puIndex === -1) {
+                    return socket.emit('powerup_result', { success: false, error: 'Power-up not in inventory' });
+                }
+                const updatedInv = [...invArr];
+                updatedInv.splice(puIndex, 1);
+                await supabase.from('users').update({ inventory: updatedInv }).eq('telegram_id', userId);
+            } else {
+                const newInvMap = { ...user.inventory_powerups };
+                newInvMap[powerUpId] = currentItemCount - 1;
+                await supabase.from('users').update({ inventory_powerups: newInvMap }).eq('telegram_id', userId);
+                socket.emit('balance_update', { inventoryPowerups: newInvMap });
+            }
 
             // Emit result to the player
             socket.emit('powerup_result', result);
             // Notify the room about the power-up usage
             io.to(roomId).emit('powerup_used', { playerId: mapping.playerId, powerUpId, playerName: user.username || mapping.playerId });
-            // Update user inventory on frontend
-            socket.emit('user_inventory_update', updatedInv);
 
             console.log(`[POWERUP] Player ${mapping.playerId} used ${powerUpId} in room ${roomId}`);
         } catch (e) {
@@ -775,7 +780,9 @@ io.on('connection', (socket) => {
             referralTier: calculateReferralTier(referralCount),
             recentReferrals,
             recentTransactions,
-            dailyGamesToday: user.daily_games_today || 0
+            dailyGamesToday: user.daily_games_today || 0,
+            inventoryPowerups: user.inventory_powerups || {},
+            unlockedAvatars: user.unlocked_avatars || []
         });
     });
 
