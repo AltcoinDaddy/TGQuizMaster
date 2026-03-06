@@ -216,21 +216,30 @@ export const Profile: React.FC = () => {
                     <div className="grid grid-cols-2 gap-4">
                         <div className="bg-white/5 border border-white/5 p-4 rounded-2xl flex items-center justify-between">
                             <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-400">
-                                    <Zap size={20} />
+                                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                                    <span className="text-xl">🎯</span>
                                 </div>
-                                <span className="text-[10px] font-black uppercase tracking-tighter">Shield</span>
+                                <span className="text-[10px] font-black uppercase tracking-tighter">50/50</span>
                             </div>
-                            <span className="text-sm font-black italic text-blue-400">x{user.inventoryPowerups?.SHIELD || 0}</span>
+                            <span className="text-sm font-black italic text-primary">x{user.inventoryPowerups?.pu_5050 || 0}</span>
                         </div>
                         <div className="bg-white/5 border border-white/5 p-4 rounded-2xl flex items-center justify-between">
                             <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-400">
-                                    <PlayCircle size={20} />
+                                <div className="w-10 h-10 rounded-xl bg-yellow-400/10 flex items-center justify-center text-yellow-400">
+                                    <span className="text-xl">⏰</span>
                                 </div>
-                                <span className="text-[10px] font-black uppercase tracking-tighter">Freeze</span>
+                                <span className="text-[10px] font-black uppercase tracking-tighter">Extra Time</span>
                             </div>
-                            <span className="text-sm font-black italic text-purple-400">x{user.inventoryPowerups?.TIME_FREEZE || 0}</span>
+                            <span className="text-sm font-black italic text-yellow-400">x{user.inventoryPowerups?.pu_time || 0}</span>
+                        </div>
+                        <div className="bg-white/5 border border-white/5 p-4 rounded-2xl flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-xl bg-accent-purple/10 flex items-center justify-center text-accent-purple">
+                                    <span className="text-xl">⚡</span>
+                                </div>
+                                <span className="text-[10px] font-black uppercase tracking-tighter">2x Points</span>
+                            </div>
+                            <span className="text-sm font-black italic text-accent-purple">x{user.inventoryPowerups?.pu_double || 0}</span>
                         </div>
                     </div>
                 </div>

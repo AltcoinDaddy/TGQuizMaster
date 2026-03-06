@@ -44,7 +44,7 @@ export const Home: React.FC = () => {
         const tg = (window as any).Telegram?.WebApp;
         if (socket && user.telegramId) {
             socket.emit('sync_profile', {
-                userId: user.telegramId,
+                telegramId: user.telegramId,
                 initData: tg?.initData
             });
         }

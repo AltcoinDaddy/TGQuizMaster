@@ -119,7 +119,7 @@ export const Shop: React.FC = () => {
             if (data.success) {
                 useAppStore.getState().setUser({
                     stars: data.newBalance,
-                    inventory: data.inventory
+                    inventoryPowerups: data.inventoryPowerups
                 });
                 const tg = (window as any).Telegram?.WebApp;
                 if (tg?.showAlert) tg.showAlert(`${item.title} added to your inventory! ⚡`);
@@ -214,7 +214,7 @@ export const Shop: React.FC = () => {
                         ) : category === 'powerups' ? (
                             <div className="space-y-4">
                                 {shopData.powerups.map((item) => {
-                                    const ownedCount = (user.inventory || []).filter((i: string) => i === item.id).length;
+                                    const ownedCount = user.inventoryPowerups?.[item.id] || 0;
                                     return (
                                         <GlassCard key={item.id} className="p-5 flex items-center gap-4 border-white/5 relative overflow-hidden group">
                                             <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center border border-primary/20 text-3xl">
