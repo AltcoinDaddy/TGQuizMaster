@@ -513,13 +513,13 @@ export const QuizRoom: React.FC = () => {
                                 <button
                                     key={pu.id}
                                     onClick={() => handlePowerUp(pu.id)}
-                                    disabled={isUsed || isLoading || !hasInInventory}
+                                    disabled={isUsed || isLoading}
                                     className={`flex flex-col items-center gap-1 px-4 py-2 rounded-xl border transition-all active:scale-95 ${isActive
                                         ? 'bg-primary/20 border-primary shadow-[0_0_15px_rgba(13,242,89,0.4)] animate-pulse'
                                         : isUsed
                                             ? 'bg-white/5 border-white/5 opacity-30'
                                             : !hasInInventory
-                                                ? 'bg-white/5 border-white/5 opacity-40'
+                                                ? 'bg-white/5 border-white/5 opacity-60'
                                                 : 'bg-white/10 border-white/10 hover:border-primary/30'
                                         }`}
                                 >
@@ -527,7 +527,7 @@ export const QuizRoom: React.FC = () => {
                                     <span className="text-[9px] font-black uppercase tracking-wider">{pu.label}</span>
                                     {!isUsed && (
                                         <span className={`text-[8px] font-bold ${hasInInventory ? 'text-primary' : 'opacity-50'}`}>
-                                            {hasInInventory ? `${(user.inventoryPowerups || {})[pu.id] || 0}x` : 'none'}
+                                            {count}x
                                         </span>
                                     )}
                                 </button>
