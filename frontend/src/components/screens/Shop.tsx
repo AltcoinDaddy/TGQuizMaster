@@ -122,7 +122,7 @@ export const Shop: React.FC = () => {
                     inventoryPowerups: data.inventoryPowerups
                 });
                 const tg = (window as any).Telegram?.WebApp;
-                if (tg?.showAlert) tg.showAlert(`${item.title} added to your inventory! ⚡`);
+                if (tg?.showAlert) tg.showAlert(`${item.title} added to your inventory!`);
                 else alert(`${item.title} purchased!`);
             } else {
                 throw new Error(data.error || 'Purchase failed');

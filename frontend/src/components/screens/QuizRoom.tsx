@@ -387,7 +387,7 @@ export const QuizRoom: React.FC = () => {
                             }}
                             className="w-full py-4 bg-primary text-background-dark font-black text-sm uppercase italic tracking-widest rounded-2xl active:scale-95 transition-all shadow-[0_0_20px_rgba(13,242,89,0.3)]"
                         >
-                            ⚡ Play Again
+                            <Zap size={16} fill="currentColor" /> Play Again
                         </button>
                         <button
                             onClick={() => navigate('/')}

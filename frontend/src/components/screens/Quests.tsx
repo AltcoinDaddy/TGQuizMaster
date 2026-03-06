@@ -5,7 +5,7 @@ import { useAppStore } from '../../store/useAppStore';
 import { MainLayout } from '../layout/MainLayout';
 import { GlassCard } from '../ui/GlassCard';
 import { Button } from '../ui/Button';
-import { Zap, Gift, Lock, Trophy, Sparkles, Loader2, ChevronLeft, Twitter, Send } from 'lucide-react';
+import { Zap, Gift, Lock, Trophy, Loader2, ChevronLeft, Twitter, Send, Star } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 interface Quest {
@@ -156,8 +156,11 @@ export const Quests: React.FC = () => {
                                 key={quest.id}
                                 className={`p-4 flex items-center gap-4 border-white/5 ${quest.status === 'locked' ? 'opacity-50 grayscale' : ''} ${quest.status === 'claimable' ? 'border-primary/40 shadow-[0_0_20px_rgba(13,242,89,0.1)]' : ''}`}
                             >
-                                <div className={`w-14 h-14 rounded-xl flex items-center justify-center border ${quest.status === 'claimable' ? 'bg-primary/20 text-primary border-primary/30' : 'bg-background-dark text-white/60 border-white/10'}`}>
-                                    {quest.icon}
+                                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center border transition-all ${quest.status === 'claimable'
+                                    ? 'bg-primary/20 text-primary border-primary/30 shadow-[0_0_15px_rgba(13,242,89,0.2)]'
+                                    : 'bg-white/5 text-white/40 border-white/10'
+                                    }`}>
+                                    {React.cloneElement(quest.icon as React.ReactElement<any>, { size: 24 })}
                                 </div>
 
                                 <div className="flex-1 min-w-0">
@@ -227,12 +230,14 @@ export const Quests: React.FC = () => {
                         </div>
 
                         <div className="flex gap-4 mb-10 relative z-10">
-                            <div className="bg-white/10 border border-white/20 px-6 py-3 rounded-2xl flex items-center gap-2 backdrop-blur-md shadow-xl">
-                                <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-background-dark">
-                                    <Sparkles size={18} />
+                            <div className="bg-white/10 border border-white/20 px-8 py-4 rounded-[2rem] flex items-center gap-3 backdrop-blur-md shadow-[0_0_30px_rgba(255,255,255,0.05)]">
+                                <div className="w-12 h-12 bg-primary rounded-2xl flex items-center justify-center text-background-dark shadow-lg shadow-primary/20">
+                                    <Star size={24} fill="currentColor" />
                                 </div>
-                                <span className="text-white font-black text-xl">{claimingQuest?.reward.split(' ')[0]}</span>
-                                <span className="text-[10px] font-bold opacity-50 uppercase">{claimingQuest?.reward.split(' ')[1]}</span>
+                                <div className="text-left">
+                                    <p className="text-white font-black text-2xl tracking-tighter leading-none">{claimingQuest?.reward.split(' ')[0]}</p>
+                                    <p className="text-[10px] font-bold opacity-50 uppercase tracking-widest mt-1">{claimingQuest?.reward.split(' ')[1]}</p>
+                                </div>
                             </div>
                         </div>
 

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { API_URL } from '../../config/api';
 import { authPost } from '../../utils/authFetch';
 import { MainLayout } from '../layout/MainLayout';
-import { ArrowRight, Users, Gamepad2, Star, Gem, Trophy } from 'lucide-react';
+import { ArrowRight, Users, Gamepad2, Star, Gem, Trophy, Zap } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { StreakPopup } from '../ui/StreakPopup';
 import { useAppStore } from '../../store/useAppStore';
@@ -76,8 +76,8 @@ export const Home: React.FC = () => {
                 const tg = (window as any).Telegram?.WebApp;
                 if (tg?.showAlert) {
                     const msg = data.rewardType === 'CHEST'
-                        ? `Mystery Chest Opened! +${data.reward} ⭐ and more!`
-                        : `Day ${data.streakDay} reward claimed! +${data.reward} ⭐`;
+                        ? `Mystery Chest Opened! +${data.reward} Stars and more!`
+                        : `Day ${data.streakDay} reward claimed! +${data.reward} Stars`;
                     tg.showAlert(msg);
                 }
 
@@ -124,7 +124,7 @@ export const Home: React.FC = () => {
                     if (data.success) {
                         useAppStore.getState().setUser({ dailyGamesToday: data.dailyGamesToday });
                         const tg = (window as any).Telegram?.WebApp;
-                        if (tg?.showAlert) tg.showAlert('Energy refilled! +5 games added. ⚡');
+                        if (tg?.showAlert) tg.showAlert(`Energy refilled! +5 games added.`);
                     }
                 }
             } catch (e) {
@@ -248,7 +248,8 @@ export const Home: React.FC = () => {
                                     {loadingAd ? 'Refilling...' : 'Daily Training'}
                                 </h3>
                                 <span className={`text-[10px] font-black ${loadingAd ? 'text-white/20' : 'text-primary'}`}>
-                                    {Math.max(0, 10 - (user.dailyGamesToday || 0))}/10 ⚡
+                                    {Math.max(0, 10 - (user.dailyGamesToday || 0))}/10
+                                    <Zap size={10} fill="currentColor" className="inline ml-1 mb-0.5 text-primary" />
                                 </span>
                             </div>
                             <p className="text-[10px] opacity-40 font-bold leading-tight uppercase tracking-widest leading-none">

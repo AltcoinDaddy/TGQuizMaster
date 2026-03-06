@@ -23,13 +23,21 @@ export const LevelUp: React.FC = () => {
 
                 {/* Center Content: Level Gem */}
                 <div className="relative z-10 flex items-center justify-center animate-in zoom-in duration-700 delay-200">
-                    <div className="w-64 h-64 rounded-full border-[10px] border-primary/20 flex items-center justify-center relative bg-background-dark shadow-[0_0_50px_rgba(242,204,13,0.2)]">
-                        <div className="absolute inset-0 border-[10px] border-primary rounded-full shadow-[0_0_30px_rgba(242,204,13,0.5)]" style={{ clipPath: 'polygon(50% 50%, 50% 0%, 100% 0%, 100% 100%, 0% 100%, 0% 0%, 10% 0%)' }}></div>
-                        <div className="text-[120px] leading-none font-black text-primary italic drop-shadow-2xl">{level}</div>
+                    <div className="w-64 h-64 rounded-full border-[10px] border-primary/20 flex items-center justify-center relative bg-background-dark shadow-[0_0_80px_rgba(242,204,13,0.3)]">
+                        {/* Outer Glow Ring */}
+                        <div className="absolute -inset-4 border border-primary/10 rounded-full animate-pulse"></div>
+                        <div className="absolute -inset-8 border border-primary/5 rounded-full animate-ping-slow"></div>
+
+                        <div className="absolute inset-0 border-[10px] border-primary rounded-full shadow-[0_0_40px_rgba(242,204,13,0.6)]" style={{ clipPath: 'polygon(50% 50%, 50% 0%, 100% 0%, 100% 100%, 0% 100%, 0% 0%, 10% 0%)' }}></div>
+                        <div className="text-[120px] leading-none font-black text-primary italic drop-shadow-[0_0_25px_rgba(242,204,13,0.8)] animate-bounce-slow">{level}</div>
                     </div>
                     {/* Particles */}
-                    <div className="absolute -top-10 -right-5 text-4xl animate-bounce">✨</div>
-                    <div className="absolute bottom-10 -left-10 text-3xl animate-pulse">⭐</div>
+                    <div className="absolute -top-10 -right-5 text-primary animate-bounce delay-100">
+                        <Sparkles size={48} fill="currentColor" className="opacity-60" />
+                    </div>
+                    <div className="absolute bottom-10 -left-10 text-primary animate-pulse delay-300">
+                        <Star size={40} fill="currentColor" className="opacity-40" />
+                    </div>
                 </div>
 
                 {/* Rewards */}
@@ -39,23 +47,23 @@ export const LevelUp: React.FC = () => {
                         <p className="text-[10px] font-bold opacity-40 uppercase tracking-widest mt-1">You're crushing the leaderboards!</p>
                     </div>
 
-                    <div className="bg-white/5 border border-white/10 rounded-[3rem] p-8 backdrop-blur-xl">
+                    <div className="bg-white/5 border border-white/10 rounded-[3rem] p-8 backdrop-blur-xl shadow-[0_0_30px_rgba(255,255,255,0.02)]">
                         <p className="text-[10px] font-black text-primary uppercase tracking-[0.3em] mb-6">Rewards Unlocked</p>
                         <div className="grid grid-cols-3 gap-6">
                             <div className="flex flex-col items-center gap-2 group">
-                                <div className="w-16 h-16 rounded-2xl bg-primary/20 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+                                <div className="w-16 h-16 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary group-hover:scale-110 group-hover:bg-primary/20 transition-all shadow-[0_0_15px_rgba(242,204,13,0.1)]">
                                     <Trophy size={32} />
                                 </div>
                                 <span className="text-[9px] font-black uppercase tracking-tight opacity-60">New Badge</span>
                             </div>
                             <div className="flex flex-col items-center gap-2 group">
-                                <div className="w-16 h-16 rounded-2xl bg-primary/20 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
-                                    <Star size={32} />
+                                <div className="w-16 h-16 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary group-hover:scale-110 group-hover:bg-primary/20 transition-all shadow-[0_0_15px_rgba(242,204,13,0.1)]">
+                                    <Star size={32} fill="currentColor" />
                                 </div>
                                 <span className="text-[9px] font-black uppercase tracking-tight opacity-60">+{level * 50} Stars</span>
                             </div>
                             <div className="flex flex-col items-center gap-2 group">
-                                <div className="w-16 h-16 rounded-2xl bg-primary/20 flex items-center justify-center text-primary relative overflow-hidden group-hover:scale-110 transition-transform">
+                                <div className="w-16 h-16 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary relative overflow-hidden group-hover:scale-110 group-hover:bg-primary/20 transition-all shadow-[0_0_15px_rgba(242,204,13,0.1)]">
                                     <Sparkles size={32} />
                                 </div>
                                 <span className="text-[9px] font-black uppercase tracking-tight opacity-60">Pro Frame</span>

@@ -81,7 +81,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
 
             <div className="fixed bottom-0 left-0 right-0 p-6 safe-bottom">
                 <Button fullWidth size="lg" onClick={nextStep} className="py-5 text-xl font-black italic tracking-widest">
-                    {currentStep === onboardingSteps.length - 1 ? 'GET STARTED 🚀' : 'NEXT STEP'}
+                    {currentStep === onboardingSteps.length - 1 ? 'GET STARTED' : 'NEXT STEP'}
                     <ArrowRight size={20} />
                 </Button>
             </div>

@@ -1,7 +1,7 @@
 import React from 'react';
 import { MainLayout } from '../layout/MainLayout';
 import { GlassCard } from '../ui/GlassCard';
-import { Wallet, Settings, ChevronRight, LogOut, Award, PlayCircle, Zap, HelpCircle, ExternalLink, Users, Target, Timer } from 'lucide-react';
+import { Wallet, Settings, ChevronRight, LogOut, Award, PlayCircle, Zap, HelpCircle, ExternalLink, Users, Target, Timer, Sparkles } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../../store/useAppStore';
 import { useTonConnectUI } from '@tonconnect/ui-react';
@@ -160,7 +160,9 @@ export const Profile: React.FC = () => {
                         </div>
                         <p className="text-[8px] font-bold text-white/30 uppercase mt-2 tracking-tighter italic">
                             {user.unlockedAvatars?.includes('PREMIUM_CYBER_AVATAR')
-                                ? '✨ PREMIUM AVATAR UNLOCKED'
+                                ? <span className="flex items-center gap-1">
+                                    <Sparkles size={10} fill="currentColor" /> PREMIUM AVATAR UNLOCKED
+                                </span>
                                 : 'Collect 10 shards to unlock Premium Avatar'}
                         </p>
                     </div>

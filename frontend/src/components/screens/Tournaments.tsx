@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { API_URL } from '../../config/api';
 import { MainLayout } from '../layout/MainLayout';
 import { GlassCard } from '../ui/GlassCard';
-import { Timer, Star, Plus, ArrowRight, Zap, Trophy, Lock, Gamepad2 } from 'lucide-react';
+import { Timer, Star, Plus, ArrowRight, Zap, Trophy, Lock, Gamepad2, BarChart3, Dumbbell, Diamond } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 interface Tournament {
@@ -82,25 +82,29 @@ export const Tournaments: React.FC = () => {
                 <div className="grid grid-cols-3 gap-3 mb-8">
                     <button
                         onClick={() => setTab('free')}
-                        className={`relative py-5 rounded-2xl flex flex-col items-center gap-2 transition-all active:scale-95 border-2 ${tab === 'free'
+                        className={`relative py-5 rounded-2xl flex flex-col items-center gap-2 transition-all active:scale-95 border-2 group ${tab === 'free'
                             ? 'bg-green-500/15 border-green-400 shadow-lg shadow-green-500/20'
                             : 'bg-white/5 border-white/10'
                             }`}
                     >
-                        <span className="text-3xl">🎮</span>
-                        <span className={`text-xs font-black uppercase tracking-wider ${tab === 'free' ? 'text-green-400' : 'text-white/50'}`}>Free</span>
+                        <div className={`p-2 rounded-xl transition-all ${tab === 'free' ? 'bg-green-400 text-background-dark shadow-[0_0_15px_rgba(74,222,128,0.5)]' : 'bg-white/5 text-white/40 group-hover:bg-white/10'}`}>
+                            <Gamepad2 size={24} />
+                        </div>
+                        <span className={`text-[10px] font-black uppercase tracking-wider ${tab === 'free' ? 'text-green-400' : 'text-white/50'}`}>Free</span>
                         {tab === 'free' && <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-400 rounded-full animate-pulse" />}
                     </button>
 
                     <button
                         onClick={() => setTab('stars')}
-                        className={`relative py-5 rounded-2xl flex flex-col items-center gap-2 transition-all active:scale-95 border-2 ${tab === 'stars'
+                        className={`relative py-5 rounded-2xl flex flex-col items-center gap-2 transition-all active:scale-95 border-2 group ${tab === 'stars'
                             ? 'bg-yellow-500/15 border-yellow-400 shadow-lg shadow-yellow-500/20'
                             : 'bg-white/5 border-white/10'
                             }`}
                     >
-                        <span className="text-3xl">⭐</span>
-                        <span className={`text-xs font-black uppercase tracking-wider ${tab === 'stars' ? 'text-yellow-400' : 'text-white/50'}`}>Stars</span>
+                        <div className={`p-2 rounded-xl transition-all ${tab === 'stars' ? 'bg-yellow-400 text-background-dark shadow-[0_0_15px_rgba(250,204,21,0.5)]' : 'bg-white/5 text-white/40 group-hover:bg-white/10'}`}>
+                            <Star size={24} fill="currentColor" />
+                        </div>
+                        <span className={`text-[10px] font-black uppercase tracking-wider ${tab === 'stars' ? 'text-yellow-400' : 'text-white/50'}`}>Stars</span>
                         {starsTournaments.length > 0 && (
                             <span className="absolute -top-1 -right-1 bg-yellow-400 text-background-dark text-[9px] font-black px-1.5 py-0.5 rounded-full">{starsTournaments.length}</span>
                         )}
@@ -108,13 +112,15 @@ export const Tournaments: React.FC = () => {
 
                     <button
                         onClick={() => setTab('ton')}
-                        className={`relative py-5 rounded-2xl flex flex-col items-center gap-2 transition-all active:scale-95 border-2 ${tab === 'ton'
+                        className={`relative py-5 rounded-2xl flex flex-col items-center gap-2 transition-all active:scale-95 border-2 group ${tab === 'ton'
                             ? 'bg-blue-500/15 border-blue-400 shadow-lg shadow-blue-500/20'
                             : 'bg-white/5 border-white/10'
                             }`}
                     >
-                        <span className="text-3xl">💎</span>
-                        <span className={`text-xs font-black uppercase tracking-wider ${tab === 'ton' ? 'text-blue-400' : 'text-white/50'}`}>TON</span>
+                        <div className={`p-2 rounded-xl transition-all ${tab === 'ton' ? 'bg-blue-400 text-background-dark shadow-[0_0_15px_rgba(96,165,250,0.5)]' : 'bg-white/5 text-white/40 group-hover:bg-white/10'}`}>
+                            <Diamond size={24} fill="currentColor" />
+                        </div>
+                        <span className={`text-[10px] font-black uppercase tracking-wider ${tab === 'ton' ? 'text-blue-400' : 'text-white/50'}`}>TON</span>
                         <span className="absolute -top-1 -right-1 bg-blue-400/20 text-blue-300 text-[7px] font-black px-1.5 py-0.5 rounded-full">SOON</span>
                     </button>
                 </div>
@@ -145,7 +151,7 @@ export const Tournaments: React.FC = () => {
                                 <div className="flex gap-4">
                                     <div className="flex flex-col">
                                         <span className="text-[8px] font-black uppercase tracking-widest opacity-40">Winner</span>
-                                        <span className="text-sm font-black italic text-primary">+5 ⭐</span>
+                                        <span className="text-sm font-black italic text-primary">+5 Stars</span>
                                     </div>
                                     <div className="flex flex-col">
                                         <span className="text-[8px] font-black uppercase tracking-widest opacity-40">All Players</span>
@@ -164,17 +170,26 @@ export const Tournaments: React.FC = () => {
 
                         {/* Practice Tips */}
                         <div className="p-5 rounded-2xl bg-white/5 border border-white/5">
-                            <h4 className="text-[10px] font-black uppercase tracking-widest opacity-40 mb-3">Why Practice?</h4>
-                            <div className="space-y-2">
-                                <p className="text-xs text-white/60 flex items-center gap-2">
-                                    <span className="text-primary">⚡</span> Earn XP and Stars for free
-                                </p>
-                                <p className="text-xs text-white/60 flex items-center gap-2">
-                                    <span className="text-primary">📊</span> Progress your daily quests
-                                </p>
-                                <p className="text-xs text-white/60 flex items-center gap-2">
-                                    <span className="text-primary">🏋️</span> Train before entering tournaments
-                                </p>
+                            <h4 className="text-[10px] font-black uppercase tracking-widest opacity-40 mb-3 ml-1">Why Practice?</h4>
+                            <div className="space-y-3">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+                                        <Zap size={16} />
+                                    </div>
+                                    <p className="text-xs text-white/60 font-medium">Earn XP and Stars for free</p>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                    <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+                                        <BarChart3 size={16} />
+                                    </div>
+                                    <p className="text-xs text-white/60 font-medium">Progress your daily quests</p>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                    <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+                                        <Dumbbell size={16} />
+                                    </div>
+                                    <p className="text-xs text-white/60 font-medium">Train before entering tournaments</p>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -186,16 +201,18 @@ export const Tournaments: React.FC = () => {
                         {/* Quick Play Button - prominent */}
                         <button
                             onClick={() => navigate('/quiz', { state: { type: 'quickplay', entryFee: '10 Stars', currency: 'Stars' } })}
-                            className="w-full flex items-center justify-between bg-gradient-to-r from-yellow-500/20 to-amber-500/10 border border-yellow-500/30 py-5 px-6 rounded-2xl active:scale-[0.98] transition-all"
+                            className="group w-full flex items-center justify-between bg-gradient-to-r from-yellow-500/20 to-amber-500/10 border border-yellow-500/30 py-5 px-6 rounded-2xl active:scale-[0.98] transition-all shadow-[0_0_20px_rgba(250,204,21,0.05)]"
                         >
                             <div className="flex items-center gap-3">
-                                <span className="text-2xl">⚡</span>
+                                <div className="w-12 h-12 rounded-xl bg-yellow-400/20 flex items-center justify-center text-yellow-400 border border-yellow-400/20 group-hover:scale-110 transition-transform shadow-[0_0_15px_rgba(250,204,21,0.2)]">
+                                    <Zap size={24} fill="currentColor" />
+                                </div>
                                 <div className="text-left">
                                     <p className="font-black text-sm uppercase italic tracking-tighter text-yellow-400">Quick Play</p>
-                                    <p className="text-[10px] text-white/40 font-bold">Auto-match • 10⭐ entry</p>
+                                    <p className="text-[10px] text-white/40 font-bold">Auto-match • 10 Stars entry</p>
                                 </div>
                             </div>
-                            <div className="bg-yellow-400 text-background-dark font-black px-4 py-2 rounded-xl text-xs uppercase italic">
+                            <div className="bg-yellow-400 text-background-dark font-black px-4 py-2 rounded-xl text-xs uppercase italic shadow-lg shadow-yellow-400/20 group-hover:translate-x-1 transition-transform">
                                 Play
                             </div>
                         </button>
@@ -203,16 +220,18 @@ export const Tournaments: React.FC = () => {
                         {/* Create Custom Room */}
                         <button
                             onClick={() => navigate('/create-tournament')}
-                            className="w-full flex items-center justify-between bg-gradient-to-r from-amber-900/20 to-yellow-900/10 border border-yellow-600/30 py-4 px-5 rounded-2xl active:scale-[0.98] transition-all"
+                            className="group w-full flex items-center justify-between bg-white/5 border border-white/10 py-4 px-5 rounded-2xl active:scale-[0.98] transition-all hover:bg-white/10"
                         >
                             <div className="flex items-center gap-3">
-                                <span className="text-xl">🏆</span>
+                                <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center text-white/60 group-hover:text-primary transition-colors">
+                                    <Trophy size={18} />
+                                </div>
                                 <div className="text-left">
-                                    <p className="font-black text-xs uppercase italic tracking-tight text-yellow-500">Create Custom Room</p>
+                                    <p className="font-black text-xs uppercase italic tracking-tight text-white/80 group-hover:text-white transition-colors">Create Custom Room</p>
                                     <p className="text-[10px] text-white/40 font-medium">Set your own entry fee & rules</p>
                                 </div>
                             </div>
-                            <Plus size={18} className="text-yellow-500" />
+                            <Plus size={18} className="text-white/20 group-hover:text-primary group-hover:rotate-90 transition-all" />
                         </button>
 
                         {loading ? (

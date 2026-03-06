@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { MainLayout } from '../layout/MainLayout';
 import { GlassCard } from '../ui/GlassCard';
 import { Button } from '../ui/Button';
-import { ChevronLeft, Info, Brain, Coins, Film, Trophy, Gamepad2, Lock, Link as LinkIcon, Send, Minus, Plus } from 'lucide-react';
+import { ChevronLeft, Info, Brain, Coins, Film, Trophy, Gamepad2, Lock, Link as LinkIcon, Send, Minus, Plus, Smile, Star, Diamond } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const STAR_PRESETS = [10, 25, 50, 100];
@@ -104,24 +104,30 @@ export const CreateTournament: React.FC = () => {
                         <div className="grid grid-cols-3 gap-3">
                             <button
                                 onClick={() => setFeeType('free')}
-                                className={`py-4 rounded-2xl border-2 flex flex-col items-center gap-1 transition-all ${feeType === 'free' ? 'bg-primary/10 border-primary' : 'bg-white/5 border-white/5'}`}
+                                className={`py-4 rounded-2xl border-2 flex flex-col items-center gap-2 transition-all group ${feeType === 'free' ? 'bg-primary/10 border-primary' : 'bg-white/5 border-white/5'}`}
                             >
-                                <span className="text-xl">🙌</span>
-                                <span className={`text-[10px] font-black uppercase ${feeType === 'free' ? 'text-primary' : 'text-white/40'}`}>Free</span>
+                                <div className={`p-2 rounded-xl transition-all ${feeType === 'free' ? 'bg-primary text-background-dark shadow-[0_0_15px_rgba(13,242,89,0.3)]' : 'bg-white/5 text-white/40 group-hover:bg-white/10'}`}>
+                                    <Smile size={20} />
+                                </div>
+                                <span className={`text-[10px] font-black uppercase tracking-wider ${feeType === 'free' ? 'text-primary' : 'text-white/40'}`}>Free</span>
                             </button>
                             <button
                                 onClick={() => setFeeType('stars')}
-                                className={`py-4 rounded-2xl border-2 flex flex-col items-center gap-1 transition-all ${feeType === 'stars' ? 'bg-primary/10 border-primary shadow-lg shadow-primary/10' : 'bg-white/5 border-white/5'}`}
+                                className={`py-4 rounded-2xl border-2 flex flex-col items-center gap-2 transition-all group ${feeType === 'stars' ? 'bg-primary/10 border-primary shadow-lg shadow-primary/10' : 'bg-white/5 border-white/5'}`}
                             >
-                                <span className="text-xl">⭐</span>
-                                <span className={`text-[10px] font-black uppercase ${feeType === 'stars' ? 'text-primary' : 'text-white/40'}`}>Stars</span>
+                                <div className={`p-2 rounded-xl transition-all ${feeType === 'stars' ? 'bg-primary text-background-dark shadow-[0_0_15px_rgba(13,242,89,0.3)]' : 'bg-white/5 text-white/40 group-hover:bg-white/10'}`}>
+                                    <Star size={20} fill="currentColor" />
+                                </div>
+                                <span className={`text-[10px] font-black uppercase tracking-wider ${feeType === 'stars' ? 'text-primary' : 'text-white/40'}`}>Stars</span>
                             </button>
                             <button
                                 onClick={() => setFeeType('custom')}
-                                className={`py-4 rounded-2xl border-2 flex flex-col items-center gap-1 transition-all ${feeType === 'custom' ? 'bg-primary/10 border-primary' : 'bg-white/5 border-white/5'}`}
+                                className={`py-4 rounded-2xl border-2 flex flex-col items-center gap-2 transition-all group ${feeType === 'custom' ? 'bg-primary/10 border-primary' : 'bg-white/5 border-white/5'}`}
                             >
-                                <span className="text-xl">💎</span>
-                                <span className={`text-[10px] font-black uppercase ${feeType === 'custom' ? 'text-primary' : 'text-white/40'}`}>TON</span>
+                                <div className={`p-2 rounded-xl transition-all ${feeType === 'custom' ? 'bg-primary text-background-dark shadow-[0_0_15px_rgba(13,242,89,0.3)]' : 'bg-white/5 text-white/40 group-hover:bg-white/10'}`}>
+                                    <Diamond size={20} fill="currentColor" />
+                                </div>
+                                <span className={`text-[10px] font-black uppercase tracking-wider ${feeType === 'custom' ? 'text-primary' : 'text-white/40'}`}>TON</span>
                             </button>
                         </div>
 
@@ -156,7 +162,7 @@ export const CreateTournament: React.FC = () => {
                                             onClick={() => setStarAmount(val)}
                                             className={`flex-1 py-2 rounded-xl text-[10px] font-black uppercase transition-all ${starAmount === val ? 'bg-accent-gold text-background-dark' : 'bg-white/5 text-white/40'}`}
                                         >
-                                            {val}⭐
+                                            {val} <Star size={10} fill="currentColor" className="inline mb-0.5" />
                                         </button>
                                     ))}
                                 </div>
@@ -192,9 +198,9 @@ export const CreateTournament: React.FC = () => {
                                         <button
                                             key={val}
                                             onClick={() => setTonAmount(val)}
-                                            className={`flex-1 py-2 rounded-xl text-[10px] font-black uppercase transition-all ${tonAmount === val ? 'bg-blue-500 text-white' : 'bg-white/5 text-white/40'}`}
+                                            className={`flex-1 py-2 rounded-xl text-[10px] font-black uppercase transition-all flex items-center justify-center gap-1 ${tonAmount === val ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/20' : 'bg-white/5 text-white/40'}`}
                                         >
-                                            {val} 💎
+                                            {val} <Diamond size={10} fill="currentColor" />
                                         </button>
                                     ))}
                                 </div>

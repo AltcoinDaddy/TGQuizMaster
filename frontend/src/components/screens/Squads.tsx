@@ -73,12 +73,20 @@ export const Squads = () => {
                             <div className="flex-1">
                                 <span className="text-[10px] font-black text-primary uppercase tracking-widest">My Squad</span>
                                 <h2 className="text-xl font-black text-white italic">{mySquad.name}</h2>
-                                <div className="flex items-center gap-3 mt-1 text-white/40 text-xs font-bold uppercase">
-                                    <span className="flex items-center gap-1"><Users size={12} /> {mySquad.member_count}</span>
-                                    <span className="flex items-center gap-1"><Trophy size={12} className="text-amber-400" /> {mySquad.weekly_xp} Weekly XP</span>
+                                <div className="flex items-center gap-4 mt-3">
+                                    <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-500/10 border border-blue-500/20 rounded-xl">
+                                        <Users size={12} className="text-blue-400" />
+                                        <span className="text-[10px] font-black text-white/80">{mySquad.member_count}</span>
+                                    </div>
+                                    <div className="flex items-center gap-2 px-3 py-1.5 bg-amber-500/10 border border-amber-500/20 rounded-xl shadow-[0_0_10px_rgba(245,158,11,0.05)]">
+                                        <Trophy size={12} className="text-amber-500" />
+                                        <span className="text-[10px] font-black text-amber-500/90 italic">{mySquad.weekly_xp} Weekly XP</span>
+                                    </div>
                                 </div>
                             </div>
-                            <ChevronRight className="text-white/20" />
+                            <div className="p-2 rounded-full bg-white/5 border border-white/10 group-hover:bg-primary/20 group-hover:border-primary/40 transition-all">
+                                <ChevronRight className="text-white/40 group-hover:text-primary" size={20} />
+                            </div>
                         </div>
                     </GlassCard>
                 ) : (
@@ -111,8 +119,8 @@ export const Squads = () => {
                 <GlassCard className="bg-gradient-to-br from-amber-500/10 to-transparent border-amber-500/20 py-4">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                            <div className="p-2 bg-amber-500/20 rounded-lg text-amber-500">
-                                <Trophy size={20} />
+                            <div className="p-3 bg-white/10 border border-white/20 rounded-2xl text-amber-500 shadow-[0_0_20px_rgba(245,158,11,0.1)]">
+                                <Trophy size={24} fill="currentColor" />
                             </div>
                             <div>
                                 <h3 className="text-xs font-black text-white uppercase italic tracking-wider">Weekly Global Pool</h3>

@@ -17,7 +17,7 @@ const TIERS = [
         bgColor: 'orange-500/10',
         borderColor: 'orange-500/30',
         icon: Award,
-        emoji: '🥉'
+        glowColor: 'rgba(249,115,22,0.5)'
     },
     {
         id: 'SILVER',
@@ -29,7 +29,7 @@ const TIERS = [
         bgColor: 'slate-300/10',
         borderColor: 'slate-300/30',
         icon: Crown,
-        emoji: '🥈'
+        glowColor: 'rgba(203,213,225,0.5)'
     },
     {
         id: 'GOLD',
@@ -41,7 +41,7 @@ const TIERS = [
         bgColor: 'amber-400/10',
         borderColor: 'amber-400/30',
         icon: Gem,
-        emoji: '🥇'
+        glowColor: 'rgba(251,191,36,0.5)'
     }
 ];
 
@@ -57,7 +57,7 @@ export const Referral: React.FC = () => {
     const currentTierIndex = TIER_ORDER.indexOf(currentTier);
 
     const handleShare = () => {
-        const inviteText = `I'm challenging you to a real-time quiz battle on TGQuizMaster! 🏆 Play & win TON. Join here: ${referralLink}`;
+        const inviteText = `I'm challenging you to a real-time quiz battle on TGQuizMaster! Play & win TON. Join here: ${referralLink}`;
         const url = `https://t.me/share/url?url=${encodeURIComponent(referralLink)}&text=${encodeURIComponent(inviteText)}`;
         (window as any).Telegram?.WebApp?.openTelegramLink(url);
     };
@@ -102,14 +102,23 @@ export const Referral: React.FC = () => {
                 {/* Current Tier Badge */}
                 {currentTier !== 'NONE' && (
                     <div className="flex items-center justify-center mb-8">
-                        <div className={`px-6 py-3 rounded-2xl border bg-gradient-to-r ${currentTier === 'GOLD' ? 'from-amber-400/20 to-amber-600/10 border-amber-400/40' :
-                            currentTier === 'SILVER' ? 'from-slate-300/20 to-slate-500/10 border-slate-300/40' :
-                                'from-orange-500/20 to-orange-700/10 border-orange-500/40'
-                            }`}>
-                            <span className="text-[10px] font-black uppercase tracking-[0.3em] italic">
-                                {TIERS.find(t => t.id === currentTier)?.emoji} {currentTier} REFERRER
-                            </span>
-                        </div>
+                        {(() => {
+                            const tierData = TIERS.find(t => t.id === currentTier);
+                            const TierIcon = tierData?.icon || Award;
+                            return (
+                                <div className={`group flex items-center gap-3 px-6 py-3 rounded-2xl border transition-all ${currentTier === 'GOLD' ? 'from-amber-400/20 to-amber-600/10 border-amber-400/40 shadow-[0_0_20px_rgba(251,191,36,0.1)]' :
+                                    currentTier === 'SILVER' ? 'from-slate-300/20 to-slate-500/10 border-slate-300/40 shadow-[0_0_20px_rgba(203,213,225,0.1)]' :
+                                        'from-orange-500/20 to-orange-700/10 border-orange-500/40 shadow-[0_0_20px_rgba(249,115,22,0.1)]'
+                                    } bg-gradient-to-r`}>
+                                    <div className="p-1.5 rounded-lg bg-white/10 group-hover:scale-110 transition-transform">
+                                        <TierIcon size={18} className={`text-${tierData?.color}`} fill="currentColor" />
+                                    </div>
+                                    <span className="text-[10px] font-black uppercase tracking-[0.3em] italic">
+                                        {currentTier} REFERRER
+                                    </span>
+                                </div>
+                            );
+                        })()}
                     </div>
                 )}
 
@@ -168,7 +177,7 @@ export const Referral: React.FC = () => {
                                                 <div className="flex items-center gap-2">
                                                     <span className={`text-sm font-black uppercase italic tracking-tighter ${isUnlocked ? `text-${tier.color}` : 'text-white/40'
                                                         }`}>
-                                                        {tier.emoji} {tier.label}
+                                                        {tier.label}
                                                     </span>
                                                     {isUnlocked && (
                                                         <span className="text-[8px] font-black bg-primary/20 text-primary px-2 py-0.5 rounded-full uppercase tracking-wider">
@@ -177,10 +186,13 @@ export const Referral: React.FC = () => {
                                                     )}
                                                 </div>
                                                 <p className="text-[10px] font-bold text-white/40 mt-0.5">{tier.description}</p>
-                                                <p className={`text-[9px] font-black uppercase tracking-widest mt-1 ${isUnlocked ? 'text-primary' : 'text-white/20'
+                                                <div className={`flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest mt-1.5 ${isUnlocked ? 'text-primary' : 'text-white/20'
                                                     }`}>
-                                                    🎁 {tier.reward}
-                                                </p>
+                                                    <div className={`w-4 h-4 rounded-md flex items-center justify-center ${isUnlocked ? 'bg-primary/20' : 'bg-white/5'}`}>
+                                                        <Gift size={10} />
+                                                    </div>
+                                                    {tier.reward}
+                                                </div>
                                             </div>
                                         </div>
                                         <div className="text-right">
