@@ -165,26 +165,30 @@ export class GameManager {
     }
 
     async start() {
-        if (this.started) return; // Prevent double-start
+        if (this.started) return;
         this.started = true;
 
-        this.cancelTimeout(); // Room filled — cancel the 5-min timeout
-        console.log(`Match starting in room ${this.roomId} [Type: ${this.tournamentType}]`);
+        this.cancelTimeout();
+        console.log(`[START] Room ${this.roomId} | Category: ${this.category} (ID: ${this.categoryId}) | Players: ${this.players.length}`);
+
         await this.fetchQuestions();
         this.sendQuestion();
     }
 
     private async fetchQuestions() {
+        // Fallback for ID if somehow missing from map
+        const finalId = this.categoryId || 9;
+
         try {
             const { questionCache } = await import('./QuestionCache');
-            const cached = await questionCache.getQuestions(this.questionCount, this.categoryId || 9);
+            const cached = await questionCache.getQuestions(this.questionCount, finalId);
             if (cached.length >= this.questionCount) {
                 this.questions = cached;
-                console.log(`[GAME] Loaded ${cached.length} questions for category ${this.category} (id: ${this.categoryId}) from cache`);
+                console.log(`[GAME] Loaded ${cached.length} questions for category ${this.category} (id: ${finalId}) from cache`);
                 return;
             }
         } catch (e) {
-            console.error('[GAME] Cache fetch failed, trying API directly:', e);
+            console.error('[GAME] Cache fetch failed:', e);
         }
 
         // Fetch from API (either specific category or cache/fallback)

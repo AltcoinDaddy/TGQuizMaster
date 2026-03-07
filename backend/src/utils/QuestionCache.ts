@@ -15,29 +15,27 @@ export interface CachedQuestion {
  */
 class QuestionCache {
     private pools: Map<number, CachedQuestion[]> = new Map();
-    private readonly refillThreshold = 15;
-    private readonly batchSize = 30; // Reduced batch size for faster category rotation
-    private isRefilling = false;
-    private lastRefill = 0;
-    private readonly minRefillInterval = 5500; // OpenTDB allows 1 request per 5 seconds
+    private isRefilling: Map<number, boolean> = new Map();
+    private lastRefill: Map<number, number> = new Map();
 
-    private readonly CATEGORY_IDS = [9, 11, 15, 18, 21]; // General, Movies, Gaming, Computers, Sports
+    private readonly refillThreshold = 10;
+    private readonly batchSize = 25;
+    private readonly minRefillInterval = 5000; // 5 seconds per category
+
+    private readonly CATEGORY_IDS = [9, 11, 15, 18, 21];
 
     constructor() {
-        // Initial pre-fill for General
-        this.refill(9);
+        // Pre-fill categories in background
+        this.CATEGORY_IDS.forEach(id => this.refill(id));
     }
 
-    /**
-     * Get N questions from a specific category pool.
-     */
-    async getQuestions(count: number, categoryId: number = 9): Promise<CachedQuestion[]> {
-        const id = categoryId || 9;
-        let pool = this.pools.get(id) || [];
+    async getQuestions(count: number, categoryId: number): Promise<CachedQuestion[]> {
+        const id = categoryId;
+        const pool = this.pools.get(id) || [];
 
-        // Trigger background refill for this specific category if low
+        // Check if we need to refill in background
         if (pool.length < this.refillThreshold + count) {
-            this.refill(id); // non-blocking
+            this.refill(id);
         }
 
         if (pool.length >= count) {
@@ -46,40 +44,39 @@ class QuestionCache {
             return questions;
         }
 
-        // Cache empty — fetch directly (fallback)
-        console.log(`[CACHE] Pool empty for category ${id}, fetching directly`);
+        // Fallback: Fetch directly if cache empty
+        console.log(`[CACHE] Pool empty for category ${id}, fetching directly...`);
         return this.fetchFromAPI(count, id);
     }
 
-    /**
-     * Background refill — fetches a batch from OpenTDB and adds to target pool.
-     */
     private async refill(categoryId: number): Promise<void> {
-        if (this.isRefilling) return;
+        if (this.isRefilling.get(categoryId)) return;
 
         const now = Date.now();
-        if (now - this.lastRefill < this.minRefillInterval) return;
+        const last = this.lastRefill.get(categoryId) || 0;
+        if (now - last < this.minRefillInterval) return;
 
-        this.isRefilling = true;
-        this.lastRefill = now;
+        this.isRefilling.set(categoryId, true);
+        this.lastRefill.set(categoryId, now);
 
         try {
             const questions = await this.fetchFromAPI(this.batchSize, categoryId);
-            const currentPool = this.pools.get(categoryId) || [];
-            this.pools.set(categoryId, [...currentPool, ...questions]);
-            console.log(`[CACHE] Refilled category ${categoryId} (+${questions.length}), pool size: ${this.pools.get(categoryId)?.length}`);
+            if (questions.length > 0) {
+                const currentPool = this.pools.get(categoryId) || [];
+                this.pools.set(categoryId, [...currentPool, ...questions]);
+                console.log(`[CACHE] Refilled category ${categoryId} (+${questions.length}), pool size: ${this.pools.get(categoryId)?.length}`);
+            }
         } catch (e) {
-            console.error(`[CACHE] Refill failed for category ${categoryId}:`, e);
+            console.error(`[CACHE] Refill failed for ${categoryId}:`, e);
         } finally {
-            this.isRefilling = false;
+            this.isRefilling.set(categoryId, false);
         }
     }
 
-    private async fetchFromAPI(amount: number, categoryId: number = 9): Promise<CachedQuestion[]> {
+    private async fetchFromAPI(amount: number, categoryId: number): Promise<CachedQuestion[]> {
         try {
-            const url = categoryId && categoryId !== 9
-                ? `https://opentdb.com/api.php?amount=${amount}&category=${categoryId}&type=multiple`
-                : `https://opentdb.com/api.php?amount=${amount}&type=multiple`;
+            // STRICT category enforcement
+            const url = `https://opentdb.com/api.php?amount=${amount}&category=${categoryId}&type=multiple`;
 
             const resp = await axios.get(url);
 
@@ -91,11 +88,11 @@ class QuestionCache {
                     correctAnswer: decode(q.correct_answer)
                 }));
             } else {
-                console.warn(`[CACHE] API returned code ${resp.data.response_code} for category ${categoryId}`);
+                console.warn(`[CACHE] API error ${resp.data.response_code} for cat ${categoryId}`);
                 return [];
             }
         } catch (e: any) {
-            console.error(`[CACHE] API fetch failed for category ${categoryId}:`, e.message);
+            console.error(`[CACHE] API fetch failed for cat ${categoryId}:`, e.message);
             return [];
         }
     }
@@ -104,10 +101,6 @@ class QuestionCache {
         let total = 0;
         this.pools.forEach(p => total += p.length);
         return total;
-    }
-
-    getPoolSize(categoryId: number) {
-        return this.pools.get(categoryId)?.length || 0;
     }
 }
 
