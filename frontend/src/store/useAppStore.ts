@@ -45,8 +45,8 @@ interface AppStore {
 
 export const useAppStore = create<AppStore>((set, get) => ({
     user: {
-        telegramId: "123456789", // Default for dev
-        username: "@Alex_Quiz",
+        telegramId: "",
+        username: "",
         xp: 0,
         wins: 0,
         totalGames: 0,

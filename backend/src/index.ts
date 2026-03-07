@@ -358,7 +358,7 @@ io.on('connection', (socket) => {
                 return;
             }
 
-            // --- PAID / TOURNAMENT ROOMS ---
+            // 3. Matchmaking & Room Selection (Atomic Block - no awaits until room is secured)
             let requestedMax = data.maxPlayers ? parseInt(data.maxPlayers) : 5;
             let effectiveFee = feeAmount;
             let effectiveCurrency = feeCurrency === 'TON' ? 'TON' : 'Stars';
@@ -372,7 +372,7 @@ io.on('connection', (socket) => {
                 }
             }
 
-            // Find existing room
+            // Find existing room synchronously
             roomId = Array.from(rooms.keys()).find(id => {
                 const mgr = rooms.get(id);
                 if (!mgr) return false;
@@ -383,32 +383,14 @@ io.on('connection', (socket) => {
                 const matchesCategory = info.category === (category || 'General');
                 const hasSpace = info.players < info.maxPlayers;
                 const isWaiting = info.status === 'waiting';
-
-                // Quick Play joins ANY matching fee room. 
-                // Regular joins must match requestedMax.
                 const matchesSize = (data.roomType === 'quickplay') || (info.maxPlayers === requestedMax);
 
-                return matchesFee && matchesCurrency && matchesCategory && hasSpace && isWaiting && matchesSize;
+                const isMatch = matchesFee && matchesCurrency && matchesCategory && hasSpace && isWaiting && matchesSize;
+                if (!isMatch && info.category === (category || 'General') && matchesFee) {
+                    console.log(`[MATCH-DEBUG] Room ${id} skipped: hasSpace=${hasSpace}, isWaiting=${isWaiting}, matchesSize=${matchesSize}`);
+                }
+                return isMatch;
             });
-
-            // If found, deduct fee and join (Wait for DB fee deduction first for safety on join)
-            if (effectiveFee > 0) {
-                const { error: updateError } = await supabase
-                    .from('users')
-                    .update({ balance_stars: user.balance_stars - effectiveFee })
-                    .eq('telegram_id', userId);
-                if (updateError) throw updateError;
-                user.balance_stars -= effectiveFee;
-
-                await supabase.from('transactions').insert({
-                    user_id: userId,
-                    type: 'ENTRY_FEE',
-                    amount: -effectiveFee,
-                    currency: effectiveCurrency,
-                    metadata: { roomId, mode: data.roomType },
-                    status: 'COMPLETED'
-                });
-            }
 
             if (!roomId) {
                 roomId = crypto.randomUUID();
@@ -419,6 +401,7 @@ io.on('connection', (socket) => {
                 newManager.onExpire = async (mgr) => {
                     const info = mgr.getRoomInfo();
                     const players = mgr.getPlayers();
+                    console.log(`[EXPIRE] Room ${mgr.getRoomInfo().id} expired. Refunding ${players.length} players.`);
                     for (const p of players) {
                         try {
                             const pid = parseInt(p.id);
@@ -429,7 +412,7 @@ io.on('connection', (socket) => {
                             }
                         } catch (e) { console.error('Expire refund error:', e); }
                     }
-                    rooms.delete(roomId!);
+                    rooms.delete(mgr.getRoomInfo().id);
                 };
 
                 newManager.onGameOver = (finishedRoomId) => {
@@ -437,28 +420,63 @@ io.on('connection', (socket) => {
                     console.log(`[CLEANUP] Room ${finishedRoomId} deleted`);
                 };
 
-                rooms.set(roomId, newManager); // SET IMMEDIATELY before notifying others
-                console.log(`[CREATE] Room ${roomId} created for ${username}`);
+                rooms.set(roomId, newManager);
+                console.log(`[CREATE] Room ${roomId} created for ${username} (Atomic)`);
             }
 
             const manager = rooms.get(roomId)!;
+
+            // Reserve slot immediately to prevent race conditions
             manager.addPlayer({ id: userId.toString(), username, avatar, score: 0 });
 
-            await socket.join(roomId);
-            socketPlayerMap.set(socket.id, { roomId, playerId: userId.toString() });
+            // 4. Database & Socket Joins (Awaits)
+            try {
+                if (effectiveFee > 0) {
+                    const { error: updateError } = await supabase
+                        .from('users')
+                        .update({ balance_stars: user.balance_stars - effectiveFee })
+                        .eq('telegram_id', userId);
+                    if (updateError) throw updateError;
+                    user.balance_stars -= effectiveFee;
 
-            // Notify everyone in the room
-            io.to(roomId).emit('room_update', {
-                ...manager.getRoomInfo(),
-                players: manager.getPlayers()
-            });
+                    await supabase.from('transactions').insert({
+                        user_id: userId,
+                        type: 'ENTRY_FEE',
+                        amount: -effectiveFee,
+                        currency: effectiveCurrency,
+                        metadata: { roomId, mode: data.roomType },
+                        status: 'COMPLETED'
+                    });
+                    console.log(`[FEE] Deducted ${effectiveFee} ${effectiveCurrency} from ${username}`);
+                }
 
-            // Start if full
-            const info = manager.getRoomInfo();
-            if (manager.getPlayers().length >= info.maxPlayers && !manager.isStarted()) {
-                manager.recalculatePrizePool();
-                manager.start();
-                io.to(roomId).emit('game_start');
+                await socket.join(roomId);
+                socketPlayerMap.set(socket.id, { roomId, playerId: userId.toString() });
+
+                // Notify everyone in the room
+                const roomInfo = {
+                    ...manager.getRoomInfo(),
+                    players: manager.getPlayers()
+                };
+                io.to(roomId).emit('room_update', roomInfo);
+                socket.emit('room_update', roomInfo); // Direct update for certainty
+
+                // Start if full
+                const info = manager.getRoomInfo();
+                if (manager.getPlayers().length >= info.maxPlayers && !manager.isStarted()) {
+                    console.log(`[START] Room ${roomId} full (${manager.getPlayers().length}/${info.maxPlayers}). Starting...`);
+                    manager.recalculatePrizePool();
+                    manager.start();
+                    io.to(roomId).emit('game_start');
+                }
+            } catch (err) {
+                console.error(`[JOIN-ERROR] Failed to finalize join for room ${roomId}:`, err);
+                manager.removePlayer(userId.toString());
+                if (manager.getPlayers().length === 0) {
+                    rooms.delete(roomId);
+                    console.log(`[CLEANUP] Deleted empty room ${roomId} after join error`);
+                }
+                socket.emit('error', { message: 'Failed to join room' });
             }
 
         } catch (error) {

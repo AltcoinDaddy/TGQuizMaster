@@ -23,10 +23,16 @@ export const QuizRoom: React.FC = () => {
     const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
     const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
     const [revealedAnswer, setRevealedAnswer] = useState<string | null>(null);
-    const [players, setPlayers] = useState<any[]>([]);
-
     const initialMax = location.state?.maxPlayers || queryParams.get('maxPlayers') || 5;
-    const [maxPlayersCount, setMaxPlayersCount] = useState(parseInt(String(initialMax)));
+    const [maxPlayersCount, setMaxPlayersCount] = useState(parseInt(String(initialMax)) || 5);
+
+    // FIX: Initialize with current user to avoid "0/N" flash
+    const [players, setPlayers] = useState<any[]>(user?.username ? [{
+        id: user.telegramId?.toString(),
+        username: user.username,
+        avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`,
+        score: 0
+    }] : []);
 
     const [gameStatus, setGameStatus] = useState<'waiting' | 'playing' | 'ended'>('waiting');
     const gameEndedRef = useRef(false);
@@ -59,7 +65,9 @@ export const QuizRoom: React.FC = () => {
         const onRoomUpdate = (room: any) => {
             const sortedPlayers = [...room.players].sort((a: any, b: any) => b.score - a.score);
             setPlayers(sortedPlayers);
-            if (room.maxPlayers) setMaxPlayersCount(room.maxPlayers);
+            if (room.maxPlayers) {
+                setMaxPlayersCount(room.maxPlayers);
+            }
         };
 
         const onGameStart = () => {

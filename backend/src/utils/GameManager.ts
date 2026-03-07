@@ -222,6 +222,20 @@ export class GameManager {
     }
 
     private sendQuestion() {
+        if (this.questions.length === 0) {
+            console.warn(`[GAME] No questions loaded for room ${this.roomId}. Waiting...`);
+            // If we have no questions after 5 seconds of starting, then fail
+            setTimeout(() => {
+                if (this.questions.length === 0) {
+                    console.error(`[GAME] Failed to load questions for room ${this.roomId}. Ending.`);
+                    this.endGame();
+                } else {
+                    this.sendQuestion();
+                }
+            }, 2000);
+            return;
+        }
+
         if (this.currentIndex >= this.questions.length) {
             this.endGame();
             return;
