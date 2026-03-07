@@ -23,7 +23,21 @@ export const QuizRoom: React.FC = () => {
     const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
     const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
     const [revealedAnswer, setRevealedAnswer] = useState<string | null>(null);
-    const initialMax = location.state?.maxPlayers || queryParams.get('maxPlayers') || 5;
+    const roomIdFromUrl = queryParams.get('roomId');
+    const categoryFromUrl = queryParams.get('category');
+    const typeFromUrl = queryParams.get('type') as any;
+
+    // Support encoded max players in room ID: room_ID_m2
+    let extractedMax: number | null = null;
+    let cleanRoomId = roomIdFromUrl;
+    if (roomIdFromUrl && roomIdFromUrl.includes('_m')) {
+        const parts = roomIdFromUrl.split('_m');
+        cleanRoomId = parts[0];
+        extractedMax = parseInt(parts[1]);
+        console.log(`[JOIN] Extracted max players ${extractedMax} from room ID ${roomIdFromUrl}`);
+    }
+
+    const initialMax = extractedMax || location.state?.maxPlayers || queryParams.get('maxPlayers') || 5;
     const [maxPlayersCount, setMaxPlayersCount] = useState(parseInt(String(initialMax)) || 5);
 
     // FIX: Initialize with current user to avoid "0/N" flash
@@ -51,12 +65,8 @@ export const QuizRoom: React.FC = () => {
     const circumference = 2 * Math.PI * radius;
     const strokeDashoffset = circumference - (timeLeft / 15) * circumference;
 
-    const roomIdFromUrl = queryParams.get('roomId');
-    const categoryFromUrl = queryParams.get('category');
-    const typeFromUrl = queryParams.get('type') as any;
-
     const { tournamentId, entryFee, currency, type: stateType, category: stateCategory } = location.state || {};
-    const finalRoomId = roomIdFromUrl || tournamentId;
+    const finalRoomId = cleanRoomId || tournamentId;
     const finalType = stateType || typeFromUrl || 'tournament';
     const finalCategory = stateCategory || categoryFromUrl || 'General';
 

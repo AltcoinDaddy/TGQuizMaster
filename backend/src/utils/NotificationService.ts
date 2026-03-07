@@ -22,7 +22,8 @@ export class NotificationService {
     async notifyRoomOpen(userId: number, roomDetails: { roomId: string; entryFee: number; currency: string; playerCount: number; maxPlayers: number }) {
         try {
             const baseUrl = process.env.VITE_APP_URL || 'https://tgquizmaster.online';
-            const deepLinkUrl = `${baseUrl}?startapp=room_${roomDetails.roomId}`;
+            // Encode maxPlayers into the startapp parameter: room_ID_mX
+            const deepLinkUrl = `${baseUrl}?startapp=room_${roomDetails.roomId}_m${roomDetails.maxPlayers}`;
 
             const message = `🎮 *New Room Open!*\n\n` +
                 `Entry: ${roomDetails.entryFee} ${roomDetails.currency}\n` +

@@ -378,6 +378,11 @@ io.on('connection', (socket) => {
                 if (!mgr) return false;
                 const info = mgr.getRoomInfo();
 
+                // PRIORITY: If a specific tournamentId was requested, only match THAT ID
+                if (tournamentId) {
+                    return id === tournamentId && info.status === 'waiting' && info.players < info.maxPlayers;
+                }
+
                 const matchesFee = Math.abs(info.entryFee - effectiveFee) < 0.01;
                 const matchesCurrency = info.currency === effectiveCurrency;
                 const matchesCategory = info.category === (category || 'General');
