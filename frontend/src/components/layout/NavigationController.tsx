@@ -12,8 +12,20 @@ export const NavigationController = () => {
 
         if (startParam && startParam.startsWith('room_')) {
             const roomId = startParam.replace('room_', '');
+            let finalUrl = `/quiz?roomId=${roomId}`;
+
+            // Support encoded parameters: room_ID_m2_cMovies
+            if (startParam.includes('_m')) {
+                const parts = startParam.split('_');
+                const mPart = parts.find((p: string) => p.startsWith('m'));
+                const cPart = parts.find((p: string) => p.startsWith('c'));
+
+                if (mPart) finalUrl += `&maxPlayers=${mPart.substring(1)}`;
+                if (cPart) finalUrl += `&category=${cPart.substring(1)}`;
+            }
+
             console.log('[NAVIGATION] Deep link detected, redirecting to room:', roomId);
-            navigate(`/quiz?roomId=${roomId}`, { replace: true });
+            navigate(finalUrl, { replace: true });
         }
     }, [navigate]);
 

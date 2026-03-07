@@ -27,14 +27,21 @@ export const QuizRoom: React.FC = () => {
     const categoryFromUrl = queryParams.get('category');
     const typeFromUrl = queryParams.get('type') as any;
 
-    // Support encoded max players in room ID: room_ID_m2
+    // Support encoded parameters in room ID: room_ID_m2_cMovies
     let extractedMax: number | null = null;
+    let extractedCategory: string | null = null;
     let cleanRoomId = roomIdFromUrl;
-    if (roomIdFromUrl && roomIdFromUrl.includes('_m')) {
-        const parts = roomIdFromUrl.split('_m');
+    if (roomIdFromUrl && roomIdFromUrl.includes('_')) {
+        const parts = roomIdFromUrl.split('_');
         cleanRoomId = parts[0];
-        extractedMax = parseInt(parts[1]);
-        console.log(`[JOIN] Extracted max players ${extractedMax} from room ID ${roomIdFromUrl}`);
+
+        const mPart = parts.find((p: string) => p.startsWith('m'));
+        const cPart = parts.find((p: string) => p.startsWith('c'));
+
+        if (mPart) extractedMax = parseInt(mPart.substring(1));
+        if (cPart) extractedCategory = cPart.substring(1);
+
+        console.log(`[JOIN] Extracted from ID: max=${extractedMax}, category=${extractedCategory}`);
     }
 
     const { tournamentId, entryFee, currency, type: stateType, category: stateCategory } = location.state || {};
@@ -48,6 +55,9 @@ export const QuizRoom: React.FC = () => {
 
     const initialMax = extractedMax || location.state?.maxPlayers || pendingConf?.maxPlayers || queryParams.get('maxPlayers') || 5;
     const [maxPlayersCount, setMaxPlayersCount] = useState(parseInt(String(initialMax)) || 5);
+
+    const initialCategory = extractedCategory || stateCategory || categoryFromUrl || pendingConf?.category || 'General';
+    const [roomCategory, setRoomCategory] = useState(initialCategory);
 
     // FIX: Initialize with current user to avoid "0/N" flash
     const [players, setPlayers] = useState<any[]>(user?.username ? [{
@@ -76,7 +86,6 @@ export const QuizRoom: React.FC = () => {
 
     const finalRoomId = cleanRoomId || tournamentId;
     const finalType = stateType || typeFromUrl || 'tournament';
-    const finalCategory = stateCategory || categoryFromUrl || pendingConf?.category || 'General';
 
     useEffect(() => {
         // 1. Setup Listeners
@@ -85,6 +94,9 @@ export const QuizRoom: React.FC = () => {
             setPlayers(sortedPlayers);
             if (room.maxPlayers) {
                 setMaxPlayersCount(room.maxPlayers);
+            }
+            if (room.category) {
+                setRoomCategory(room.category);
             }
         };
 
@@ -288,7 +300,7 @@ export const QuizRoom: React.FC = () => {
                 console.log("Game already ended, skipping rejoin");
                 return;
             }
-            console.log("Joining room...", { type: finalType, category: finalCategory, maxPlayersCount });
+            console.log("Joining room...", { type: finalType, category: roomCategory, maxPlayersCount });
             socket.emit('join_room', {
                 username: user.username,
                 telegramId: user.telegramId,
@@ -297,7 +309,7 @@ export const QuizRoom: React.FC = () => {
                 tournamentId: finalRoomId,
                 entryFee: entryFee || 0,
                 currency: currency || 'Stars',
-                category: finalCategory,
+                category: roomCategory,
                 maxPlayers: maxPlayersCount
             });
         };
@@ -325,7 +337,7 @@ export const QuizRoom: React.FC = () => {
             socket.off('level_up', onLevelUp);
             socket.emit('leave_room');
         };
-    }, [user.telegramId, user.username, finalRoomId, finalType, finalCategory, entryFee, currency, location.state]);
+    }, [user.telegramId, user.username, finalRoomId, finalType, roomCategory, entryFee, currency, location.state]);
 
     const handleAnswer = (option: string) => {
         if (selectedAnswer || gameStatus !== 'playing' || eliminatedOptions.includes(option)) return;
@@ -439,7 +451,7 @@ export const QuizRoom: React.FC = () => {
                                 gameEndedRef.current = false;
                                 // Pass state in URL so it survives window.location.reload()
                                 const params = new URLSearchParams();
-                                if (finalCategory) params.set('category', finalCategory);
+                                if (roomCategory) params.set('category', roomCategory);
                                 if (finalType) params.set('type', finalType);
                                 if (finalRoomId) params.set('roomId', finalRoomId);
                                 if (maxPlayersCount) params.set('maxPlayers', maxPlayersCount.toString());

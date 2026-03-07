@@ -498,7 +498,8 @@ io.on('connection', (socket) => {
                                         entryFee: info.entryFee,
                                         currency: info.currency,
                                         playerCount: info.players,
-                                        maxPlayers: info.maxPlayers
+                                        maxPlayers: info.maxPlayers,
+                                        category: info.category
                                     });
                                     // Subtle delay to avoid rate limits
                                     await new Promise(r => setTimeout(r, 50));
