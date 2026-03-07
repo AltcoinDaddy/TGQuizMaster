@@ -42,9 +42,13 @@ export const QuizRoom: React.FC = () => {
     const location = useLocation();
     const queryParams = new URLSearchParams(location.search);
     const roomIdFromUrl = queryParams.get('roomId');
+    const categoryFromUrl = queryParams.get('category');
+    const typeFromUrl = queryParams.get('type') as any;
 
-    const { tournamentId, entryFee, currency, type } = location.state || {}; // Fallback if direct access
+    const { tournamentId, entryFee, currency, type: stateType, category: stateCategory } = location.state || {};
     const finalRoomId = roomIdFromUrl || tournamentId;
+    const finalType = stateType || typeFromUrl || 'tournament';
+    const finalCategory = stateCategory || categoryFromUrl || 'General';
 
     useEffect(() => {
         // 1. Setup Listeners
@@ -95,7 +99,7 @@ export const QuizRoom: React.FC = () => {
                 if (!isWin) {
                     (window as any).Telegram?.WebApp?.HapticFeedback?.notificationOccurred('error');
                     // Practice Mode Revive Logic
-                    if (type === 'practice' && !hasRevived) {
+                    if (finalType === 'practice' && !hasRevived) {
                         setShowReviveModal(true);
                     }
                 } else {
@@ -142,7 +146,7 @@ export const QuizRoom: React.FC = () => {
             let myXp = 0;
             let myReward = 0;
 
-            if (location.state?.type === 'practice' || !location.state?.type) {
+            if (finalType === 'practice' || !finalType) {
                 myXp = data.xpEarned || (amIWinner ? 10 : 5);
                 myReward = data.reward !== undefined ? data.reward : (amIWinner ? 5 : 0);
             } else {
@@ -159,7 +163,7 @@ export const QuizRoom: React.FC = () => {
                 score: data.winners[myIndex]?.score || 0,
                 xp: myXp,
                 reward: myReward,
-                currency: data.currency || (location.state?.currency === 'none' ? 'Stars' : (location.state?.currency || 'Stars'))
+                currency: data.currency || (currency === 'none' ? 'Stars' : (currency || 'Stars'))
             });
 
             if (amIWinner) soundManager.play('win');
@@ -232,17 +236,17 @@ export const QuizRoom: React.FC = () => {
                 console.log("Game already ended, skipping rejoin");
                 return;
             }
-            console.log("Joining room...", { type: type || 'tournament' });
+            console.log("Joining room...", { type: finalType });
             socket.emit('join_room', {
                 username: user.username,
                 telegramId: user.telegramId,
                 avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`,
-                roomType: type || (roomIdFromUrl ? 'tournament' : 'tournament'),
+                roomType: finalType,
                 tournamentId: finalRoomId,
                 entryFee: entryFee || 0,
                 currency: currency || 'Stars',
-                category: location.state?.category || 'General',
-                maxPlayers: (type === 'tournament' || type === 'stars' || roomIdFromUrl) ? (location.state?.maxPlayers || 5) : 5
+                category: finalCategory,
+                maxPlayers: (finalType === 'tournament' || finalType === 'stars' || roomIdFromUrl) ? (location.state?.maxPlayers || 5) : 5
             });
         };
 
@@ -383,7 +387,13 @@ export const QuizRoom: React.FC = () => {
                         <button
                             onClick={() => {
                                 gameEndedRef.current = false;
-                                navigate('/quiz', { state: location.state, replace: true });
+                                // Pass state in URL so it survives window.location.reload()
+                                const params = new URLSearchParams();
+                                if (finalCategory) params.set('category', finalCategory);
+                                if (finalType) params.set('type', finalType);
+                                if (finalRoomId) params.set('roomId', finalRoomId);
+
+                                navigate(`/quiz?${params.toString()}`, { state: location.state, replace: true });
                                 window.location.reload();
                             }}
                             className="w-full py-4 bg-primary text-background-dark font-black text-sm uppercase italic tracking-widest rounded-2xl active:scale-95 transition-all shadow-[0_0_20px_rgba(13,242,89,0.3)]"
@@ -583,7 +593,7 @@ export const QuizRoom: React.FC = () => {
                 </div>
             </footer>
 
-            {type === 'practice' && (
+            {finalType === 'practice' && (
                 <div className="fixed bottom-24 left-6 right-6 flex items-center justify-between opacity-30 pointer-events-none">
                     <span className="text-[8px] font-black uppercase tracking-widest italic">Practice Mode</span>
                     <span className="text-[8px] font-black uppercase tracking-widest italic">{hasRevived ? 'Used Revive' : 'Revive Available'}</span>
