@@ -170,6 +170,73 @@ async function fetchUserWithRetry(userId: number, username: string, maxRetries =
     }
 }
 
+/**
+ * Shared helper to handle a player leaving a room (manual or disconnect).
+ * Handles refunds, room_update emission, and empty room cleanup.
+ */
+async function handlePlayerExit(io: Server, socket: any, roomId: string, playerId: string) {
+    const manager = rooms.get(roomId);
+    if (!manager) return;
+
+    // If game hasn't started, remove player and refund entry fee
+    if (!manager.isStarted() && !manager.isExpired()) {
+        const fee = manager.getEntryFee();
+        const type = manager.getType();
+        manager.removePlayer(playerId);
+
+        console.log(`[EXIT] Player ${playerId} left room ${roomId} (fee: ${fee}, type: ${type})`);
+
+        // Refund entry fee if it was a paid room
+        if (fee > 0 && (type === 'stars' || type === 'ton')) {
+            try {
+                const pid = parseInt(playerId);
+                const { data: userData } = await supabase
+                    .from('users')
+                    .select('balance_stars')
+                    .eq('telegram_id', pid)
+                    .single();
+
+                if (userData) {
+                    await supabase.from('users')
+                        .update({ balance_stars: (userData.balance_stars || 0) + fee })
+                        .eq('telegram_id', pid);
+                }
+
+                await supabase.from('transactions').insert({
+                    user_id: pid,
+                    type: 'REFUND',
+                    amount: fee,
+                    currency: 'STARS',
+                    metadata: { reason: 'player_exit', roomId },
+                    status: 'COMPLETED'
+                });
+
+                console.log(`[REFUND] Refunded ${fee} Stars to player ${pid}`);
+
+                // Instant UI update for the player
+                if (userData) {
+                    socket.emit('balance_update', { stars: (userData.balance_stars || 0) + fee });
+                }
+            } catch (e) {
+                console.error('[REFUND] Exit refund failed:', e);
+            }
+        }
+
+        // Update room for remaining players
+        io.to(roomId).emit('room_update', {
+            ...manager.getRoomInfo(),
+            players: manager.getPlayers()
+        });
+
+        // Clean up empty rooms
+        if (manager.getPlayers().length === 0) {
+            manager.cancelTimeout();
+            rooms.delete(roomId);
+            console.log(`[CLEANUP] Empty room ${roomId} deleted`);
+        }
+    }
+}
+
 io.on('connection', (socket) => {
     console.log('User connected:', socket.id);
 
@@ -359,6 +426,7 @@ io.on('connection', (socket) => {
             }
             // Find a room matching the currency/type or create new (skip if quickplay already found one)
             if (!roomId) {
+                const requestedMax = data.maxPlayers ? parseInt(data.maxPlayers) : 5;
                 roomId = Array.from(rooms.keys()).find(id => {
                     const mgr = rooms.get(id);
                     if (!mgr) return false;
@@ -367,6 +435,7 @@ io.on('connection', (socket) => {
                         info.status === 'waiting' &&
                         info.currency === (feeCurrency === 'TON' ? 'TON' : 'Stars') &&
                         info.category === (category || 'General') &&
+                        info.maxPlayers === requestedMax && // Crucial fix: check requested player limit
                         Math.abs(info.entryFee - feeAmount) < 0.01; // Float safety
                 });
             }
@@ -402,6 +471,11 @@ io.on('connection', (socket) => {
                                     await supabase.from('users')
                                         .update({ balance_stars: (userData.balance_stars || 0) + info.entryFee })
                                         .eq('telegram_id', playerId);
+
+                                    // Instant UI update if player is still connected
+                                    io.to(player.id).emit('balance_update', {
+                                        stars: (userData.balance_stars || 0) + info.entryFee
+                                    });
                                 }
 
                                 // Log refund transaction
@@ -567,33 +641,15 @@ io.on('connection', (socket) => {
         }
     });
 
-    socket.on('leave_room', () => {
+    socket.on('leave_room', async () => {
         const mapping = socketPlayerMap.get(socket.id);
         if (!mapping) return;
 
         const { roomId, playerId } = mapping;
-        console.log(`[LEAVE] Player ${playerId} leaving room ${roomId}`);
-
         socketPlayerMap.delete(socket.id);
         socket.leave(roomId);
 
-        const manager = rooms.get(roomId);
-        if (!manager) return;
-
-        // Same cleanup logic as disconnect
-        if (!manager.isStarted() && !manager.isExpired()) {
-            manager.removePlayer(playerId);
-            io.to(roomId).emit('room_update', {
-                ...manager.getRoomInfo(),
-                players: manager.getPlayers()
-            });
-
-            if (manager.getPlayers().length === 0) {
-                manager.cancelTimeout();
-                rooms.delete(roomId);
-                console.log(`[CLEANUP] Empty room ${roomId} deleted`);
-            }
-        }
+        await handlePlayerExit(io, socket, roomId, playerId);
     });
 
     socket.on('sync_profile', async (data) => {
@@ -841,61 +897,7 @@ io.on('connection', (socket) => {
         const { roomId, playerId } = mapping;
         socketPlayerMap.delete(socket.id);
 
-        const manager = rooms.get(roomId);
-        if (!manager) return;
-
-        // If game hasn't started, remove player and refund entry fee
-        if (!manager.isStarted() && !manager.isExpired()) {
-            const fee = manager.getEntryFee();
-            const type = manager.getType();
-            manager.removePlayer(playerId);
-
-            console.log(`[DISCONNECT] Player ${playerId} left room ${roomId} (fee: ${fee})`);
-
-            // Refund entry fee if it was a paid room
-            if (fee > 0 && (type === 'stars' || type === 'ton')) {
-                try {
-                    const pid = parseInt(playerId);
-                    const { data: userData } = await supabase
-                        .from('users')
-                        .select('balance_stars')
-                        .eq('telegram_id', pid)
-                        .single();
-
-                    if (userData) {
-                        await supabase.from('users')
-                            .update({ balance_stars: (userData.balance_stars || 0) + fee })
-                            .eq('telegram_id', pid);
-                    }
-
-                    await supabase.from('transactions').insert({
-                        user_id: pid,
-                        type: 'REFUND',
-                        amount: fee,
-                        currency: 'STARS',
-                        metadata: { reason: 'player_disconnect', roomId },
-                        status: 'COMPLETED'
-                    });
-
-                    console.log(`[REFUND] Refunded ${fee} Stars to disconnected player ${pid}`);
-                } catch (e) {
-                    console.error('[REFUND] Disconnect refund failed:', e);
-                }
-            }
-
-            // Update room for remaining players
-            io.to(roomId).emit('room_update', {
-                ...manager.getRoomInfo(),
-                players: manager.getPlayers()
-            });
-
-            // Clean up empty rooms
-            if (manager.getPlayers().length === 0) {
-                manager.cancelTimeout();
-                rooms.delete(roomId);
-                console.log(`[CLEANUP] Empty room ${roomId} deleted`);
-            }
-        }
+        await handlePlayerExit(io, socket, roomId, playerId);
     });
 });
 

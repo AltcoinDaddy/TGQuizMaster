@@ -13,6 +13,9 @@ import { adsService } from '../../utils/AdsService';
 export const QuizRoom: React.FC = () => {
     const { user } = useAppStore();
     const navigate = useNavigate();
+    const location = useLocation();
+    const queryParams = new URLSearchParams(location.search);
+
     const [timeLeft, setTimeLeft] = useState(15);
     const [currentQuestion, setCurrentQuestion] = useState<any>(null);
     const [questionIndex, setQuestionIndex] = useState(0);
@@ -21,7 +24,10 @@ export const QuizRoom: React.FC = () => {
     const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
     const [revealedAnswer, setRevealedAnswer] = useState<string | null>(null);
     const [players, setPlayers] = useState<any[]>([]);
-    const [maxPlayersCount, setMaxPlayersCount] = useState(5);
+
+    const initialMax = location.state?.maxPlayers || queryParams.get('maxPlayers') || 5;
+    const [maxPlayersCount, setMaxPlayersCount] = useState(parseInt(String(initialMax)));
+
     const [gameStatus, setGameStatus] = useState<'waiting' | 'playing' | 'ended'>('waiting');
     const gameEndedRef = useRef(false);
     const [gameResults, setGameResults] = useState<any>(null);
@@ -39,8 +45,6 @@ export const QuizRoom: React.FC = () => {
     const circumference = 2 * Math.PI * radius;
     const strokeDashoffset = circumference - (timeLeft / 15) * circumference;
 
-    const location = useLocation();
-    const queryParams = new URLSearchParams(location.search);
     const roomIdFromUrl = queryParams.get('roomId');
     const categoryFromUrl = queryParams.get('category');
     const typeFromUrl = queryParams.get('type') as any;
@@ -392,6 +396,7 @@ export const QuizRoom: React.FC = () => {
                                 if (finalCategory) params.set('category', finalCategory);
                                 if (finalType) params.set('type', finalType);
                                 if (finalRoomId) params.set('roomId', finalRoomId);
+                                if (maxPlayersCount) params.set('maxPlayers', maxPlayersCount.toString());
 
                                 navigate(`/quiz?${params.toString()}`, { state: location.state, replace: true });
                                 window.location.reload();
