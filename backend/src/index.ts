@@ -466,8 +466,43 @@ io.on('connection', (socket) => {
                 if (manager.getPlayers().length >= info.maxPlayers && !manager.isStarted()) {
                     console.log(`[START] Room ${roomId} full (${manager.getPlayers().length}/${info.maxPlayers}). Starting...`);
                     manager.recalculatePrizePool();
-                    manager.start();
+
+                    // FIX: Wait for questions to load BEFORE telling the client to start
+                    await manager.start();
                     io.to(roomId).emit('game_start');
+                } else if (manager.getPlayers().length === 1 && (info.type === 'stars' || info.type === 'ton')) {
+                    // NEW: Notify other users about the new room (only for public Stars/TON rooms)
+                    // We only do this when the FIRST player creates/joins to avoid spam
+                    setTimeout(async () => {
+                        try {
+                            if (!notificationService) return;
+
+                            // Fetch engaged users (those who play most)
+                            const { data: activeUsers } = await supabase
+                                .from('users')
+                                .select('telegram_id')
+                                .neq('telegram_id', userId)
+                                .order('stats_total_games', { ascending: false })
+                                .limit(50);
+
+                            if (activeUsers && activeUsers.length > 0) {
+                                console.log(`[NOTIFY] Broadcasting new room ${roomId} to ${activeUsers.length} users`);
+                                for (const u of activeUsers) {
+                                    notificationService.notifyRoomOpen(u.telegram_id, {
+                                        roomId,
+                                        entryFee: info.entryFee,
+                                        currency: info.currency,
+                                        playerCount: info.players,
+                                        maxPlayers: info.maxPlayers
+                                    });
+                                    // Subtle delay to avoid rate limits
+                                    await new Promise(r => setTimeout(r, 50));
+                                }
+                            }
+                        } catch (e) {
+                            console.error('[NOTIFY] Broadcast failed:', e);
+                        }
+                    }, 500);
                 }
             } catch (err) {
                 console.error(`[JOIN-ERROR] Failed to finalize join for room ${roomId}:`, err);

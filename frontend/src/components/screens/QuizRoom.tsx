@@ -70,12 +70,27 @@ export const QuizRoom: React.FC = () => {
             }
         };
 
+        // NEW: Timeout for finding players
+        const joinTimeout = setTimeout(() => {
+            if (gameStatus === 'waiting' && !gameEndedRef.current) {
+                console.warn("[JOIN] Room join timed out. Returning to home.");
+                const tg = (window as any).Telegram?.WebApp;
+                if (tg?.showConfirm) {
+                    tg.showConfirm("Still finding players... stay here or return home?", (ok: boolean) => {
+                        if (!ok) navigate('/');
+                    });
+                }
+            }
+        }, 30000); // 30 seconds
+
         const onGameStart = () => {
             console.log("Game started!");
+            clearTimeout(joinTimeout);
             setGameStatus('playing');
         };
 
         const onNewQuestion = (data: any) => {
+            clearTimeout(joinTimeout);
             // Safety: If we missed game_start, switch to playing
             setGameStatus(prev => {
                 if (prev === 'waiting') {
@@ -147,6 +162,7 @@ export const QuizRoom: React.FC = () => {
         };
 
         const onGameOver = (data: any) => {
+            clearTimeout(joinTimeout);
             gameEndedRef.current = true;
             setGameStatus('ended');
             setPlayers(data.winners);
@@ -182,21 +198,27 @@ export const QuizRoom: React.FC = () => {
         };
 
         const onRoomExpired = (data: any) => {
+            clearTimeout(joinTimeout);
             setGameStatus('ended');
             const tg = (window as any).Telegram?.WebApp;
             if (tg?.showAlert) {
                 tg.showAlert(data.message || 'Room closed — not enough players. Entry fee refunded.');
             }
-            setTimeout(() => navigate('/'), 2000);
+            navigate('/');
         };
 
         const onSocketError = (data: any) => {
-            console.error("Socket error received:", data);
-            const tg = (window as any).Telegram?.WebApp;
-            if (tg?.showAlert) {
-                tg.showAlert(data.message || 'An error occurred. Returning to lobby.');
+            console.error('[SOCKET] error:', data);
+            clearTimeout(joinTimeout);
+            if (data.message === 'Insufficient Stars balance') {
+                alert('You do not have enough stars to join this room.');
             } else {
-                alert(data.message || 'An error occurred. Returning to lobby.');
+                const tg = (window as any).Telegram?.WebApp;
+                if (tg?.showAlert) {
+                    tg.showAlert(data.message || 'An error occurred. Returning to lobby.');
+                } else {
+                    alert(data.message || 'An error occurred. Returning to lobby.');
+                }
             }
             navigate('/');
         };
@@ -266,10 +288,10 @@ export const QuizRoom: React.FC = () => {
             joinRoom();
         } else {
             socket.connect();
-            socket.once('connect', joinRoom);
         }
 
         return () => {
+            clearTimeout(joinTimeout);
             socket.off('room_update', onRoomUpdate);
             socket.off('game_start', onGameStart);
             socket.off('new_question', onNewQuestion);
@@ -283,11 +305,9 @@ export const QuizRoom: React.FC = () => {
             socket.off('error', onSocketError);
             socket.off('powerup_result', onPowerUpResult);
             socket.off('level_up', onLevelUp);
-            socket.off('powerup_result', onPowerUpResult);
-            socket.off('connect', joinRoom);
             socket.emit('leave_room');
         };
-    }, [user.username]);
+    }, [user.telegramId, user.username, finalRoomId, finalType, finalCategory, entryFee, currency, location.state]);
 
     const handleAnswer = (option: string) => {
         if (selectedAnswer || gameStatus !== 'playing' || eliminatedOptions.includes(option)) return;

@@ -42,6 +42,16 @@ export const Home: React.FC = () => {
         // Trigger profile sync to ensure fresh energy/stars data
         const socket = (window as any).socket;
         const tg = (window as any).Telegram?.WebApp;
+
+        // NEW: Handle Deep Linking (startapp=room_ID)
+        const startParam = tg?.initDataUnsafe?.start_param;
+        if (startParam && startParam.startsWith('room_')) {
+            const roomId = startParam.replace('room_', '');
+            console.log(`[DEEP LINK] Joining room: ${roomId}`);
+            navigate(`/quiz?roomId=${roomId}&type=tournament`);
+            return;
+        }
+
         if (socket && user.telegramId) {
             socket.emit('sync_profile', {
                 telegramId: user.telegramId,
