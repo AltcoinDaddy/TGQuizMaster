@@ -323,247 +323,140 @@ io.on('connection', (socket) => {
                 console.log(`[PAYMENT] Deducted ${feeAmount} ${feeCurrency} from ${username}`);
             }
 
-            // 3. Matchmaking
+            // 3. Matchmaking & Room Selection
             let roomId: string | undefined;
 
             if (data.roomType === 'practice') {
-                // DAILY LIMIT CHECK (Already reset in sync_profile if needed)
+                // ... (Keep practice logic mostly same but ensure set is early)
                 if ((user.daily_games_today || 0) >= 10) {
-                    socket.emit('error', { message: 'Daily limit reached! Come back tomorrow.' }); // 10 games max
+                    socket.emit('error', { message: 'Daily limit reached! Come back tomorrow.' });
                     return;
                 }
 
                 roomId = crypto.randomUUID();
                 const mgr = new GameManager(roomId, io, 'practice', 0, 0, 5, category || 'General');
 
-                // Assign cleanup handler so room is deleted after game ends
                 mgr.onGameOver = (finishedRoomId) => {
                     rooms.delete(finishedRoomId);
-                    console.log(`[CLEANUP] Practice room ${finishedRoomId} deleted after game over`);
+                    console.log(`[CLEANUP] Practice room ${finishedRoomId} deleted`);
                 };
 
-                rooms.set(roomId, mgr);
+                rooms.set(roomId, mgr); // Set immediately
 
-                mgr.addPlayer({
-                    id: userId.toString(),
-                    username,
-                    avatar,
-                    score: 0
-                });
-
-                // Crucial: Use await to ensure client is in the room before we start emitting game events
+                mgr.addPlayer({ id: userId.toString(), username, avatar, score: 0 });
                 await socket.join(roomId);
                 socketPlayerMap.set(socket.id, { roomId, playerId: userId.toString() });
 
-                // Increment Usage ONLY after successful join
-                await supabase.from('users').update({
-                    daily_games_today: (user.daily_games_today || 0) + 1
-                }).eq('telegram_id', userId);
+                await supabase.from('users').update({ daily_games_today: (user.daily_games_today || 0) + 1 }).eq('telegram_id', userId);
+                socket.emit('balance_update', { dailyGamesToday: (user.daily_games_today || 0) + 1 });
+                socket.emit('room_update', { ...mgr.getRoomInfo(), players: mgr.getPlayers() });
 
-                // Notify client immediately of the new energy count
-                socket.emit('balance_update', {
-                    dailyGamesToday: (user.daily_games_today || 0) + 1
-                });
-
-                // Emit room_update so frontend transitions to joined state correctly
-                socket.emit('room_update', {
-                    ...mgr.getRoomInfo(),
-                    players: mgr.getPlayers()
-                });
-
-                // Small delay to ensure frontend has processed room_update
                 setTimeout(() => {
                     socket.emit('game_start');
                     mgr.start();
                 }, 800);
-
                 return;
             }
 
-            // Quick Play: auto-join any open Stars room with 10 Stars entry
+            // --- PAID / TOURNAMENT ROOMS ---
+            let requestedMax = data.maxPlayers ? parseInt(data.maxPlayers) : 5;
+            let effectiveFee = feeAmount;
+            let effectiveCurrency = feeCurrency === 'TON' ? 'TON' : 'Stars';
+
             if (data.roomType === 'quickplay') {
-                const quickFee = 10;
-                if ((user.balance_stars || 0) < quickFee) {
-                    socket.emit('error', { message: `Need at least ${quickFee} Stars for Quick Play` });
+                effectiveFee = 10;
+                effectiveCurrency = 'Stars';
+                if ((user.balance_stars || 0) < effectiveFee) {
+                    socket.emit('error', { message: `Need 10 Stars for Quick Play` });
                     return;
                 }
+            }
 
-                // Deduct Stars
-                await supabase.from('users')
-                    .update({ balance_stars: user.balance_stars - quickFee })
+            // Find existing room
+            roomId = Array.from(rooms.keys()).find(id => {
+                const mgr = rooms.get(id);
+                if (!mgr) return false;
+                const info = mgr.getRoomInfo();
+
+                const matchesFee = Math.abs(info.entryFee - effectiveFee) < 0.01;
+                const matchesCurrency = info.currency === effectiveCurrency;
+                const matchesCategory = info.category === (category || 'General');
+                const hasSpace = info.players < info.maxPlayers;
+                const isWaiting = info.status === 'waiting';
+
+                // Quick Play joins ANY matching fee room. 
+                // Regular joins must match requestedMax.
+                const matchesSize = (data.roomType === 'quickplay') || (info.maxPlayers === requestedMax);
+
+                return matchesFee && matchesCurrency && matchesCategory && hasSpace && isWaiting && matchesSize;
+            });
+
+            // If found, deduct fee and join (Wait for DB fee deduction first for safety on join)
+            if (effectiveFee > 0) {
+                const { error: updateError } = await supabase
+                    .from('users')
+                    .update({ balance_stars: user.balance_stars - effectiveFee })
                     .eq('telegram_id', userId);
-                user.balance_stars -= quickFee;
+                if (updateError) throw updateError;
+                user.balance_stars -= effectiveFee;
 
-                // Log entry fee transaction
                 await supabase.from('transactions').insert({
                     user_id: userId,
                     type: 'ENTRY_FEE',
-                    amount: -quickFee,
-                    currency: 'STARS',
-                    metadata: { mode: 'quickplay' },
+                    amount: -effectiveFee,
+                    currency: effectiveCurrency,
+                    metadata: { roomId, mode: data.roomType },
                     status: 'COMPLETED'
-                });
-
-                // Find any open Stars room or create one
-                roomId = Array.from(rooms.keys()).find(id => {
-                    const mgr = rooms.get(id);
-                    if (!mgr) return false;
-                    const info = mgr.getRoomInfo();
-                    return info.players < info.maxPlayers &&
-                        info.status === 'waiting' &&
-                        info.currency === 'Stars' &&
-                        Math.abs(info.entryFee - quickFee) < 0.01;
-                });
-
-                if (!roomId) {
-                    roomId = crypto.randomUUID();
-                    rooms.set(roomId, new GameManager(roomId, io, 'stars', 0, quickFee, 5, 'General'));
-                }
-
-                feeAmount = quickFee;
-                feeCurrency = 'STARS';
-                // Fall through to normal join logic below
-            }
-            // Find a room matching the currency/type or create new (skip if quickplay already found one)
-            if (!roomId) {
-                const requestedMax = data.maxPlayers ? parseInt(data.maxPlayers) : 5;
-                roomId = Array.from(rooms.keys()).find(id => {
-                    const mgr = rooms.get(id);
-                    if (!mgr) return false;
-                    const info = mgr.getRoomInfo();
-                    return info.players < info.maxPlayers &&
-                        info.status === 'waiting' &&
-                        info.currency === (feeCurrency === 'TON' ? 'TON' : 'Stars') &&
-                        info.category === (category || 'General') &&
-                        info.maxPlayers === requestedMax && // Crucial fix: check requested player limit
-                        Math.abs(info.entryFee - feeAmount) < 0.01; // Float safety
                 });
             }
 
             if (!roomId) {
                 roomId = crypto.randomUUID();
-                // Use provided maxPlayers but clamp between 2 and 20 for safety
-                const playersLimit = data.maxPlayers ? Math.min(Math.max(parseInt(data.maxPlayers), 2), 20) : 5;
-                const newManager = new GameManager(roomId, io, feeCurrency === 'TON' ? 'ton' : 'stars', 0, feeAmount, playersLimit, category || 'General');
+                const playersLimit = data.roomType === 'quickplay' ? 5 : Math.min(Math.max(requestedMax, 2), 20);
+                const newManager = new GameManager(roomId, io, effectiveCurrency.toLowerCase() as any, 0, effectiveFee, playersLimit, category || 'General');
 
-                // Handle room timeout: refund all players and clean up
-                const capturedRoomId = roomId;
+                // UNIFIED Handlers
                 newManager.onExpire = async (mgr) => {
-                    try {
-                        const info = mgr.getRoomInfo();
-                        const players = mgr.getPlayers();
-
-                        if (info.entryFee > 0 && players.length > 0) {
-                            console.log(`[REFUND] Refunding ${players.length} players in expired room ${capturedRoomId} (${info.entryFee} Stars each)`);
-
-                            for (const player of players) {
-                                const playerId = parseInt(player.id);
-                                if (!playerId) continue;
-
-                                // Credit Stars back
-                                const { data: userData } = await supabase
-                                    .from('users')
-                                    .select('balance_stars')
-                                    .eq('telegram_id', playerId)
-                                    .single();
-
-                                if (userData) {
-                                    await supabase.from('users')
-                                        .update({ balance_stars: (userData.balance_stars || 0) + info.entryFee })
-                                        .eq('telegram_id', playerId);
-
-                                    // Instant UI update if player is still connected
-                                    io.to(player.id).emit('balance_update', {
-                                        stars: (userData.balance_stars || 0) + info.entryFee
-                                    });
-                                }
-
-                                // Log refund transaction
-                                await supabase.from('transactions').insert({
-                                    user_id: playerId,
-                                    type: 'REFUND',
-                                    amount: info.entryFee,
-                                    currency: 'STARS',
-                                    metadata: { reason: 'room_expired', roomId: capturedRoomId },
-                                    status: 'COMPLETED'
-                                });
-
-                                console.log(`[REFUND] Refunded ${info.entryFee} Stars to user ${playerId}`);
+                    const info = mgr.getRoomInfo();
+                    const players = mgr.getPlayers();
+                    for (const p of players) {
+                        try {
+                            const pid = parseInt(p.id);
+                            const { data: u } = await supabase.from('users').select('balance_stars').eq('telegram_id', pid).single();
+                            if (u) {
+                                await supabase.from('users').update({ balance_stars: (u.balance_stars || 0) + info.entryFee }).eq('telegram_id', pid);
+                                io.to(p.id).emit('balance_update', { stars: (u.balance_stars || 0) + info.entryFee });
                             }
-                        }
-                    } catch (e) {
-                        console.error('[REFUND] Failed to refund players:', e);
+                        } catch (e) { console.error('Expire refund error:', e); }
                     }
-
-                    // Clean up room from memory
-                    rooms.delete(capturedRoomId);
+                    rooms.delete(roomId!);
                 };
 
-                // Clean up room after game finishes
                 newManager.onGameOver = (finishedRoomId) => {
                     rooms.delete(finishedRoomId);
-                    console.log(`[CLEANUP] Room ${finishedRoomId} deleted after game over`);
+                    console.log(`[CLEANUP] Room ${finishedRoomId} deleted`);
                 };
 
-                rooms.set(roomId, newManager);
-
-                // Notify recently active users about the new room (Stars rooms only)
-                if (feeCurrency === 'STARS' && notificationService) {
-                    (async () => {
-                        try {
-
-                            const { data: recentUsers } = await supabase
-                                .from('users')
-                                .select('telegram_id')
-                                .gt('stats_total_games', 0)
-                                .neq('telegram_id', userId)
-                                .limit(50);
-
-                            if (recentUsers && recentUsers.length > 0) {
-                                console.log(`[NOTIFY] Sending room notification to ${recentUsers.length} recent players`);
-                                for (const u of recentUsers) {
-                                    notificationService.notifyRoomOpen(u.telegram_id, {
-                                        roomId: roomId,
-                                        entryFee: feeAmount,
-                                        currency: 'Stars',
-                                        playerCount: 1,
-                                        maxPlayers: playersLimit
-                                    });
-                                }
-                            }
-                        } catch (e) {
-                            console.error('[NOTIFY] Room notification failed:', e);
-                        }
-                    })();
-                }
+                rooms.set(roomId, newManager); // SET IMMEDIATELY before notifying others
+                console.log(`[CREATE] Room ${roomId} created for ${username}`);
             }
 
             const manager = rooms.get(roomId)!;
-            manager.addPlayer({
-                id: userId.toString(),
-                username,
-                avatar,
-                score: 0
-            });
+            manager.addPlayer({ id: userId.toString(), username, avatar, score: 0 });
 
-            socket.join(roomId);
+            await socket.join(roomId);
             socketPlayerMap.set(socket.id, { roomId, playerId: userId.toString() });
 
-            // Send updated user balance to client
-            socket.emit('balance_update', {
-                stars: user.balance_stars,
-                ton: user.balance_ton || 0,
-                balanceQP: user.balance_qp || 0
-            });
-
+            // Notify everyone in the room
             io.to(roomId).emit('room_update', {
                 ...manager.getRoomInfo(),
                 players: manager.getPlayers()
             });
 
-            const roomInfo = manager.getRoomInfo();
-            if (manager.getPlayers().length >= roomInfo.maxPlayers && !manager.isStarted()) {
-                manager.recalculatePrizePool(); // Calculate prize pool & rake based on actual players
+            // Start if full
+            const info = manager.getRoomInfo();
+            if (manager.getPlayers().length >= info.maxPlayers && !manager.isStarted()) {
+                manager.recalculatePrizePool();
                 manager.start();
                 io.to(roomId).emit('game_start');
             }
