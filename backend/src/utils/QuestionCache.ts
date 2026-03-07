@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { decode } from 'html-entities';
+import { CRYPTO_QUESTIONS } from './LocalQuestions';
 
 export interface CachedQuestion {
     id: string;
@@ -12,6 +13,8 @@ export interface CachedQuestion {
  * Pre-fetches and caches trivia questions from OpenTDB to avoid
  * hitting the API on every game start. Refills automatically
  * when the pool drops below a threshold.
+ * 
+ * Category 18 (Crypto) is served from a local curated bank.
  */
 class QuestionCache {
     private pools: Map<number, CachedQuestion[]> = new Map();
@@ -23,15 +26,23 @@ class QuestionCache {
     private readonly batchSize = 30;
     private readonly minGlobalInterval = 6000; // 6 seconds between ANY request
 
-    private readonly CATEGORY_IDS = [9, 11, 15, 18, 21];
+    // Categories we fetch from OpenTDB
+    private readonly EXTERNAL_CATEGORY_IDS = [9, 11, 15, 21, 12, 22, 23, 24, 30];
 
     constructor() {
-        // Queue initial refills sequentially
-        this.CATEGORY_IDS.forEach(id => this.queueRefill(id));
+        // Queue initial refills for external categories
+        this.EXTERNAL_CATEGORY_IDS.forEach(id => this.queueRefill(id));
     }
 
     async getQuestions(count: number, categoryId: number): Promise<CachedQuestion[]> {
         const id = categoryId;
+
+        // SPECIAL CASE: Crypto (ID 18) uses curated local questions
+        if (id === 18) {
+            console.log(`[CACHE] Serving ${count} curated Crypto questions from local bank`);
+            return this.getRandomLocalQuestions(count);
+        }
+
         const pool = this.pools.get(id) || [];
 
         // If pool is getting low, queue a refill
@@ -47,20 +58,18 @@ class QuestionCache {
 
         // Emergency fallback: fetch directly but still obey global limit
         console.log(`[CACHE] Pool empty for category ${id}, fetching directly...`);
-        // For direct fetches, we need to ensure they also respect the global interval.
-        // The simplest way is to queue them as well, or make fetchFromAPI handle the wait.
-        // The instruction implies fetchFromAPI will handle the timing, so we'll just call it.
-        // However, the `processQueue` is designed to handle the timing for `batchSize` refills.
-        // For a direct fetch, we need to ensure it waits if necessary.
-        // Let's modify fetchFromAPI to include the wait logic.
         return this.fetchFromAPI(count, id);
     }
 
+    private getRandomLocalQuestions(count: number): CachedQuestion[] {
+        // Shuffle and take N
+        const shuffled = [...CRYPTO_QUESTIONS].sort(() => Math.random() - 0.5);
+        return shuffled.slice(0, Math.min(count, shuffled.length));
+    }
+
     private queueRefill(categoryId: number) {
-        // Only add to queue if not already present
-        if (!this.requestQueue.includes(categoryId)) {
-            this.requestQueue.push(categoryId);
-        }
+        if (this.requestQueue.includes(categoryId)) return;
+        this.requestQueue.push(categoryId);
         this.processQueue();
     }
 
@@ -81,7 +90,6 @@ class QuestionCache {
             const categoryId = this.requestQueue.shift();
             if (categoryId !== undefined) {
                 try {
-                    // This call to fetchFromAPI will update lastRequestTime
                     const questions = await this.fetchFromAPI(this.batchSize, categoryId);
                     if (questions.length > 0) {
                         const currentPool = this.pools.get(categoryId) || [];
@@ -106,11 +114,9 @@ class QuestionCache {
             await new Promise(r => setTimeout(r, wait));
         }
 
-        this.lastRequestTime = Date.now(); // Update last request time immediately before making the call
+        this.lastRequestTime = Date.now();
         try {
-            // STRICT category enforcement
             const url = `https://opentdb.com/api.php?amount=${amount}&category=${categoryId}&type=multiple`;
-
             const resp = await axios.get(url);
 
             if (resp.data.response_code === 0 && resp.data.results) {

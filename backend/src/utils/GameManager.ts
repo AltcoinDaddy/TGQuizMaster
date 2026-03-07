@@ -67,7 +67,12 @@ export class GameManager {
         'Crypto': 18, // Science: Computers
         'Movies': 11,
         'Sports': 21,
-        'Gaming': 15
+        'Gaming': 15,
+        'History': 23,
+        'Geography': 22,
+        'Music': 12,
+        'Politics': 24,
+        'Gadgets': 30
     };
 
     constructor(roomId: string, io: any, type: 'free' | 'stars' | 'ton' | 'practice' = 'free', prize = 0, fee = 0, maxPlayers = 5, category = 'General') {

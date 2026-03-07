@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { MainLayout } from '../layout/MainLayout';
 import { GlassCard } from '../ui/GlassCard';
 import { Button } from '../ui/Button';
-import { ChevronLeft, Info, Brain, Coins, Film, Trophy, Gamepad2, Lock, Link as LinkIcon, Send, Minus, Plus, Smile, Star, Diamond } from 'lucide-react';
+import { ChevronLeft, Info, Brain, Coins, Film, Trophy, Gamepad2, Lock, Link as LinkIcon, Send, Minus, Plus, Smile, Star, Diamond, History, Globe, Music, Landmark, Smartphone } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const STAR_PRESETS = [10, 25, 50, 100];
@@ -23,6 +23,11 @@ export const CreateTournament: React.FC = () => {
         { name: 'Movies', icon: <Film size={20} /> },
         { name: 'Sports', icon: <Trophy size={20} /> },
         { name: 'Gaming', icon: <Gamepad2 size={20} /> },
+        { name: 'History', icon: <History size={20} /> },
+        { name: 'Geography', icon: <Globe size={20} /> },
+        { name: 'Music', icon: <Music size={20} /> },
+        { name: 'Politics', icon: <Landmark size={20} /> },
+        { name: 'Gadgets', icon: <Smartphone size={20} /> },
     ];
 
     const getEntryFeeStr = () => {
