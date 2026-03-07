@@ -64,7 +64,13 @@ class QuestionCache {
     private getRandomLocalQuestions(count: number): CachedQuestion[] {
         // Shuffle and take N
         const shuffled = [...CRYPTO_QUESTIONS].sort(() => Math.random() - 0.5);
-        return shuffled.slice(0, Math.min(count, shuffled.length));
+        const selected = shuffled.slice(0, Math.min(count, shuffled.length));
+
+        // CRITICAL: Shuffle the options for each question so the correct answer isn't always at index 0
+        return selected.map(q => ({
+            ...q,
+            options: [...q.options].sort(() => Math.random() - 0.5)
+        }));
     }
 
     private queueRefill(categoryId: number) {

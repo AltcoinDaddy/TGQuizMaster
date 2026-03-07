@@ -537,7 +537,7 @@ export const QuizRoom: React.FC = () => {
                         const isRevealed = revealedAnswer === option;
                         const isEliminated = eliminatedOptions.includes(option);
 
-                        let buttonClass = 'bg-white/5 border-white/5 hover:border-primary/30';
+                        let buttonClass = 'bg-white/5 border-white/5';
                         if (isEliminated) {
                             buttonClass = 'bg-white/2 border-white/5 opacity-30 line-through pointer-events-none';
                         } else if (isSelected) {
@@ -556,7 +556,7 @@ export const QuizRoom: React.FC = () => {
                                 className={`group w-full p-4 border-2 rounded-2xl flex items-center transition-all animate-in fade-in slide-in-from-bottom duration-300 active:scale-[0.98] ${buttonClass}`}
                                 style={{ animationDelay: `${idx * 100}ms` }}
                             >
-                                <div className={`w-10 h-10 rounded-full flex items-center justify-center font-black mr-4 transition-colors ${isSelected ? 'bg-primary text-background-dark' : 'bg-white/10 group-hover:bg-primary group-hover:text-background-dark'
+                                <div className={`w-10 h-10 rounded-full flex items-center justify-center font-black mr-4 transition-colors ${isSelected ? 'bg-primary text-background-dark' : 'bg-white/10'
                                     }`}>
                                     {letters[idx]}
                                 </div>
