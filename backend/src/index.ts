@@ -472,9 +472,11 @@ io.on('connection', (socket) => {
                     console.log(`[START] Room ${roomId} full (${manager.getPlayers().length}/${info.maxPlayers}). Starting...`);
                     manager.recalculatePrizePool();
 
-                    // FIX: Wait for questions to load BEFORE telling the client to start
-                    await manager.start();
+                    // Emit game_start immediately to switch UI mode
                     io.to(roomId).emit('game_start');
+
+                    // Then fetch questions and start the manager
+                    await manager.start();
                 } else if (manager.getPlayers().length === 1 && (info.type === 'stars' || info.type === 'ton')) {
                     // NEW: Notify other users about the new room (only for public Stars/TON rooms)
                     // We only do this when the FIRST player creates/joins to avoid spam

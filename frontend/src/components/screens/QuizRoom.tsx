@@ -317,11 +317,13 @@ export const QuizRoom: React.FC = () => {
         if (socket.connected) {
             joinRoom();
         } else {
+            socket.on('connect', joinRoom);
             socket.connect();
         }
 
         return () => {
             clearTimeout(joinTimeout);
+            socket.off('connect', joinRoom);
             socket.off('room_update', onRoomUpdate);
             socket.off('game_start', onGameStart);
             socket.off('new_question', onNewQuestion);
@@ -337,7 +339,7 @@ export const QuizRoom: React.FC = () => {
             socket.off('level_up', onLevelUp);
             socket.emit('leave_room');
         };
-    }, [user.telegramId, user.username, finalRoomId, finalType, roomCategory, entryFee, currency, location.state]);
+    }, [user.telegramId, user.username, finalRoomId, finalType, entryFee, currency]);
 
     const handleAnswer = (option: string) => {
         if (selectedAnswer || gameStatus !== 'playing' || eliminatedOptions.includes(option)) return;
