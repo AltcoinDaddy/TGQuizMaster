@@ -278,6 +278,12 @@ export const CreateTournament: React.FC = () => {
                             return;
                         }
 
+                        // NEW: Persist to sessionStorage in case location.state drops in Telegram WebApp
+                        sessionStorage.setItem('pendingRoomConf', JSON.stringify({
+                            category,
+                            maxPlayers: players
+                        }));
+
                         navigate('/quiz', {
                             state: {
                                 type: 'tournament',

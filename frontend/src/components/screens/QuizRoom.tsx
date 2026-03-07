@@ -37,7 +37,16 @@ export const QuizRoom: React.FC = () => {
         console.log(`[JOIN] Extracted max players ${extractedMax} from room ID ${roomIdFromUrl}`);
     }
 
-    const initialMax = extractedMax || location.state?.maxPlayers || queryParams.get('maxPlayers') || 5;
+    const { tournamentId, entryFee, currency, type: stateType, category: stateCategory } = location.state || {};
+
+    // NEW: Recover pending configuration from sessionStorage if state drops
+    let pendingConf: any = null;
+    try {
+        const confStr = sessionStorage.getItem('pendingRoomConf');
+        if (confStr) pendingConf = JSON.parse(confStr);
+    } catch (e) { }
+
+    const initialMax = extractedMax || location.state?.maxPlayers || pendingConf?.maxPlayers || queryParams.get('maxPlayers') || 5;
     const [maxPlayersCount, setMaxPlayersCount] = useState(parseInt(String(initialMax)) || 5);
 
     // FIX: Initialize with current user to avoid "0/N" flash
@@ -65,10 +74,9 @@ export const QuizRoom: React.FC = () => {
     const circumference = 2 * Math.PI * radius;
     const strokeDashoffset = circumference - (timeLeft / 15) * circumference;
 
-    const { tournamentId, entryFee, currency, type: stateType, category: stateCategory } = location.state || {};
     const finalRoomId = cleanRoomId || tournamentId;
     const finalType = stateType || typeFromUrl || 'tournament';
-    const finalCategory = stateCategory || categoryFromUrl || 'General';
+    const finalCategory = stateCategory || categoryFromUrl || pendingConf?.category || 'General';
 
     useEffect(() => {
         // 1. Setup Listeners
@@ -280,7 +288,7 @@ export const QuizRoom: React.FC = () => {
                 console.log("Game already ended, skipping rejoin");
                 return;
             }
-            console.log("Joining room...", { type: finalType });
+            console.log("Joining room...", { type: finalType, category: finalCategory, maxPlayersCount });
             socket.emit('join_room', {
                 username: user.username,
                 telegramId: user.telegramId,
@@ -290,7 +298,7 @@ export const QuizRoom: React.FC = () => {
                 entryFee: entryFee || 0,
                 currency: currency || 'Stars',
                 category: finalCategory,
-                maxPlayers: (finalType === 'tournament' || finalType === 'stars' || roomIdFromUrl) ? (location.state?.maxPlayers || 5) : 5
+                maxPlayers: maxPlayersCount
             });
         };
 
