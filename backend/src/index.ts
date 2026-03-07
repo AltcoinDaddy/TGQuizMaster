@@ -366,6 +366,7 @@ io.on('connection', (socket) => {
                     return info.players < info.maxPlayers &&
                         info.status === 'waiting' &&
                         info.currency === (feeCurrency === 'TON' ? 'TON' : 'Stars') &&
+                        info.category === (category || 'General') &&
                         Math.abs(info.entryFee - feeAmount) < 0.01; // Float safety
                 });
             }

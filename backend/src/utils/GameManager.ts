@@ -150,7 +150,8 @@ export class GameManager {
             prizePool: this.prizePool,
             entryFee: this.entryFee,
             status: this.started ? 'live' : 'waiting',
-            currency: this.tournamentType === 'stars' ? 'Stars' : 'TON'
+            currency: this.tournamentType === 'stars' ? 'Stars' : 'TON',
+            category: this.category
         };
     }
 
@@ -174,19 +175,16 @@ export class GameManager {
     }
 
     private async fetchQuestions() {
-        // Only use cache for General category
-        if (!this.categoryId || this.categoryId === 9) {
-            try {
-                const { questionCache } = await import('./QuestionCache');
-                const cached = await questionCache.getQuestions(this.questionCount);
-                if (cached.length >= this.questionCount) {
-                    this.questions = cached;
-                    console.log(`[GAME] Loaded ${cached.length} questions from cache (pool: ${questionCache.size} remaining)`);
-                    return;
-                }
-            } catch (e) {
-                console.error('[GAME] Cache fetch failed, trying API directly:', e);
+        try {
+            const { questionCache } = await import('./QuestionCache');
+            const cached = await questionCache.getQuestions(this.questionCount, this.categoryId || 9);
+            if (cached.length >= this.questionCount) {
+                this.questions = cached;
+                console.log(`[GAME] Loaded ${cached.length} questions for category ${this.category} (id: ${this.categoryId}) from cache`);
+                return;
             }
+        } catch (e) {
+            console.error('[GAME] Cache fetch failed, trying API directly:', e);
         }
 
         // Fetch from API (either specific category or cache/fallback)
