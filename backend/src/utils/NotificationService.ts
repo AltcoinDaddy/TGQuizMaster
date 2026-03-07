@@ -7,6 +7,17 @@ export class NotificationService {
         this.bot = bot;
     }
 
+    // Helper to check if a Telegram error is ignorable (e.g. user blocked bot or chat not found)
+    private isIgnorableError(e: any): boolean {
+        const message = e.message || '';
+        return (
+            message.includes('bot was blocked') ||
+            message.includes('chat not found') ||
+            message.includes('user is deactivated') ||
+            message.includes('forbidden')
+        );
+    }
+
     // Notify a user about a new room being created
     async notifyRoomOpen(userId: number, roomDetails: { roomId: string; entryFee: number; currency: string; playerCount: number; maxPlayers: number }) {
         try {
@@ -27,8 +38,7 @@ export class NotificationService {
                 }
             });
         } catch (e: any) {
-            // User may have blocked the bot — don't crash
-            if (!e.message?.includes('bot was blocked')) {
+            if (!this.isIgnorableError(e)) {
                 console.error(`[NOTIFY] Failed to send room notification to ${userId}:`, e.message);
             }
         }
@@ -50,7 +60,7 @@ export class NotificationService {
                 }
             });
         } catch (e: any) {
-            if (!e.message?.includes('bot was blocked')) {
+            if (!this.isIgnorableError(e)) {
                 console.error(`[NOTIFY] Failed to send daily reward notification to ${userId}:`, e.message);
             }
         }
@@ -66,7 +76,7 @@ export class NotificationService {
 
             await this.bot.sendMessage(userId, message, { parse_mode: 'Markdown' });
         } catch (e: any) {
-            if (!e.message?.includes('bot was blocked')) {
+            if (!this.isIgnorableError(e)) {
                 console.error(`[NOTIFY] Failed to send referral notification to ${userId}:`, e.message);
             }
         }
@@ -93,11 +103,11 @@ export class NotificationService {
             });
             return { success: true };
         } catch (e: any) {
-            const blocked = e.message?.includes('bot was blocked') || e.message?.includes('user is deactivated');
-            if (!blocked) {
+            const ignored = this.isIgnorableError(e);
+            if (!ignored) {
                 console.error(`[NOTIFY] Re-engagement failed for ${userId}:`, e.message);
             }
-            return { success: false, blocked };
+            return { success: false, blocked: ignored };
         }
     }
 
@@ -119,7 +129,7 @@ export class NotificationService {
                 });
                 sent++;
             } catch (e: any) {
-                if (e.message?.includes('bot was blocked') || e.message?.includes('user is deactivated')) {
+                if (this.isIgnorableError(e)) {
                     blocked++;
                 } else {
                     failed++;
