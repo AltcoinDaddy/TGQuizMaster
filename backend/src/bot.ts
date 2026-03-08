@@ -274,7 +274,7 @@ if (!token) {
         try {
             const roomId = crypto.randomUUID();
             const entryFee = 10;
-            const maxPlayers = 10;
+            const maxPlayers = 2;
 
             const manager = roomRegistry.createRoom(
                 roomId,
