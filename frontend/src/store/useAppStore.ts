@@ -36,12 +36,14 @@ interface UserState {
 
 interface AppStore {
     user: UserState;
+    isParamProcessed: boolean;
     setUser: (user: Partial<UserState>) => void;
     setWalletConnected: (connected: boolean) => void;
     updateStars: (amount: number) => void;
     updateTON: (amount: number) => void;
     syncFromBackend: (data: any) => void;
     updateSettings: (settings: { soundEnabled: boolean; hapticsEnabled: boolean }) => void;
+    setParamProcessed: (val: boolean) => void;
 }
 
 export const useAppStore = create<AppStore>((set, get) => ({
@@ -71,6 +73,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
         },
         isSynced: false
     },
+    isParamProcessed: false,
     setUser: (userData) =>
         set((state) => ({ user: { ...state.user, ...userData } })),
     setWalletConnected: (connected) =>
@@ -109,8 +112,8 @@ export const useAppStore = create<AppStore>((set, get) => ({
             }
         })),
     updateSettings: async (settings) => {
-        const state = get();
-        const newSettings = { ...state.user.settings, ...settings };
+        const currentUser = get().user;
+        const newSettings = { ...currentUser.settings, ...settings };
 
         // Optimistic update
         set((state) => ({ user: { ...state.user, settings: newSettings } }));
@@ -118,11 +121,12 @@ export const useAppStore = create<AppStore>((set, get) => ({
         // Sync with backend
         try {
             await authPost('/api/settings', {
-                telegramId: state.user.telegramId,
+                telegramId: currentUser.telegramId,
                 settings: newSettings
             });
         } catch (e) {
             console.error('Failed to save settings:', e);
         }
-    }
+    },
+    setParamProcessed: (val) => set({ isParamProcessed: val })
 }));

@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Star, Gem } from 'lucide-react';
 import { useTonConnectUI, useTonAddress } from '@tonconnect/ui-react';
 import { useAppStore } from '../../store/useAppStore';
+import { socket } from '../../utils/socket';
 
 export const Header: React.FC = () => {
     const location = useLocation();
@@ -32,7 +33,13 @@ export const Header: React.FC = () => {
             <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">
                     {location.pathname !== '/' && (
-                        <button onClick={() => navigate('/')} className="mr-1 p-1.5 bg-white/10 rounded-full active:scale-95 transition-all hover:bg-white/20">
+                        <button
+                            onClick={() => {
+                                socket.emit('leave_room');
+                                navigate('/');
+                            }}
+                            className="mr-1 p-1.5 bg-white/10 rounded-full active:scale-95 transition-all hover:bg-white/20"
+                        >
                             <ArrowLeft size={20} className="text-white" />
                         </button>
                     )}

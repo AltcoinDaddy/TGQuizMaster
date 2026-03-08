@@ -331,12 +331,15 @@ export const QuizRoom: React.FC = () => {
 
         // 3. Telegram BackButton support
         const tg = (window as any).Telegram?.WebApp;
+        const handleBack = () => {
+            console.log("Back button clicked, leaving room...");
+            socket.emit('leave_room');
+            navigate('/');
+        };
+
         if (tg?.BackButton) {
             tg.BackButton.show();
-            tg.BackButton.onClick(() => {
-                socket.emit('leave_room');
-                navigate('/');
-            });
+            tg.BackButton.onClick(handleBack);
         }
 
         return () => {
@@ -359,7 +362,7 @@ export const QuizRoom: React.FC = () => {
 
             if (tg?.BackButton) {
                 tg.BackButton.hide();
-                tg.BackButton.offClick();
+                tg.BackButton.offClick(handleBack);
             }
         };
     }, [user.telegramId, user.username, finalRoomId, finalType, entryFee, currency]);
