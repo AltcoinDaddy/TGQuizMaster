@@ -13,10 +13,10 @@ export const WelcomeBonusModal: React.FC = () => {
         // and we haven't shown it this session
         // CRITICAL: Wait for isSynced to be true to avoid showing it for old users during initial load
         const hasSeenWelcome = sessionStorage.getItem('hasSeenWelcome');
-        if (user.isSynced && user.telegramId && user.totalGames === 0 && !hasSeenWelcome) {
+        if (user.isSynced && user.telegramId && user.totalGames === 0 && user.xp === 0 && !hasSeenWelcome) {
             setIsVisible(true);
         }
-    }, [user.isSynced, user.telegramId, user.totalGames]);
+    }, [user.isSynced, user.telegramId, user.totalGames, user.xp]);
 
     const handleClaim = () => {
         setIsVisible(false);

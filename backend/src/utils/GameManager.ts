@@ -130,8 +130,10 @@ export class GameManager {
         return this.players;
     }
 
-    removePlayer(playerId: string) {
+    removePlayer(playerId: string): boolean {
+        const initialLength = this.players.length;
         this.players = this.players.filter(p => p.id !== playerId);
+        return this.players.length < initialLength;
     }
 
     getEntryFee() {

@@ -184,9 +184,11 @@ async function handlePlayerExit(io: Server, socket: any, roomId: string, playerI
 
     // If game hasn't started, remove player and refund entry fee
     if (!manager.isStarted() && !manager.isExpired()) {
+        const removed = manager.removePlayer(playerId);
+        if (!removed) return; // Already removed/refunded
+
         const fee = manager.getEntryFee();
         const type = manager.getType();
-        manager.removePlayer(playerId);
 
         console.log(`[EXIT] Player ${playerId} left room ${roomId} (fee: ${fee}, type: ${type})`);
 
