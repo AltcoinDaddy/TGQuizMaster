@@ -1,6 +1,7 @@
 import React from 'react';
 import { Header } from './Header';
 import { BottomNav } from './BottomNav';
+import { WelcomeBonusModal } from '../ui/WelcomeBonusModal';
 
 interface MainLayoutProps {
     children: React.ReactNode;
@@ -28,6 +29,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
 
                 <main className="flex-1 px-5 py-4 space-y-6 overflow-y-auto">
                     {children}
+                    <WelcomeBonusModal />
                     <div className="h-20" /> {/* Bottom Spacer for Nav */}
                 </main>
 

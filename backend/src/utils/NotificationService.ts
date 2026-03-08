@@ -28,6 +28,7 @@ export class NotificationService {
             const message = `🎮 *New Room Open!*\n\n` +
                 `Entry: ${roomDetails.entryFee} ${roomDetails.currency}\n` +
                 `Players: ${roomDetails.playerCount}/${roomDetails.maxPlayers}\n\n` +
+                `🎁 *New Players*: Get *100 Stars FREE* when you join!\n\n` +
                 `Jump in before it fills up! ⚡`;
 
             await this.bot.sendMessage(userId, message, {
