@@ -409,7 +409,7 @@ io.on('connection', (socket) => {
                 return;
             }
 
-            // 3. Matchmaking & Room Selection (Atomic Block - no awaits until room is secured)
+            // 3. Matchmaking & Room Selection (Atomic Block)
             let requestedMax = data.maxPlayers ? parseInt(data.maxPlayers) : 5;
             let effectiveFee = feeAmount;
             let effectiveCurrency = feeCurrency === 'TON' ? 'TON' : 'Stars';
@@ -423,14 +423,21 @@ io.on('connection', (socket) => {
                 }
             }
 
+            // EXTRACT ROOM ID FROM tournamentId (handle room_UUID_... format)
+            let searchRoomId: string | undefined = tournamentId;
+            if (tournamentId && tournamentId.startsWith('room_')) {
+                const parts = tournamentId.split('_');
+                searchRoomId = parts[1]; // room_UUID_... -> parts[1] is UUID
+            }
+
             // Find existing room synchronously
             const matchedRoom = roomRegistry.getAllRooms().find(mgr => {
                 const info = mgr.getRoomInfo();
                 const id = info.id;
 
                 // PRIORITY: If a specific tournamentId was requested, only match THAT ID
-                if (tournamentId) {
-                    return id === tournamentId && info.status === 'waiting' && info.players < info.maxPlayers;
+                if (searchRoomId) {
+                    return id === searchRoomId && info.status === 'waiting' && info.players < info.maxPlayers;
                 }
 
                 const matchesFee = Math.abs(info.entryFee - effectiveFee) < 0.01;
@@ -448,17 +455,18 @@ io.on('connection', (socket) => {
             }
 
             if (!roomId) {
-                roomId = crypto.randomUUID();
+                roomId = searchRoomId && searchRoomId.length > 20 ? searchRoomId : crypto.randomUUID();
                 const playersLimit = data.roomType === 'quickplay' ? 5 : Math.min(Math.max(requestedMax, 2), 20);
                 const newManager = new GameManager(roomId, io, effectiveCurrency.toLowerCase() as any, 0, effectiveFee, playersLimit, category || 'General');
 
-                // If joining from a group deep link, mark as group to prevent global notifications
-                if (isGroup) {
-                    (newManager as any).groupId = 'pending_via_link';
+                // If joining from a group deep link or specific link, mark as private to prevent global notifications
+                if (isGroup || (tournamentId && tournamentId.startsWith('room_'))) {
+                    (newManager as any).groupId = isGroup ? 'pending_via_group' : 'private_link';
+                    console.log(`[CREATE] Marking new room ${roomId} as PRIVATE (groupId: ${(newManager as any).groupId})`);
                 }
 
                 roomRegistry.setRoom(roomId, newManager);
-                console.log(`[CREATE] Room ${roomId} created for ${username} (Atomic)`);
+                console.log(`[CREATE] Room ${roomId} created for ${username} (Atomic) (tournamentId: ${tournamentId})`);
             }
 
             const manager = roomRegistry.getRoom(roomId)!;
@@ -516,7 +524,8 @@ io.on('connection', (socket) => {
 
                 // Start if full
                 const info = manager.getRoomInfo();
-                const isPrivateJoin = !!tournamentId || isGroup || !!(manager as any).groupId;
+                const isPrivateJoin = !!tournamentId || isGroup || !!(manager as any).groupId || (data.roomType !== 'quickplay' && data.roomType !== 'public' && data.roomType !== undefined);
+                console.log(`[JOIN-DECISION] User: ${username}, Room: ${roomId}, Players: ${manager.getPlayers().length}, isPrivate: ${isPrivateJoin} (roomType: ${data.roomType}, tId: ${tournamentId}, isGroup: ${isGroup}, mgrGrp: ${(manager as any).groupId})`);
 
                 if (manager.getPlayers().length >= info.maxPlayers && !manager.isStarted()) {
                     console.log(`[START] Room ${roomId} full (${manager.getPlayers().length}/${info.maxPlayers}). Starting...`);
@@ -524,6 +533,7 @@ io.on('connection', (socket) => {
                     io.to(roomId).emit('game_start');
                     await manager.start();
                 } else if (manager.getPlayers().length === 1 && (info.type === 'stars' || info.type === 'ton') && !isPrivateJoin) {
+                    console.log(`[NOTIFY-PLAN] Room ${roomId} is public. Scheduling broadcast...`);
                     // NEW: Notify other users about the new room (ONLY for public Stars/TON rooms)
                     // We only do this when the FIRST player creates/joins to avoid spam
                     setTimeout(async () => {
@@ -532,9 +542,11 @@ io.on('connection', (socket) => {
 
                             // Double check condition inside timeout just in case
                             const currentMgr = roomRegistry.getRoom(roomId);
-                            if (!currentMgr || (currentMgr as any).groupId || currentMgr.isStarted()) return;
+                            const isGroupOrStarted = (currentMgr as any)?.groupId || currentMgr?.isStarted();
+                            console.log(`[NOTIFY-FINAL] Check for ${roomId}: isPrivate=${!!isGroupOrStarted}`);
+                            if (!currentMgr || isGroupOrStarted) return;
 
-                            console.log(`[NOTIFY] Broadcasting new room ${roomId} to users...`);
+                            console.log(`[NOTIFY-EXEC] Broadcasting new room ${roomId} to users...`);
                             // ...
 
                             // Fetch engaged users (those who play most)
@@ -912,7 +924,7 @@ io.on('connection', (socket) => {
 
 const PORT = process.env.PORT || 3001;
 server.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+    console.log(`Server v1.0.1 [Fix-Applied-${new Date().toISOString()}] running on port ${PORT}`);
 
     // Daily Reward Reminder — runs every 6 hours
     const SIX_HOURS = 6 * 60 * 60 * 1000;
