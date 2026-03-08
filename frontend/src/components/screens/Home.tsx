@@ -45,9 +45,12 @@ export const Home: React.FC = () => {
 
         // NEW: Handle Deep Linking (startapp=room_ID)
         const startParam = tg?.initDataUnsafe?.start_param;
-        if (startParam && startParam.startsWith('room_')) {
+        const hasProcessed = sessionStorage.getItem('startParamProcessed');
+
+        if (startParam && startParam.startsWith('room_') && !hasProcessed) {
             const roomId = startParam.replace('room_', '');
             console.log(`[DEEP LINK] Joining room: ${roomId}`);
+            sessionStorage.setItem('startParamProcessed', 'true');
             navigate(`/quiz?roomId=${roomId}&type=tournament`);
             return;
         }

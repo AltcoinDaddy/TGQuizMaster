@@ -63,6 +63,9 @@ export const QuizRoom: React.FC = () => {
     const initialCategory = extractedCategory || stateCategory || categoryFromUrl || pendingConf?.category || 'General';
     const [roomCategory, setRoomCategory] = useState(initialCategory);
 
+    const initialEntryFee = entryFee || (roomIdFromUrl ? 10 : 0);
+    const initialCurrency = currency || 'Stars';
+
     // FIX: Initialize with current user to avoid "0/N" flash
     const [players, setPlayers] = useState<any[]>(user?.username ? [{
         id: user.telegramId?.toString(),
@@ -311,11 +314,11 @@ export const QuizRoom: React.FC = () => {
                 avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`,
                 roomType: finalType,
                 tournamentId: finalRoomId,
-                entryFee: entryFee || 0,
-                currency: currency || 'Stars',
+                entryFee: initialEntryFee,
+                currency: initialCurrency,
                 category: roomCategory,
                 maxPlayers: maxPlayersCount,
-                isGroup: location.state?.isGroup || false
+                isGroup: (location.state as any)?.isGroup || !!extractedCategory || false
             });
         };
 
@@ -324,6 +327,16 @@ export const QuizRoom: React.FC = () => {
         } else {
             socket.on('connect', joinRoom);
             socket.connect();
+        }
+
+        // 3. Telegram BackButton support
+        const tg = (window as any).Telegram?.WebApp;
+        if (tg?.BackButton) {
+            tg.BackButton.show();
+            tg.BackButton.onClick(() => {
+                socket.emit('leave_room');
+                navigate('/');
+            });
         }
 
         return () => {
@@ -343,6 +356,11 @@ export const QuizRoom: React.FC = () => {
             socket.off('powerup_result', onPowerUpResult);
             socket.off('level_up', onLevelUp);
             socket.emit('leave_room');
+
+            if (tg?.BackButton) {
+                tg.BackButton.hide();
+                tg.BackButton.offClick();
+            }
         };
     }, [user.telegramId, user.username, finalRoomId, finalType, entryFee, currency]);
 
@@ -403,7 +421,10 @@ export const QuizRoom: React.FC = () => {
                     </div>
 
                     <button
-                        onClick={() => navigate('/')}
+                        onClick={() => {
+                            socket.emit('leave_room');
+                            navigate('/');
+                        }}
                         className="w-full max-w-xs py-4 bg-white/5 border border-white/10 text-white/40 font-black text-xs uppercase tracking-[0.2em] rounded-2xl active:scale-95 transition-all mt-4"
                     >
                         Cancel & Leave

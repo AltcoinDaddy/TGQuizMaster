@@ -111,7 +111,7 @@ function calculateReferralTier(count: number): 'NONE' | 'BRONZE' | 'SILVER' | 'G
 }
 
 // Game State (in-memory, shared with socket handlers below)
-const socketPlayerMap = new Map<string, { roomId: string; playerId: string }>();
+const socketPlayerMap = new Map<string, { roomId: string; playerId: string, paidFee: number, currency: string }>();
 
 // Tournaments endpoint stays inline — it reads from the in-memory rooms map
 app.get('/api/tournaments', (req, res) => {
@@ -178,68 +178,64 @@ async function fetchUserWithRetry(userId: number, username: string, maxRetries =
  * Shared helper to handle a player leaving a room (manual or disconnect).
  * Handles refunds, room_update emission, and empty room cleanup.
  */
-async function handlePlayerExit(io: Server, socket: any, roomId: string, playerId: string) {
+async function handlePlayerExit(io: Server, socket: any, roomId: string, playerId: string, paidFee: number = 0, currency: string = 'STARS') {
     const manager = roomRegistry.getRoom(roomId);
     if (!manager) return;
 
-    // If game hasn't started, remove player and refund entry fee
-    if (!manager.isStarted() && !manager.isExpired()) {
-        const removed = manager.removePlayer(playerId);
-        if (!removed) return; // Already removed/refunded
+    const removed = manager.removePlayer(playerId);
+    if (!removed) return; // Already removed/refunded
 
-        const fee = manager.getEntryFee();
-        const type = manager.getType();
+    const type = manager.getType();
 
-        console.log(`[EXIT] Player ${playerId} left room ${roomId} (fee: ${fee}, type: ${type})`);
+    console.log(`[EXIT] Player ${playerId} left room ${roomId} (paid: ${paidFee}, type: ${type})`);
 
-        // Refund entry fee if it was a paid room
-        if (fee > 0 && (type === 'stars' || type === 'ton')) {
-            try {
-                const pid = parseInt(playerId);
-                const { data: userData } = await supabase
-                    .from('users')
-                    .select('balance_stars')
-                    .eq('telegram_id', pid)
-                    .single();
+    // Refund entry fee if it was a paid room AND user actually paid something
+    if (paidFee > 0) {
+        try {
+            const pid = parseInt(playerId);
+            const { data: userData } = await supabase
+                .from('users')
+                .select('balance_stars')
+                .eq('telegram_id', pid)
+                .single();
 
-                if (userData) {
-                    await supabase.from('users')
-                        .update({ balance_stars: (userData.balance_stars || 0) + fee })
-                        .eq('telegram_id', pid);
-                }
-
-                await supabase.from('transactions').insert({
-                    user_id: pid,
-                    type: 'REFUND',
-                    amount: fee,
-                    currency: 'STARS',
-                    metadata: { reason: 'player_exit', roomId },
-                    status: 'COMPLETED'
-                });
-
-                console.log(`[REFUND] Refunded ${fee} Stars to player ${pid}`);
-
-                // Instant UI update for the player
-                if (userData) {
-                    socket.emit('balance_update', { stars: (userData.balance_stars || 0) + fee });
-                }
-            } catch (e) {
-                console.error('[REFUND] Exit refund failed:', e);
+            if (userData) {
+                await supabase.from('users')
+                    .update({ balance_stars: (userData.balance_stars || 0) + paidFee })
+                    .eq('telegram_id', pid);
             }
-        }
 
-        // Update room for remaining players
-        io.to(roomId).emit('room_update', {
-            ...manager.getRoomInfo(),
-            players: manager.getPlayers()
-        });
+            await supabase.from('transactions').insert({
+                user_id: pid,
+                type: 'REFUND',
+                amount: paidFee,
+                currency: currency.toUpperCase(),
+                metadata: { reason: 'player_exit', roomId },
+                status: 'COMPLETED'
+            });
 
-        // Clean up empty rooms
-        if (manager.getPlayers().length === 0) {
-            manager.cancelTimeout();
-            roomRegistry.deleteRoom(roomId);
-            console.log(`[CLEANUP] Empty room ${roomId} deleted`);
+            console.log(`[REFUND] Refunded ${paidFee} ${currency} to player ${pid}`);
+
+            // Instant UI update for the player
+            if (userData) {
+                socket.emit('balance_update', { stars: (userData.balance_stars || 0) + paidFee });
+            }
+        } catch (e) {
+            console.error('[REFUND] Exit refund failed:', e);
         }
+    }
+
+    // Update room for remaining players
+    io.to(roomId).emit('room_update', {
+        ...manager.getRoomInfo(),
+        players: manager.getPlayers()
+    });
+
+    // Clean up empty rooms
+    if (manager.getPlayers().length === 0) {
+        manager.cancelTimeout();
+        roomRegistry.deleteRoom(roomId);
+        console.log(`[CLEANUP] Empty room ${roomId} deleted`);
     }
 }
 
@@ -371,7 +367,7 @@ io.on('connection', (socket) => {
 
                 mgr.addPlayer({ id: userId.toString(), username, avatar, score: 0 });
                 await socket.join(roomId);
-                socketPlayerMap.set(socket.id, { roomId, playerId: userId.toString() });
+                socketPlayerMap.set(socket.id, { roomId, playerId: userId.toString(), paidFee: 0, currency: 'STARS' });
 
                 await supabase.from('users').update({ daily_games_today: (user.daily_games_today || 0) + 1 }).eq('telegram_id', userId);
                 socket.emit('balance_update', { dailyGamesToday: (user.daily_games_today || 0) + 1 });
@@ -494,7 +490,12 @@ io.on('connection', (socket) => {
                 }
 
                 await socket.join(roomId);
-                socketPlayerMap.set(socket.id, { roomId, playerId: userId.toString() });
+                socketPlayerMap.set(socket.id, {
+                    roomId,
+                    playerId: userId.toString(),
+                    paidFee: effectiveFee,
+                    currency: effectiveCurrency
+                });
 
                 // Notify everyone in the room
                 const roomInfo = {
@@ -637,11 +638,11 @@ io.on('connection', (socket) => {
         const mapping = socketPlayerMap.get(socket.id);
         if (!mapping) return;
 
-        const { roomId, playerId } = mapping;
+        const { roomId, playerId, paidFee, currency } = mapping;
         socketPlayerMap.delete(socket.id);
         socket.leave(roomId);
 
-        await handlePlayerExit(io, socket, roomId, playerId);
+        await handlePlayerExit(io, socket, roomId, playerId, paidFee, currency);
     });
 
     socket.on('sync_profile', async (data) => {
@@ -886,10 +887,10 @@ io.on('connection', (socket) => {
         const mapping = socketPlayerMap.get(socket.id);
         if (!mapping) return;
 
-        const { roomId, playerId } = mapping;
+        const { roomId, playerId, paidFee, currency } = mapping;
         socketPlayerMap.delete(socket.id);
 
-        await handlePlayerExit(io, socket, roomId, playerId);
+        await handlePlayerExit(io, socket, roomId, playerId, paidFee, currency);
     });
 });
 
