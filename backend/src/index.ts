@@ -280,10 +280,17 @@ io.on('connection', (socket) => {
                     }
                 } else {
                     user = newUser;
-                    console.log(`[AUTH] Created new user: ${username}`);
+                    console.log(`[AUTH] Created new user: ${username} (${userId})`);
                 }
             } else if (fetchError) {
+                console.error(`[AUTH-ERROR] Fetch failed for ${userId}:`, fetchError);
                 throw fetchError;
+            }
+
+            if (!user) {
+                console.error(`[JOIN-ERROR] No user found/created for ${userId}`);
+                socket.emit('error', { message: 'Authentication failed. Please restart the app.' });
+                return;
             }
 
             // 2. Entry Fee Check
@@ -316,14 +323,19 @@ io.on('connection', (socket) => {
                 }
 
                 // Log Transaction
-                await supabase.from('transactions').insert({
-                    user_id: userId,
-                    type: 'ENTRY_FEE',
-                    amount: -feeAmount,
-                    currency: feeCurrency,
-                    metadata: { tournamentId },
-                    status: 'COMPLETED'
-                });
+                try {
+                    await supabase.from('transactions').insert({
+                        user_id: userId,
+                        type: 'ENTRY_FEE',
+                        amount: -feeAmount,
+                        currency: feeCurrency,
+                        metadata: { tournamentId },
+                        status: 'COMPLETED'
+                    });
+                } catch (txErr) {
+                    console.error(`[PAYMENT-ERROR] Failed to log transaction for ${userId}:`, txErr);
+                    // Non-blocking for now, but logged
+                }
                 console.log(`[PAYMENT] Deducted ${feeAmount} ${feeCurrency} from ${username}`);
             }
 
@@ -531,19 +543,19 @@ io.on('connection', (socket) => {
                         }
                     }, 500);
                 }
-            } catch (err) {
+            } catch (err: any) {
                 console.error(`[JOIN-ERROR] Failed to finalize join for room ${roomId}:`, err);
                 manager.removePlayer(userId.toString());
                 if (manager.getPlayers().length === 0) {
                     roomRegistry.deleteRoom(roomId);
                     console.log(`[CLEANUP] Deleted empty room ${roomId} after join error`);
                 }
-                socket.emit('error', { message: 'Failed to join room' });
+                socket.emit('error', { message: `Failed to join: ${err.message || 'Internal Error'}` });
             }
 
-        } catch (error) {
-            console.error('Join Room Error:', error);
-            socket.emit('error', { message: 'Failed to join room' });
+        } catch (error: any) {
+            console.error('[JOIN-FATAL] Error in join_room handler:', error);
+            socket.emit('error', { message: `Join Failed: ${error.message || 'Server Error'}` });
         }
     });
 

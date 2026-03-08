@@ -39,7 +39,9 @@ export const QuizRoom: React.FC = () => {
         const cPart = parts.find((p: string) => p.startsWith('c'));
 
         if (mPart) extractedMax = parseInt(mPart.substring(1));
-        if (cPart) extractedCategory = cPart.substring(1);
+        if (cPart) {
+            extractedCategory = cPart.substring(1).replace(/_/g, ' ');
+        }
 
         console.log(`[JOIN] Extracted from ID: max=${extractedMax}, category=${extractedCategory}`);
     }

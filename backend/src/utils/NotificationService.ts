@@ -23,7 +23,9 @@ export class NotificationService {
         try {
             // Use the Telegram Direct Link format to ensure the app opens as an overlay
             const botUsername = process.env.TELEGRAM_BOT_USERNAME || 'TGQuizMasters_bot';
-            const deepLinkUrl = `https://t.me/${botUsername}/tgquizmaster?startapp=room_${roomDetails.roomId}_m${roomDetails.maxPlayers}_c${roomDetails.category}`;
+            // Slugify category (replace spaces with underscores) to comply with Telegram start_param rules
+            const slugCategory = roomDetails.category.replace(/\s+/g, '_');
+            const deepLinkUrl = `https://t.me/${botUsername}/tgquizmaster?startapp=room_${roomDetails.roomId}_m${roomDetails.maxPlayers}_c${slugCategory}`;
 
             const message = `🎮 *New Room Open!*\n\n` +
                 `Entry: ${roomDetails.entryFee} ${roomDetails.currency}\n` +
@@ -35,7 +37,7 @@ export class NotificationService {
                 parse_mode: 'Markdown',
                 reply_markup: {
                     inline_keyboard: [[
-                        { text: '🎮 Join Now', web_app: { url: deepLinkUrl } }
+                        { text: '🎮 Join Now', url: deepLinkUrl }
                     ]]
                 }
             });
