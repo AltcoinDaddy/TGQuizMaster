@@ -463,6 +463,14 @@ io.on('connection', (socket) => {
 
             const manager = roomRegistry.getRoom(roomId)!;
 
+            // Diagnostic log
+            console.log(`[JOIN] User ${username} joining room ${roomId}. isGroup: ${isGroup}, tournamentId: ${tournamentId}, currentGroupId: ${(manager as any).groupId}`);
+
+            // Ensure groupId is marked if this is a group join or via link
+            if (isGroup && !(manager as any).groupId) {
+                (manager as any).groupId = 'pending_via_link';
+            }
+
             // CRITICAL: Ensure handlers are attached (even if room was created by bot)
             attachRoomHandlers(manager);
 
@@ -472,6 +480,7 @@ io.on('connection', (socket) => {
             // 4. Database & Socket Joins (Awaits)
             try {
                 if (effectiveFee > 0) {
+                    // ... (keep deduction logic same)
                     const { error: updateError } = await supabase
                         .from('users')
                         .update({ balance_stars: user.balance_stars - effectiveFee })
@@ -487,7 +496,6 @@ io.on('connection', (socket) => {
                         metadata: { roomId, mode: data.roomType },
                         status: 'COMPLETED'
                     });
-                    console.log(`[FEE] Deducted ${effectiveFee} ${effectiveCurrency} from ${username}`);
                 }
 
                 await socket.join(roomId);
@@ -508,21 +516,26 @@ io.on('connection', (socket) => {
 
                 // Start if full
                 const info = manager.getRoomInfo();
+                const isPrivateJoin = !!tournamentId || isGroup || !!(manager as any).groupId;
+
                 if (manager.getPlayers().length >= info.maxPlayers && !manager.isStarted()) {
                     console.log(`[START] Room ${roomId} full (${manager.getPlayers().length}/${info.maxPlayers}). Starting...`);
                     manager.recalculatePrizePool();
-
-                    // Emit game_start immediately to switch UI mode
                     io.to(roomId).emit('game_start');
-
-                    // Then fetch questions and start the manager
                     await manager.start();
-                } else if (manager.getPlayers().length === 1 && (info.type === 'stars' || info.type === 'ton') && !(manager as any).groupId) {
-                    // NEW: Notify other users about the new room (only for public Stars/TON rooms)
+                } else if (manager.getPlayers().length === 1 && (info.type === 'stars' || info.type === 'ton') && !isPrivateJoin) {
+                    // NEW: Notify other users about the new room (ONLY for public Stars/TON rooms)
                     // We only do this when the FIRST player creates/joins to avoid spam
                     setTimeout(async () => {
                         try {
                             if (!notificationService) return;
+
+                            // Double check condition inside timeout just in case
+                            const currentMgr = roomRegistry.getRoom(roomId);
+                            if (!currentMgr || (currentMgr as any).groupId || currentMgr.isStarted()) return;
+
+                            console.log(`[NOTIFY] Broadcasting new room ${roomId} to users...`);
+                            // ...
 
                             // Fetch engaged users (those who play most)
                             const { data: activeUsers } = await supabase
