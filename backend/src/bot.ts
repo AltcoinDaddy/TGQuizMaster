@@ -3,6 +3,8 @@ import dotenv from 'dotenv';
 import { supabase } from './config/supabase';
 import { StarsService } from './utils/StarsService';
 import { NotificationService } from './utils/NotificationService';
+import { roomRegistry } from './utils/RoomRegistry';
+import crypto from 'crypto';
 
 dotenv.config();
 
@@ -223,6 +225,65 @@ if (!token) {
                 ]
             }
         });
+    });
+
+    // /play command (Group/Supergroup support)
+    bot.onText(/\/(?:play|quiz)(?:\s+(.+))?/, async (msg, match) => {
+        const chatId = msg.chat.id;
+        const chatType = msg.chat.type;
+        const userId = msg.from?.id;
+        const firstName = msg.from?.first_name || 'Champion';
+        const category = match ? match[1] : 'General';
+
+        if (chatType === 'private') {
+            bot.sendMessage(chatId, `Ready for a challenge, ${firstName}? 🏆`, {
+                reply_markup: {
+                    inline_keyboard: [[
+                        { text: '🎮 Start Playing', web_app: { url: webAppUrl } }
+                    ]]
+                }
+            });
+            return;
+        }
+
+        try {
+            const roomId = crypto.randomUUID();
+            const entryFee = 10;
+            const maxPlayers = 10;
+
+            const manager = roomRegistry.createRoom(
+                roomId,
+                'stars',
+                0,
+                entryFee,
+                maxPlayers,
+                category
+            );
+
+            (manager as any).groupId = chatId;
+
+            const inviteMessage =
+                `🔥 **Quiz Battle Initiated!** 🔥\n\n` +
+                `👤 **Host**: ${firstName}\n` +
+                `🏷 **Category**: \`${category}\`\n` +
+                `💰 **Entry**: ${entryFee} Stars\n` +
+                `👥 **Max Players**: ${maxPlayers}\n\n` +
+                `Tap below to join the battle! The game starts automatically when enough players join.`;
+
+            const botUsername = (await bot.getMe()).username;
+            await bot.sendMessage(chatId, inviteMessage, {
+                parse_mode: 'Markdown',
+                reply_markup: {
+                    inline_keyboard: [[
+                        { text: '🎮 Join & Play', url: `https://t.me/${botUsername}/app?startapp=room_${roomId}_m${maxPlayers}_c${category}` }
+                    ]]
+                }
+            });
+
+        } catch (error: any) {
+            console.error('[BOT-GROUP] Failed to start group room:', error.message);
+            bot.sendMessage(chatId, `⚠️ Failed to start quiz: ${error.message}`);
+        }
     });
 
     // Handle Pre-Checkout (Required for payments)

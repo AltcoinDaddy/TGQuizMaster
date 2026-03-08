@@ -16,6 +16,7 @@ import { getTonBalance } from './utils/tonBalance';
 import { socketAuthMiddleware } from './middleware/auth';
 
 import { GameManager } from './utils/GameManager';
+import { roomRegistry } from './utils/RoomRegistry';
 import './bot'; // Initialize Bot
 import { starsService, notificationService } from './bot';
 
@@ -39,6 +40,9 @@ const io = new Server(server, {
         credentials: true
     }
 });
+
+// Initialize RoomRegistry with Socket.IO instance
+roomRegistry.setIO(io);
 
 app.use(cors({
     origin: ALLOWED_ORIGINS,
@@ -107,13 +111,12 @@ function calculateReferralTier(count: number): 'NONE' | 'BRONZE' | 'SILVER' | 'G
 }
 
 // Game State (in-memory, shared with socket handlers below)
-const rooms = new Map<string, GameManager>();
 const socketPlayerMap = new Map<string, { roomId: string; playerId: string }>();
 
 // Tournaments endpoint stays inline — it reads from the in-memory rooms map
 app.get('/api/tournaments', (req, res) => {
     try {
-        const activeRooms = Array.from(rooms.values()).map(mgr => mgr.getRoomInfo());
+        const activeRooms = roomRegistry.getAllRooms().map(mgr => mgr.getRoomInfo());
         res.json({ tournaments: activeRooms });
     } catch (error: any) {
         console.error('Tournaments API Error:', error.message);
@@ -176,7 +179,7 @@ async function fetchUserWithRetry(userId: number, username: string, maxRetries =
  * Handles refunds, room_update emission, and empty room cleanup.
  */
 async function handlePlayerExit(io: Server, socket: any, roomId: string, playerId: string) {
-    const manager = rooms.get(roomId);
+    const manager = roomRegistry.getRoom(roomId);
     if (!manager) return;
 
     // If game hasn't started, remove player and refund entry fee
@@ -232,7 +235,7 @@ async function handlePlayerExit(io: Server, socket: any, roomId: string, playerI
         // Clean up empty rooms
         if (manager.getPlayers().length === 0) {
             manager.cancelTimeout();
-            rooms.delete(roomId);
+            roomRegistry.deleteRoom(roomId);
             console.log(`[CLEANUP] Empty room ${roomId} deleted`);
         }
     }
@@ -337,12 +340,20 @@ io.on('connection', (socket) => {
                 roomId = crypto.randomUUID();
                 const mgr = new GameManager(roomId, io, 'practice', 0, 0, 5, category || 'General');
 
-                mgr.onGameOver = (finishedRoomId) => {
-                    rooms.delete(finishedRoomId);
+                mgr.onGameOver = (finishedRoomId, results) => {
+                    const manager = roomRegistry.getRoom(finishedRoomId);
+                    if (manager && (manager as any).groupId) {
+                        notificationService.notifyGroupResults(
+                            (manager as any).groupId,
+                            (manager as any).category || 'General',
+                            results
+                        );
+                    }
+                    roomRegistry.deleteRoom(finishedRoomId);
                     console.log(`[CLEANUP] Practice room ${finishedRoomId} deleted`);
                 };
 
-                rooms.set(roomId, mgr); // Set immediately
+                roomRegistry.setRoom(roomId, mgr); // Set immediately
 
                 mgr.addPlayer({ id: userId.toString(), username, avatar, score: 0 });
                 await socket.join(roomId);
@@ -374,10 +385,9 @@ io.on('connection', (socket) => {
             }
 
             // Find existing room synchronously
-            roomId = Array.from(rooms.keys()).find(id => {
-                const mgr = rooms.get(id);
-                if (!mgr) return false;
+            const matchedRoom = roomRegistry.getAllRooms().find(mgr => {
                 const info = mgr.getRoomInfo();
+                const id = info.id;
 
                 // PRIORITY: If a specific tournamentId was requested, only match THAT ID
                 if (tournamentId) {
@@ -391,12 +401,12 @@ io.on('connection', (socket) => {
                 const isWaiting = info.status === 'waiting';
                 const matchesSize = (data.roomType === 'quickplay') || (info.maxPlayers === requestedMax);
 
-                const isMatch = matchesFee && matchesCurrency && matchesCategory && hasSpace && isWaiting && matchesSize;
-                if (!isMatch && info.category === (category || 'General') && matchesFee) {
-                    console.log(`[MATCH-DEBUG] Room ${id} skipped: hasSpace=${hasSpace}, isWaiting=${isWaiting}, matchesSize=${matchesSize}`);
-                }
-                return isMatch;
+                return matchesFee && matchesCurrency && matchesCategory && hasSpace && isWaiting && matchesSize;
             });
+
+            if (matchedRoom) {
+                roomId = matchedRoom.getRoomInfo().id;
+            }
 
             if (!roomId) {
                 roomId = crypto.randomUUID();
@@ -418,19 +428,27 @@ io.on('connection', (socket) => {
                             }
                         } catch (e) { console.error('Expire refund error:', e); }
                     }
-                    rooms.delete(mgr.getRoomInfo().id);
+                    roomRegistry.deleteRoom(mgr.getRoomInfo().id);
                 };
 
-                newManager.onGameOver = (finishedRoomId) => {
-                    rooms.delete(finishedRoomId);
+                newManager.onGameOver = (finishedRoomId, results) => {
+                    const manager = roomRegistry.getRoom(finishedRoomId);
+                    if (manager && (manager as any).groupId) {
+                        notificationService.notifyGroupResults(
+                            (manager as any).groupId,
+                            (manager as any).category || 'General',
+                            results
+                        );
+                    }
+                    roomRegistry.deleteRoom(finishedRoomId);
                     console.log(`[CLEANUP] Room ${finishedRoomId} deleted`);
                 };
 
-                rooms.set(roomId, newManager);
+                roomRegistry.setRoom(roomId, newManager);
                 console.log(`[CREATE] Room ${roomId} created for ${username} (Atomic)`);
             }
 
-            const manager = rooms.get(roomId)!;
+            const manager = roomRegistry.getRoom(roomId)!;
 
             // Reserve slot immediately to prevent race conditions
             manager.addPlayer({ id: userId.toString(), username, avatar, score: 0 });
@@ -517,7 +535,7 @@ io.on('connection', (socket) => {
                 console.error(`[JOIN-ERROR] Failed to finalize join for room ${roomId}:`, err);
                 manager.removePlayer(userId.toString());
                 if (manager.getPlayers().length === 0) {
-                    rooms.delete(roomId);
+                    roomRegistry.deleteRoom(roomId);
                     console.log(`[CLEANUP] Deleted empty room ${roomId} after join error`);
                 }
                 socket.emit('error', { message: 'Failed to join room' });
@@ -533,16 +551,16 @@ io.on('connection', (socket) => {
         // Find which room and player this socket is in
         const mapping = socketPlayerMap.get(socket.id);
         if (mapping && mapping.roomId) {
-            rooms.get(mapping.roomId)?.submitAnswer(mapping.playerId, answer);
+            roomRegistry.getRoom(mapping.roomId)?.submitAnswer(mapping.playerId, answer);
         }
     });
 
     // Power-Up Usage
     socket.on('use_powerup', async (powerUpId: string) => {
-        const roomId = Array.from(socket.rooms).find(r => rooms.has(r));
+        const roomId = Array.from(socket.rooms).find(r => roomRegistry.getRoom(r));
         if (!roomId) return socket.emit('powerup_result', { success: false, error: 'Not in a room' });
 
-        const manager = rooms.get(roomId);
+        const manager = roomRegistry.getRoom(roomId);
         if (!manager) return socket.emit('powerup_result', { success: false, error: 'Room not found' });
 
         // Check user inventory in DB

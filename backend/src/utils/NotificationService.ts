@@ -143,4 +143,27 @@ export class NotificationService {
 
         return { sent, failed, blocked, total: userIds.length };
     }
+
+    // Post final game results back to a group
+    async notifyGroupResults(chatId: number, category: string, results: { username: string; score: number }[]) {
+        try {
+            if (results.length === 0) return;
+
+            let message = `🏆 **Quiz Battle Finished!** 🏆\n` +
+                `🏷 Category: \`${category}\`\n\n` +
+                `**LEADERBOARD:**\n`;
+
+            results.slice(0, 5).forEach((res, idx) => {
+                const medal = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : '👤';
+                message += `${medal} **${res.username}**: ${res.score} pts\n`;
+            });
+
+            message += `\nWell played everyone! Tap the menu button to start a new game anytime. ⚡`;
+
+            await this.bot.sendMessage(chatId, message, { parse_mode: 'Markdown' });
+            console.log(`[NOTIFY-GROUP] Results posted to chat ${chatId}`);
+        } catch (e: any) {
+            console.error(`[NOTIFY-GROUP] Failed to post results to ${chatId}:`, e.message);
+        }
+    }
 }

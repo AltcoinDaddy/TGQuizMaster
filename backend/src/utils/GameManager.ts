@@ -58,8 +58,10 @@ export class GameManager {
     private rakePercentage = 0.10; // 10% platform cut
     private roomTimeout: NodeJS.Timeout | null = null;
     private expired = false;
+    public onGameOver?: (roomId: string, results: any[]) => void;
     public onExpire?: (manager: GameManager) => void; // Callback for timeout
-    private category: string;
+    public groupId?: number; // Chat ID for group results
+    public category: string;
     private categoryId: number | null = null;
 
     private readonly CATEGORY_MAP: Record<string, number> = {
@@ -485,7 +487,7 @@ export class GameManager {
                 console.log(`Practice game over in ${this.roomId}. Winner: ${winners[0]?.username} (+5 Stars, +10 XP)`);
 
                 // Fix: Ensure we clean up the room!
-                if (this.onGameOver) this.onGameOver(this.roomId);
+                if (this.onGameOver) this.onGameOver(this.roomId, []);
                 return;
             } catch (e) {
                 console.error('Failed to save practice results:', e);
@@ -660,8 +662,6 @@ export class GameManager {
         });
 
         // Notify index.ts to clean up this room
-        if (this.onGameOver) this.onGameOver(this.roomId);
+        if (this.onGameOver) this.onGameOver(this.roomId, winners);
     }
-
-    public onGameOver?: (roomId: string) => void;
 }
