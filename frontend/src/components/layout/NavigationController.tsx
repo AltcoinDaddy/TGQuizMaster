@@ -1,16 +1,21 @@
 import { useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useAppStore } from '../../store/useAppStore';
 
 export const NavigationController = () => {
     const navigate = useNavigate();
     const location = useLocation();
+    const { isParamProcessed, setParamProcessed } = useAppStore();
 
     // Single Effect to handle Deep Linking on Mount
     useEffect(() => {
         const tg = (window as any).Telegram?.WebApp;
         const startParam = tg?.initDataUnsafe?.start_param;
 
-        if (startParam && startParam.startsWith('room_')) {
+        // Extra safety check in sessionStorage besides Zustand
+        const isSessionProcessed = sessionStorage.getItem('dp_processed') === 'true';
+
+        if (startParam && startParam.startsWith('room_') && !isParamProcessed && !isSessionProcessed) {
             const roomId = startParam.replace('room_', '');
             let finalUrl = `/quiz?roomId=${roomId}`;
 
@@ -25,9 +30,14 @@ export const NavigationController = () => {
             }
 
             console.log('[NAVIGATION] Deep link detected, redirecting to room:', roomId);
+
+            // Mark as processed BEFORE navigating to avoid race conditions
+            setParamProcessed(true);
+            sessionStorage.setItem('dp_processed', 'true');
+
             navigate(finalUrl, { replace: true });
         }
-    }, [navigate]);
+    }, [navigate, isParamProcessed, setParamProcessed]);
 
     useEffect(() => {
         const tg = (window as any).Telegram?.WebApp;

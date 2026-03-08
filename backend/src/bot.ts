@@ -51,6 +51,31 @@ if (!token) {
 
     console.log('Telegram Bot started and listening for commands.');
 
+    // Handle being added to a group (Onboarding)
+    bot.on('new_chat_members', async (msg) => {
+        const chatId = msg.chat.id;
+        const newMembers = msg.new_chat_members || [];
+        const botId = (await bot.getMe()).id;
+
+        const isMe = newMembers.some(member => member.id === botId);
+
+        if (isMe) {
+            console.log(`[BOT] Added to group: ${msg.chat.title} (${chatId})`);
+            const welcomeMsg =
+                `👋 **Hello ${msg.chat.title}!** 🏆\n\n` +
+                `I'm **TGQuizMaster**, your real-time trivia host! Battle your friends and community members right here in this chat.\n\n` +
+                `🚀 **How to Start?**\n` +
+                `Type \`/play\` followed by a category (optional) to initiate a battle!\n\n` +
+                `*Examples:*\n` +
+                `• \`/play\` (General knowledge)\n` +
+                `• \`/play Crypto\`\n` +
+                `• \`/play Sports\`\n\n` +
+                `Ready to test your knowledge? Let's go! ⚡`;
+
+            bot.sendMessage(chatId, welcomeMsg, { parse_mode: 'Markdown' });
+        }
+    });
+
     // /start command with support for deep links (referrals)
     bot.onText(/\/start(?:\s+(.+))?/, async (msg, match) => {
         const chatId = msg.chat.id;

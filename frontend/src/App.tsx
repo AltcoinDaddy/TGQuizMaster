@@ -65,6 +65,9 @@ function App() {
 
 
   useEffect(() => {
+    // Ensure socket is available globally for legacy components
+    (window as any).socket = socket;
+
     try {
       console.log('App initialization started');
       const completed = localStorage.getItem('onboarding_completed');
