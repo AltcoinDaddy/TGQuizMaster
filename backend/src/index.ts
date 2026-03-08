@@ -22,6 +22,7 @@ import { starsService, notificationService } from './bot';
 dotenv.config();
 
 const app = express();
+app.set('trust proxy', 1); // Trust first proxy (e.g. Vercel, Nginx)
 const server = http.createServer(app);
 
 const ALLOWED_ORIGINS = [
