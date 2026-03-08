@@ -37,13 +37,15 @@ export const QuizRoom: React.FC = () => {
 
         const mPart = parts.find((p: string) => p.startsWith('m'));
         const cPart = parts.find((p: string) => p.startsWith('c'));
+        const gPart = parts.find((p: string) => p.startsWith('g'));
 
         if (mPart) extractedMax = parseInt(mPart.substring(1));
         if (cPart) {
             extractedCategory = cPart.substring(1).replace(/_/g, ' ');
         }
 
-        console.log(`[JOIN] Extracted from ID: max=${extractedMax}, category=${extractedCategory}`);
+        console.log(`[JOIN] Extracted from ID: max=${extractedMax}, category=${extractedCategory}, isGroup=${!!gPart}`);
+        if (gPart) (location.state as any) = { ...location.state, isGroup: true };
     }
 
     const { tournamentId, entryFee, currency, type: stateType, category: stateCategory } = location.state || {};
@@ -312,7 +314,8 @@ export const QuizRoom: React.FC = () => {
                 entryFee: entryFee || 0,
                 currency: currency || 'Stars',
                 category: roomCategory,
-                maxPlayers: maxPlayersCount
+                maxPlayers: maxPlayersCount,
+                isGroup: location.state?.isGroup || false
             });
         };
 
@@ -398,6 +401,13 @@ export const QuizRoom: React.FC = () => {
                             <img key={i} src={p.avatar} className="w-14 h-14 rounded-full border-4 border-background-dark shadow-xl" alt={p.username} />
                         ))}
                     </div>
+
+                    <button
+                        onClick={() => navigate('/')}
+                        className="w-full max-w-xs py-4 bg-white/5 border border-white/10 text-white/40 font-black text-xs uppercase tracking-[0.2em] rounded-2xl active:scale-95 transition-all mt-4"
+                    >
+                        Cancel & Leave
+                    </button>
                 </div>
             </MainLayout>
         );

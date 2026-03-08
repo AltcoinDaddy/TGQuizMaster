@@ -247,7 +247,7 @@ io.on('connection', (socket) => {
     console.log('User connected:', socket.id);
 
     socket.on('join_room', async (data) => {
-        const { username, avatar, telegramId, tournamentId, entryFee, currency, category } = data;
+        const { username, avatar, telegramId, tournamentId, entryFee, currency, category, isGroup } = data;
         const userId = telegramId ? parseInt(telegramId) : 0; // 0 for anon/dev, but really should strictly enforce
 
         console.log(`[JOIN] ${username} (${userId}) attempting to join. Fee: ${entryFee}`);
@@ -426,6 +426,11 @@ io.on('connection', (socket) => {
                 roomId = crypto.randomUUID();
                 const playersLimit = data.roomType === 'quickplay' ? 5 : Math.min(Math.max(requestedMax, 2), 20);
                 const newManager = new GameManager(roomId, io, effectiveCurrency.toLowerCase() as any, 0, effectiveFee, playersLimit, category || 'General');
+
+                // If joining from a group deep link, mark as group to prevent global notifications
+                if (isGroup) {
+                    (newManager as any).groupId = 'pending_via_link';
+                }
 
                 // UNIFIED Handlers
                 newManager.onExpire = async (mgr) => {

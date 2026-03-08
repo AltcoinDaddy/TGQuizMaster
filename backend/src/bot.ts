@@ -275,7 +275,7 @@ if (!token) {
                 parse_mode: 'Markdown',
                 reply_markup: {
                     inline_keyboard: [[
-                        { text: '🎮 Join & Play', url: `https://t.me/${botUsername}/tgquizmaster?startapp=room_${roomId}_m${maxPlayers}_c${category}` }
+                        { text: '🎮 Join & Play', url: `https://t.me/${botUsername}/tgquizmaster?startapp=room_${roomId}_m${maxPlayers}_c${category}_g1` }
                     ]]
                 }
             });
