@@ -242,6 +242,41 @@ async function handlePlayerExit(io: Server, socket: any, roomId: string, playerI
 io.on('connection', (socket) => {
     console.log('User connected:', socket.id);
 
+    // Unified helper to attach event handlers to a GameManager
+    const attachRoomHandlers = (manager: GameManager) => {
+        // Only attach if not already present or if we need to force update
+        manager.onExpire = async (mgr) => {
+            const info = mgr.getRoomInfo();
+            const players = mgr.getPlayers();
+            console.log(`[EXPIRE] Room ${mgr.getRoomInfo().id} expired. Refunding ${players.length} players.`);
+            for (const p of players) {
+                try {
+                    const pid = parseInt(p.id);
+                    const { data: u } = await supabase.from('users').select('balance_stars').eq('telegram_id', pid).single();
+                    if (u) {
+                        await supabase.from('users').update({ balance_stars: (u.balance_stars || 0) + info.entryFee }).eq('telegram_id', pid);
+                        io.to(p.id).emit('balance_update', { stars: (u.balance_stars || 0) + info.entryFee });
+                    }
+                } catch (e) { console.error('Expire refund error:', e); }
+            }
+            roomRegistry.deleteRoom(mgr.getRoomInfo().id);
+        };
+
+        manager.onGameOver = (finishedRoomId, results) => {
+            const mgr = roomRegistry.getRoom(finishedRoomId);
+            if (mgr && (mgr as any).groupId) {
+                console.log(`[NOTIFY] Room ${finishedRoomId} finished. Posting stats to group ${(mgr as any).groupId}`);
+                notificationService.notifyGroupResults(
+                    (mgr as any).groupId,
+                    (mgr as any).category || 'General',
+                    results
+                );
+            }
+            roomRegistry.deleteRoom(finishedRoomId);
+            console.log(`[CLEANUP] Room ${finishedRoomId} deleted`);
+        };
+    };
+
     socket.on('join_room', async (data) => {
         const { username, avatar, telegramId, tournamentId, entryFee, currency, category, isGroup } = data;
         const userId = telegramId ? parseInt(telegramId) : 0; // 0 for anon/dev, but really should strictly enforce
@@ -356,19 +391,7 @@ io.on('connection', (socket) => {
                 roomId = crypto.randomUUID();
                 const mgr = new GameManager(roomId, io, 'practice', 0, 0, 5, category || 'General');
 
-                mgr.onGameOver = (finishedRoomId, results) => {
-                    const manager = roomRegistry.getRoom(finishedRoomId);
-                    if (manager && (manager as any).groupId) {
-                        notificationService.notifyGroupResults(
-                            (manager as any).groupId,
-                            (manager as any).category || 'General',
-                            results
-                        );
-                    }
-                    roomRegistry.deleteRoom(finishedRoomId);
-                    console.log(`[CLEANUP] Practice room ${finishedRoomId} deleted`);
-                };
-
+                attachRoomHandlers(mgr);
                 roomRegistry.setRoom(roomId, mgr); // Set immediately
 
                 mgr.addPlayer({ id: userId.toString(), username, avatar, score: 0 });
@@ -434,42 +457,14 @@ io.on('connection', (socket) => {
                     (newManager as any).groupId = 'pending_via_link';
                 }
 
-                // UNIFIED Handlers
-                newManager.onExpire = async (mgr) => {
-                    const info = mgr.getRoomInfo();
-                    const players = mgr.getPlayers();
-                    console.log(`[EXPIRE] Room ${mgr.getRoomInfo().id} expired. Refunding ${players.length} players.`);
-                    for (const p of players) {
-                        try {
-                            const pid = parseInt(p.id);
-                            const { data: u } = await supabase.from('users').select('balance_stars').eq('telegram_id', pid).single();
-                            if (u) {
-                                await supabase.from('users').update({ balance_stars: (u.balance_stars || 0) + info.entryFee }).eq('telegram_id', pid);
-                                io.to(p.id).emit('balance_update', { stars: (u.balance_stars || 0) + info.entryFee });
-                            }
-                        } catch (e) { console.error('Expire refund error:', e); }
-                    }
-                    roomRegistry.deleteRoom(mgr.getRoomInfo().id);
-                };
-
-                newManager.onGameOver = (finishedRoomId, results) => {
-                    const manager = roomRegistry.getRoom(finishedRoomId);
-                    if (manager && (manager as any).groupId) {
-                        notificationService.notifyGroupResults(
-                            (manager as any).groupId,
-                            (manager as any).category || 'General',
-                            results
-                        );
-                    }
-                    roomRegistry.deleteRoom(finishedRoomId);
-                    console.log(`[CLEANUP] Room ${finishedRoomId} deleted`);
-                };
-
                 roomRegistry.setRoom(roomId, newManager);
                 console.log(`[CREATE] Room ${roomId} created for ${username} (Atomic)`);
             }
 
             const manager = roomRegistry.getRoom(roomId)!;
+
+            // CRITICAL: Ensure handlers are attached (even if room was created by bot)
+            attachRoomHandlers(manager);
 
             // Reserve slot immediately to prevent race conditions
             manager.addPlayer({ id: userId.toString(), username, avatar, score: 0 });

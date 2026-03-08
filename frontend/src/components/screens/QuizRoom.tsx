@@ -318,7 +318,7 @@ export const QuizRoom: React.FC = () => {
                 currency: initialCurrency,
                 category: roomCategory,
                 maxPlayers: maxPlayersCount,
-                isGroup: (location.state as any)?.isGroup || !!extractedCategory || false
+                isGroup: (location.state as any)?.isGroup || (roomIdFromUrl && roomIdFromUrl.includes('_g')) || false
             });
         };
 
