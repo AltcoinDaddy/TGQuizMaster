@@ -296,9 +296,15 @@ io.on('connection', (socket) => {
             let feeCurrency = 'STARS';
 
             if (entryFee && entryFee !== 'Free') {
-                const parts = entryFee.split(' ');
-                feeAmount = parseInt(parts[0]);
-                feeCurrency = parts[1].toUpperCase(); // STARS or TON
+                if (typeof entryFee === 'number') {
+                    feeAmount = entryFee;
+                    feeCurrency = currency?.toUpperCase() || 'STARS';
+                } else {
+                    const parts = String(entryFee).split(' ');
+                    feeAmount = parseInt(parts[0]) || 0;
+                    if (parts[1]) feeCurrency = parts[1].toUpperCase();
+                    else if (currency) feeCurrency = currency.toUpperCase();
+                }
 
                 if (feeCurrency === 'STARS') {
                     if ((user.balance_stars || 0) < feeAmount) {
