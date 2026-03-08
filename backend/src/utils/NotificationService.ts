@@ -21,9 +21,9 @@ export class NotificationService {
     // Notify a user about a new room being created
     async notifyRoomOpen(userId: number, roomDetails: { roomId: string; entryFee: number; currency: string; playerCount: number; maxPlayers: number; category: string }) {
         try {
-            const baseUrl = process.env.VITE_APP_URL || 'https://tgquizmaster.online';
-            // Encode maxPlayers and category into the startapp parameter: room_ID_mX_cCategory
-            const deepLinkUrl = `${baseUrl}?startapp=room_${roomDetails.roomId}_m${roomDetails.maxPlayers}_c${roomDetails.category}`;
+            // Use the Telegram Direct Link format to ensure the app opens as an overlay
+            const botUsername = process.env.TELEGRAM_BOT_USERNAME || 'TGQuizMasters_bot';
+            const deepLinkUrl = `https://t.me/${botUsername}/tgquizmaster?startapp=room_${roomDetails.roomId}_m${roomDetails.maxPlayers}_c${roomDetails.category}`;
 
             const message = `🎮 *New Room Open!*\n\n` +
                 `Entry: ${roomDetails.entryFee} ${roomDetails.currency}\n` +
