@@ -508,7 +508,7 @@ io.on('connection', (socket) => {
 
                     // Then fetch questions and start the manager
                     await manager.start();
-                } else if (manager.getPlayers().length === 1 && (info.type === 'stars' || info.type === 'ton')) {
+                } else if (manager.getPlayers().length === 1 && (info.type === 'stars' || info.type === 'ton') && !(manager as any).groupId) {
                     // NEW: Notify other users about the new room (only for public Stars/TON rooms)
                     // We only do this when the FIRST player creates/joins to avoid spam
                     setTimeout(async () => {

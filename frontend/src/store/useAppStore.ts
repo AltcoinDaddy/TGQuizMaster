@@ -31,6 +31,7 @@ interface UserState {
         soundEnabled: boolean;
         hapticsEnabled: boolean;
     };
+    isSynced: boolean;
 }
 
 interface AppStore {
@@ -67,7 +68,8 @@ export const useAppStore = create<AppStore>((set, get) => ({
         settings: {
             soundEnabled: true,
             hapticsEnabled: true
-        }
+        },
+        isSynced: false
     },
     setUser: (userData) =>
         set((state) => ({ user: { ...state.user, ...userData } })),
@@ -102,7 +104,8 @@ export const useAppStore = create<AppStore>((set, get) => ({
                 squadId: data.squadId ?? state.user.squadId,
                 squadName: data.squadName ?? state.user.squadName,
                 dailyGamesToday: data.dailyGamesToday ?? state.user.dailyGamesToday,
-                transactions: data.recentTransactions ?? state.user.transactions
+                transactions: data.recentTransactions ?? state.user.transactions,
+                isSynced: true
             }
         })),
     updateSettings: async (settings) => {

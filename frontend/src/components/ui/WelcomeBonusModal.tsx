@@ -11,11 +11,12 @@ export const WelcomeBonusModal: React.FC = () => {
     useEffect(() => {
         // Show modal if it's a new user (0 games played) 
         // and we haven't shown it this session
+        // CRITICAL: Wait for isSynced to be true to avoid showing it for old users during initial load
         const hasSeenWelcome = sessionStorage.getItem('hasSeenWelcome');
-        if (user.telegramId && user.totalGames === 0 && !hasSeenWelcome) {
+        if (user.isSynced && user.telegramId && user.totalGames === 0 && !hasSeenWelcome) {
             setIsVisible(true);
         }
-    }, [user.telegramId, user.totalGames]);
+    }, [user.isSynced, user.telegramId, user.totalGames]);
 
     const handleClaim = () => {
         setIsVisible(false);
