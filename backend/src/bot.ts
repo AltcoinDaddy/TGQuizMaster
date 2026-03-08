@@ -245,9 +245,36 @@ if (!token) {
                         { text: '🐦 Follow X (Twitter)', url: 'https://x.com/TGQuizMaster' }
                     ],
                     [
-                        { text: '❓ How to Play', callback_data: 'how_to_play' }
+                        { text: '❓ How to Play', callback_data: 'how_to_play' },
+                        { text: '👥 Group Play', callback_data: 'group_play_info' }
                     ]
                 ]
+            }
+        });
+    });
+
+    // /groups command - Shortcut to group play instructions
+    bot.onText(/\/groups/, async (msg) => {
+        const chatId = msg.chat.id;
+        const botUsername = (await bot.getMe()).username;
+        const groupsMsg =
+            `👥 **Group Play Guide** 🎮\n\n` +
+            `Bring the trivia battle to your favorite groups! Transform any chat into a real-time arena.\n\n` +
+            `🚀 **How to setup?**\n` +
+            `1️⃣ Tap the button below to add me to your group.\n` +
+            `2️⃣ In the group, type \`/play\` to start a battle.\n` +
+            `3️⃣ Challenge your friends to see who's the smartest!\n\n` +
+            `🏆 **Why play in groups?**\n` +
+            `• Automatic real-time leaderboards.\n` +
+            `• Custom categories supported (\`/play Crypto\`).\n` +
+            `• Competitive fun with your community!`;
+
+        bot.sendMessage(chatId, groupsMsg, {
+            parse_mode: 'Markdown',
+            reply_markup: {
+                inline_keyboard: [[
+                    { text: '➕ Add to Group', url: `https://t.me/${botUsername}?startgroup=true` }
+                ]]
             }
         });
     });
@@ -365,7 +392,39 @@ Want custom stakes? Create your own Star room and set the entry fee (10-500⭐).
 Open the app daily to claim free Stars. Keep your streak alive for bigger rewards!
 
 🧠 *Knowledge Yield*
-Earn $QUIZ Airdrop Points passively! Open the 'Yield' tab in the app to start harvesting. Higher total QP = bigger potential airdrop.`, { parse_mode: 'Markdown' });
+Earn $QUIZ Airdrop Points passively! Open the 'Yield' tab in the app to start harvesting. Higher total QP = bigger potential airdrop.`, {
+                parse_mode: 'Markdown',
+                reply_markup: {
+                    inline_keyboard: [[
+                        { text: '👥 Group Play Info', callback_data: 'group_play_info' }
+                    ]]
+                }
+            });
+        }
+
+        if (query.data === 'group_play_info') {
+            bot.getMe().then(me => {
+                const groupsMsg =
+                    `👥 **Group Play Guide** 🎮\n\n` +
+                    `Bring the trivia battle to your favorite groups! Transform any chat into a real-time arena.\n\n` +
+                    `🚀 **How to setup?**\n` +
+                    `1️⃣ Tap the button below to add me to your group.\n` +
+                    `2️⃣ In the group, type \`/play\` to start a battle.\n` +
+                    `3️⃣ Challenge your friends to see who's the smartest!\n\n` +
+                    `🏆 **Why play in groups?**\n` +
+                    `• Automatic real-time leaderboards.\n` +
+                    `• Custom categories supported (\`/play Crypto\`).\n` +
+                    `• Competitive fun with your community!`;
+
+                bot.sendMessage(chatId, groupsMsg, {
+                    parse_mode: 'Markdown',
+                    reply_markup: {
+                        inline_keyboard: [[
+                            { text: '➕ Add to Group', url: `https://t.me/${me.username}?startgroup=true` }
+                        ]]
+                    }
+                });
+            });
         }
     });
 
