@@ -44,3 +44,22 @@ create table public.transactions (
 alter table public.users enable row level security;
 alter table public.tournaments enable row level security;
 alter table public.transactions enable row level security;
+
+-- Tournament Seasons (2-week marathons)
+CREATE TABLE tournament_seasons (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    title TEXT NOT NULL,
+    start_time TIMESTAMP WITH TIME ZONE NOT NULL,
+    end_time TIMESTAMP WITH TIME ZONE NOT NULL,
+    prize_pool BIGINT NOT NULL, -- 20,000,000 etc
+    currency TEXT DEFAULT 'STARS',
+    status TEXT DEFAULT 'active', -- 'active', 'finished'
+    metadata JSONB DEFAULT '{}',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Link rewards to seasons
+ALTER TABLE users ADD COLUMN IF NOT EXISTS season_xp BIGINT DEFAULT 0;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS last_season_id UUID REFERENCES tournament_seasons(id);
+
+CREATE INDEX IF NOT EXISTS idx_seasons_active ON tournament_seasons(status) WHERE status = 'active';

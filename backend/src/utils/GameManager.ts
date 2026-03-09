@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { decode } from 'html-entities';
 import { supabase } from '../config/supabase';
+import { RewardService } from './RewardService';
 
 export interface Player {
     id: string;
@@ -306,6 +307,16 @@ export class GameManager {
                 player.doublePoints = false; // Consume the power-up
             }
             player.score += Math.round(points);
+
+            // Add Season XP if this is a tournament/ranked game
+            if (this.tournamentType === 'stars' || this.tournamentType === 'ton') {
+                const userId = parseInt(player.id);
+                if (!isNaN(userId)) {
+                    RewardService.addSeasonXP(userId, Math.round(points)).catch(e =>
+                        console.error(`[GAME] Failed to add Season XP for ${userId}:`, e)
+                    );
+                }
+            }
         } else {
             // Wrong answer — clear double points if active
             player.doublePoints = false;

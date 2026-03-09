@@ -17,6 +17,7 @@ export const Home: React.FC = () => {
     const [chestItems, setChestItems] = useState<any>(null);
     const [leaderboardPreview, setLeaderboardPreview] = useState<any[]>([]);
     const [loadingAd, setLoadingAd] = useState(false);
+    const [activeSeason, setActiveSeason] = useState<any>(null);
     const { user } = useAppStore();
 
     useEffect(() => {
@@ -106,6 +107,17 @@ export const Home: React.FC = () => {
             }
         };
         fetchPreview();
+
+        const fetchActiveSeason = async () => {
+            try {
+                const res = await fetch(`${API_URL}/api/tournament-season/active`);
+                const data = await res.json();
+                if (data.season) setActiveSeason(data.season);
+            } catch (e) {
+                console.error('Failed to fetch active season:', e);
+            }
+        };
+        fetchActiveSeason();
     }, []);
 
     const handleStartPractice = async () => {
@@ -141,6 +153,42 @@ export const Home: React.FC = () => {
             <div className="bg-mesh min-h-full">
                 {/* Play Modes */}
                 <div className="space-y-3">
+                    {activeSeason && (
+                        <div
+                            onClick={() => navigate('/mega-tournament')}
+                            className="bg-gradient-to-r from-yellow-500 via-amber-600 to-yellow-500 p-[1px] rounded-[32px] mb-6 shadow-[0_0_30px_rgba(250,204,21,0.3)] animate-pulse-slow cursor-pointer group"
+                        >
+                            <div className="bg-black/90 rounded-[31px] p-5 flex items-center gap-4 relative overflow-hidden">
+                                <div className="absolute top-0 right-0 w-32 h-32 bg-yellow-500/10 rounded-full -mr-16 -mt-16 blur-2xl border border-yellow-500/20" />
+
+                                <div className="w-16 h-16 rounded-2xl bg-yellow-400/20 flex items-center justify-center text-yellow-400 border border-yellow-400/30 group-hover:scale-110 transition-transform">
+                                    <Trophy size={32} fill="currentColor" fillOpacity={0.2} />
+                                </div>
+
+                                <div className="flex-1 relative z-10">
+                                    <div className="flex items-center gap-2 mb-0.5">
+                                        <h2 className="font-black text-xl uppercase italic tracking-tighter text-yellow-400 drop-shadow-[0_0_10px_rgba(250,204,21,0.5)]">
+                                            {activeSeason.title}
+                                        </h2>
+                                        <span className="bg-red-500 text-white text-[8px] font-black px-2 py-0.5 rounded-full animate-pulse uppercase">LIVE</span>
+                                    </div>
+                                    <p className="text-[10px] text-white/60 font-black uppercase tracking-[0.2em] leading-none mb-1">
+                                        PRIZE POOL: {parseInt(activeSeason.prize_pool).toLocaleString()} STARS
+                                    </p>
+                                    <div className="flex items-center gap-2">
+                                        <div className="h-1 flex-1 bg-white/10 rounded-full overflow-hidden">
+                                            <div className="h-full bg-yellow-400 w-2/3" />
+                                        </div>
+                                        <span className="text-[8px] font-bold text-yellow-400/60 uppercase italic tracking-widest">Ends in 8d</span>
+                                    </div>
+                                </div>
+                                <div className="bg-yellow-400 text-black p-2 rounded-xl group-hover:translate-x-1 transition-transform">
+                                    <ArrowRight size={20} />
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
                     <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-white/40 px-1">Play Now</h2>
 
                     <div
