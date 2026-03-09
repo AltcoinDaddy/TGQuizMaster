@@ -24,6 +24,7 @@ async function initSeason() {
             prize_pool: 20000000,
             currency: 'STARS',
             status: 'active',
+            entry_fee: 50,
             metadata: {
                 description: 'The ultimate 2-week marathon. Top 30 split 20 Million Stars!',
                 theme: 'gold'

@@ -390,7 +390,7 @@ io.on('connection', (socket) => {
             if (data.roomType === 'mega') {
                 const { data: activeSeason } = await supabase
                     .from('tournament_seasons')
-                    .select('id, entry_fee')
+                    .select('id')
                     .eq('status', 'active')
                     .single();
 

@@ -54,6 +54,7 @@ CREATE TABLE tournament_seasons (
     prize_pool BIGINT NOT NULL, -- 20,000,000 etc
     currency TEXT DEFAULT 'STARS',
     status TEXT DEFAULT 'active', -- 'active', 'finished'
+    entry_fee INT DEFAULT 50, -- Added entry fee column
     metadata JSONB DEFAULT '{}',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
