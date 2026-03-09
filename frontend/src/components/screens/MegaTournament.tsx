@@ -4,6 +4,7 @@ import { Trophy, Star, ArrowLeft, Zap, Gift, Timer } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { API_URL } from '../../config/api';
 import { useAppStore } from '../../store/useAppStore';
+import { getTimeRemaining } from '../../utils/time';
 
 export const MegaTournament: React.FC = () => {
     const navigate = useNavigate();
@@ -86,7 +87,9 @@ export const MegaTournament: React.FC = () => {
                             <span className="bg-yellow-400 text-black text-[10px] font-black px-3 py-1 rounded-full uppercase italic tracking-tighter shadow-lg shadow-yellow-400/20">Active Season</span>
                             <div className="flex items-center gap-1.5 text-red-500 animate-pulse">
                                 <Timer size={14} />
-                                <span className="text-[10px] font-black uppercase tracking-widest">Ends in 8 Days</span>
+                                <span className="text-[10px] font-black uppercase tracking-widest">
+                                    Ends in {getTimeRemaining(season.end_time)}
+                                </span>
                             </div>
                         </div>
                         <h1 className="text-5xl font-black uppercase italic tracking-tighter text-white leading-none mb-4 drop-shadow-[0_0_20px_rgba(255,255,255,0.2)]">

@@ -7,6 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import { StreakPopup } from '../ui/StreakPopup';
 import { useAppStore } from '../../store/useAppStore';
 import { adsService } from '../../utils/AdsService';
+import { getTimeRemaining } from '../../utils/time';
 
 export const Home: React.FC = () => {
     const navigate = useNavigate();
@@ -177,9 +178,11 @@ export const Home: React.FC = () => {
                                     </p>
                                     <div className="flex items-center gap-2">
                                         <div className="h-1 flex-1 bg-white/10 rounded-full overflow-hidden">
-                                            <div className="h-full bg-yellow-400 w-2/3" />
+                                            <div className="h-full bg-yellow-400 w-full" />
                                         </div>
-                                        <span className="text-[8px] font-bold text-yellow-400/60 uppercase italic tracking-widest">Ends in 8d</span>
+                                        <span className="text-[8px] font-bold text-yellow-400/60 uppercase italic tracking-widest">
+                                            Ends in {getTimeRemaining(activeSeason.end_time)}
+                                        </span>
                                     </div>
                                 </div>
                                 <div className="bg-yellow-400 text-black p-2 rounded-xl group-hover:translate-x-1 transition-transform">
