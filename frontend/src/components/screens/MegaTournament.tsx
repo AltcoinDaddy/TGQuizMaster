@@ -147,10 +147,10 @@ export const MegaTournament: React.FC = () => {
 
                         <div className="mt-8 flex items-center justify-between">
                             <button
-                                onClick={() => navigate('/tournaments')}
-                                className="bg-primary text-black px-8 py-4 rounded-full font-black uppercase tracking-widest italic flex items-center gap-2 hover:scale-105 transition-all shadow-lg shadow-primary/20"
+                                onClick={() => navigate('/quiz', { state: { type: 'mega', category: 'General', maxPlayers: 10 } })}
+                                className="bg-primary text-black px-12 py-5 rounded-full font-black uppercase tracking-widest italic flex items-center gap-3 hover:scale-105 transition-all shadow-xl shadow-primary/30 animate-bounce-subtle"
                             >
-                                Play Ranked <Zap size={18} fill="currentColor" />
+                                JOIN MEGA MATCH <Zap size={20} fill="currentColor" />
                             </button>
                             <p className="text-[9px] font-bold text-white/20 italic max-w-[120px] text-right">
                                 Every correct answer in Star Battles adds to your score

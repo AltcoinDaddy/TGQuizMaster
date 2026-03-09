@@ -64,6 +64,7 @@ export class GameManager {
     public groupId?: number; // Chat ID for group results
     public category: string;
     private categoryId: number | null = null;
+    public megaRoom: boolean = false;
 
     private readonly CATEGORY_MAP: Record<string, number> = {
         'General': 9,
@@ -582,7 +583,6 @@ export class GameManager {
                         if (currency === 'STARS') updates.balance_stars = (user.balance_stars || 0) + prize;
                         // TON prizes handled via smart contract (Phase 2)
 
-                        // Log Transaction
                         await supabase.from('transactions').insert({
                             user_id: userId,
                             type: 'PRIZE',
@@ -594,6 +594,17 @@ export class GameManager {
                     }
 
                     await supabase.from('users').update(updates).eq('telegram_id', userId);
+
+                    // Add Season XP if a season is active
+                    if (this.tournamentType === 'stars' || this.tournamentType === 'ton') {
+                        const multiplier = this.megaRoom ? 2 : 1;
+                        const xpToAdd = player.score * multiplier;
+                        if (xpToAdd > 0) {
+                            const pid = parseInt(player.id);
+                            console.log(`[SEASON] Adding ${xpToAdd} Season XP to player ${pid} (Mega: ${this.megaRoom})`);
+                            RewardService.addSeasonXP(pid, xpToAdd);
+                        }
+                    }
 
                     // Update Squad XP if user is in a squad
                     if (user.squad_id) {

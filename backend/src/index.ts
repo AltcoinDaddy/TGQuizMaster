@@ -348,36 +348,11 @@ io.on('connection', (socket) => {
                         socket.emit('error', { message: 'Insufficient Stars balance' });
                         return;
                     }
-                    // Deduct Stars
-                    const { error: updateError } = await supabase
-                        .from('users')
-                        .update({ balance_stars: user.balance_stars - feeAmount })
-                        .eq('telegram_id', userId);
-                    if (updateError) throw updateError;
-
-                    user.balance_stars -= feeAmount; // Update local state for client emit
                 } else if (feeCurrency === 'TON') {
-                    // TON entry fees will be handled via smart contract in Phase 2
-                    // For now, TON tournaments are not supported for fee deduction
                     socket.emit('error', { message: 'TON tournaments coming soon' });
                     return;
                 }
-
-                // Log Transaction
-                try {
-                    await supabase.from('transactions').insert({
-                        user_id: userId,
-                        type: 'ENTRY_FEE',
-                        amount: -feeAmount,
-                        currency: feeCurrency,
-                        metadata: { tournamentId },
-                        status: 'COMPLETED'
-                    });
-                } catch (txErr) {
-                    console.error(`[PAYMENT-ERROR] Failed to log transaction for ${userId}:`, txErr);
-                    // Non-blocking for now, but logged
-                }
-                console.log(`[PAYMENT] Deducted ${feeAmount} ${feeCurrency} from ${username}`);
+                console.log(`[PRE-CHECK] ${username} has sufficient ${feeAmount} ${feeCurrency}`);
             }
 
             // 3. Matchmaking & Room Selection
@@ -411,6 +386,20 @@ io.on('connection', (socket) => {
                 return;
             }
 
+            // Mega Tournament Specific Matchmaking
+            if (data.roomType === 'mega') {
+                const { data: activeSeason } = await supabase
+                    .from('tournament_seasons')
+                    .select('id, entry_fee')
+                    .eq('status', 'active')
+                    .single();
+
+                if (!activeSeason) {
+                    socket.emit('error', { message: 'No active tournament season found.' });
+                    return;
+                }
+            }
+
             // 3. Matchmaking & Room Selection (Atomic Block)
             let requestedMax = data.maxPlayers ? parseInt(data.maxPlayers) : 5;
             let effectiveFee = feeAmount;
@@ -421,6 +410,14 @@ io.on('connection', (socket) => {
                 effectiveCurrency = 'Stars';
                 if ((user.balance_stars || 0) < effectiveFee) {
                     socket.emit('error', { message: `Need 10 Stars for Quick Play` });
+                    return;
+                }
+            } else if (data.roomType === 'mega') {
+                effectiveFee = 50; // High stakes for Mega Match
+                effectiveCurrency = 'Stars';
+                requestedMax = 10;  // Bigger rooms for "Epic" feel
+                if ((user.balance_stars || 0) < effectiveFee) {
+                    socket.emit('error', { message: `Need 50 Stars for Mega Match` });
                     return;
                 }
             }
@@ -447,9 +444,10 @@ io.on('connection', (socket) => {
                 const matchesCategory = info.category === (category || 'General');
                 const hasSpace = info.players < info.maxPlayers;
                 const isWaiting = info.status === 'waiting';
-                const matchesSize = (data.roomType === 'quickplay') || (info.maxPlayers === requestedMax);
+                const matchesSize = (data.roomType === 'quickplay' || data.roomType === 'mega') || (info.maxPlayers === requestedMax);
+                const matchesType = (mgr as any).megaRoom === (data.roomType === 'mega');
 
-                return matchesFee && matchesCurrency && matchesCategory && hasSpace && isWaiting && matchesSize;
+                return matchesFee && matchesCurrency && matchesCategory && hasSpace && isWaiting && matchesSize && matchesType;
             });
 
             if (matchedRoom) {
@@ -467,8 +465,12 @@ io.on('connection', (socket) => {
                     console.log(`[CREATE] Marking new room ${roomId} as PRIVATE (groupId: ${(newManager as any).groupId})`);
                 }
 
+                if (data.roomType === 'mega') {
+                    (newManager as any).megaRoom = true;
+                }
+
                 roomRegistry.setRoom(roomId, newManager);
-                console.log(`[CREATE] Room ${roomId} created for ${username} (Atomic) (tournamentId: ${tournamentId})`);
+                console.log(`[CREATE] Room ${roomId} created for ${username} (Atomic) (tournamentId: ${tournamentId}, type: ${data.roomType})`);
             }
 
             const manager = roomRegistry.getRoom(roomId)!;
