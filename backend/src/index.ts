@@ -447,6 +447,11 @@ io.on('connection', (socket) => {
                 const matchesSize = (data.roomType === 'quickplay' || data.roomType === 'mega') || (info.maxPlayers === requestedMax);
                 const matchesType = (mgr as any).megaRoom === (data.roomType === 'mega');
 
+                // Special: Mega matches can be joined even if LIVE (to feel like one ongoing room)
+                if (data.roomType === 'mega' && matchesType && hasSpace) {
+                    return true;
+                }
+
                 return matchesFee && matchesCurrency && matchesCategory && hasSpace && isWaiting && matchesSize && matchesType;
             });
 
@@ -455,18 +460,29 @@ io.on('connection', (socket) => {
             }
 
             if (!roomId) {
-                roomId = searchRoomId && searchRoomId.length > 20 ? searchRoomId : crypto.randomUUID();
-                const playersLimit = data.roomType === 'quickplay' ? 5 : Math.min(Math.max(requestedMax, 2), 20);
-                const newManager = new GameManager(roomId, io, effectiveCurrency.toLowerCase() as any, 0, effectiveFee, playersLimit, category || 'General');
+                const newRoomId = searchRoomId && searchRoomId.length > 20 ? searchRoomId : crypto.randomUUID();
+                roomId = newRoomId;
+                const isMega = data.roomType === 'mega';
+                const playersLimit = isMega ? 100 : (data.roomType === 'quickplay' ? 5 : Math.min(Math.max(requestedMax, 2), 20));
+                const newManager = new GameManager(newRoomId, io, effectiveCurrency.toLowerCase() as any, 0, effectiveFee, playersLimit, category || 'General', isMega);
 
                 // If joining from a group deep link or specific link, mark as private to prevent global notifications
                 if (isGroup || (tournamentId && tournamentId.startsWith('room_'))) {
                     (newManager as any).groupId = isGroup ? 'pending_via_group' : 'private_link';
-                    console.log(`[CREATE] Marking new room ${roomId} as PRIVATE (groupId: ${(newManager as any).groupId})`);
+                    console.log(`[CREATE] Marking new room ${newRoomId} as PRIVATE (groupId: ${(newManager as any).groupId})`);
                 }
 
-                if (data.roomType === 'mega') {
+                if (isMega) {
                     (newManager as any).megaRoom = true;
+                    // Auto-start Mega Room in 5 seconds
+                    setTimeout(async () => {
+                        const m = roomRegistry.getRoom(newRoomId);
+                        if (m && !m.isStarted()) {
+                            console.log(`[MEGA-AUTOSTART] Starting room ${newRoomId}`);
+                            io.to(newRoomId).emit('game_start');
+                            await m.start().catch(e => console.error("Mega auto-start failed:", e));
+                        }
+                    }, 5000);
                 }
 
                 roomRegistry.setRoom(roomId, newManager);
@@ -526,7 +542,22 @@ io.on('connection', (socket) => {
                 io.to(roomId).emit('room_update', roomInfo);
                 socket.emit('room_update', roomInfo); // Direct update for certainty
 
-                // Start if full
+                // If joining a LIVE room (Mega match), send current state
+                if (manager.isStarted() && (manager as any).megaRoom) {
+                    console.log(`[MID-JOIN] ${username} joined LIVE Mega room ${roomId}. Sending current state...`);
+                    const mgrInfo: any = manager.getRoomInfo();
+                    if (mgrInfo.currentQuestion) {
+                        socket.emit('game_start'); // Ensure UI switches to playing
+                        socket.emit('new_question', {
+                            question: mgrInfo.currentQuestion,
+                            index: mgrInfo.currentIndex,
+                            total: mgrInfo.totalQuestions
+                        });
+                        socket.emit('timer_update', mgrInfo.timeLeft);
+                    }
+                }
+
+                // Start if full (non-mega)
                 const info = manager.getRoomInfo();
                 const isPrivateJoin = !!tournamentId || isGroup || !!(manager as any).groupId || (data.roomType !== 'quickplay' && data.roomType !== 'public' && data.roomType !== undefined);
                 console.log(`[JOIN-DECISION] User: ${username}, Room: ${roomId}, Players: ${manager.getPlayers().length}, isPrivate: ${isPrivateJoin} (roomType: ${data.roomType}, tId: ${tournamentId}, isGroup: ${isGroup}, mgrGrp: ${(manager as any).groupId})`);

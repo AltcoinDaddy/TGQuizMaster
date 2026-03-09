@@ -79,7 +79,7 @@ export class GameManager {
         'Gadgets': 30
     };
 
-    constructor(roomId: string, io: any, type: 'free' | 'stars' | 'ton' | 'practice' = 'free', prize = 0, fee = 0, maxPlayers = 5, category = 'General') {
+    constructor(roomId: string, io: any, type: 'free' | 'stars' | 'ton' | 'practice' = 'free', prize = 0, fee = 0, maxPlayers = 5, category = 'General', isMega = false) {
         this.roomId = roomId;
         this.players = [];
         this.io = io;
@@ -89,7 +89,8 @@ export class GameManager {
         this.maxPlayers = maxPlayers;
         this.category = category;
         this.categoryId = this.CATEGORY_MAP[category] || null;
-        this.questionCount = type === 'practice' ? 5 : 10;
+        this.megaRoom = isMega;
+        this.questionCount = type === 'practice' ? 5 : (this.megaRoom ? 50 : 10);
 
         // Auto-expire rooms after 5 minutes if not filled (skip for practice — instant start)
         if (type !== 'practice') {
@@ -162,7 +163,15 @@ export class GameManager {
             entryFee: this.entryFee,
             status: this.started ? 'live' : 'waiting',
             currency: this.tournamentType === 'stars' ? 'Stars' : 'TON',
-            category: this.category
+            category: this.category,
+            // Live state for mid-game joins
+            currentQuestion: this.started && this.questions[this.currentIndex] ? {
+                ...this.questions[this.currentIndex],
+                correctAnswer: undefined // Hide answer for joins
+            } : null,
+            currentIndex: this.currentIndex,
+            totalQuestions: this.questions.length,
+            timeLeft: this.timer
         };
     }
 
