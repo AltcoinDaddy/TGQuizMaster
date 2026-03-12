@@ -358,8 +358,9 @@ export class RewardService {
                     const { CHILIZ_CONFIG } = await import('../config/ChilizConfig');
                     
                     // Check for ANY configured Fan Token hold for a bonus
-                    const { anyFanToken } = await ChilizService.getUserOnChainData(user.chiliz_wallet_address || '');
+                    const { anyFanToken, chz } = await ChilizService.getUserOnChainData(user.chiliz_wallet_address || '');
                     const isHolder = anyFanToken;
+                    console.log(`[REWARD-BONUS] User ${userId} holdsFanToken=${anyFanToken}, chzBalance=${chz} -> Bonus applied: ${isHolder}`);
                     
                     // If holder, give them a 5% bonus (effectively reducing their commission share)
                     const holderBonus = isHolder ? 1.05 : 1.0; 

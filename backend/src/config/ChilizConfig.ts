@@ -15,7 +15,7 @@ const IS_PROD = process.env.NODE_ENV === 'production';
 
 export const CHILIZ_CONFIG = {
     // RPCs
-    RPC_URL: IS_PROD ? 'https://rpc.chiliz.com' : 'https://spicy-rpc.chiliz.com',
+    RPC_URL: process.env.CHILIZ_RPC_URL || (IS_PROD ? 'https://rpc.chiliz.com' : 'https://spicy-rpc.chiliz.com'),
     CHAIN_ID: IS_PROD ? 88888 : 88882,
 
     // Configured Fan Tokens for gating and rewards

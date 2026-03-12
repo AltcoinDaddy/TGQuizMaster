@@ -243,6 +243,104 @@ async function handlePlayerExit(io: Server, socket: any, roomId: string, playerI
         console.log(`[CLEANUP] Empty room ${roomId} deleted`);
     }
 }
+/**
+ * Centralized User Sync Function
+ * Ensures consistent data flow to the frontend across all sync events.
+ */
+async function syncUser(socket: any, telegramId: string, username: string) {
+    const userId = parseInt(telegramId);
+    if (!userId) return;
+
+    // 1. In-flight deduplication: Reuse ongoing fetch if it started < 2s ago
+    const existing = profileSyncInFlight.get(userId);
+    const now = Date.now();
+    if (existing && (now - existing.timestamp) < 2000) {
+        console.log(`[SYNC] Reusing in-flight request for ${userId}`);
+        const user = await existing.promise;
+        // Proceed with the rest of the sync using the fetched user
+    }
+
+    try {
+        const fetchPromise = fetchUserWithRetry(userId, username || 'Anon_Player');
+        profileSyncInFlight.set(userId, { promise: fetchPromise, timestamp: now });
+        
+        let user = await fetchPromise;
+        if (!user) throw new Error("User not found");
+
+        // 2. DAILY RESET CHECK
+        const today = new Date().toISOString().split('T')[0];
+        if (user.daily_reset_date !== today) {
+            console.log(`[SYNC] Resetting daily limits for user ${userId}`);
+            const { data: updatedUser } = await supabase
+                .from('users')
+                .update({ daily_games_today: 0, daily_wins_today: 0, daily_reset_date: today })
+                .eq('telegram_id', userId)
+                .select().single();
+            if (updatedUser) user = updatedUser;
+        }
+
+        // 3. Fetch TON Balance
+        let tonBalance = 0;
+        if (user.wallet_address) {
+            try {
+                tonBalance = await getTonBalance(user.wallet_address);
+            } catch (e) {
+                console.error(`[SYNC-TON] Failed for ${userId}:`, e);
+            }
+        }
+
+        // 4. Fetch Chiliz Balances
+        let onChainCHZBalance = 0;
+        let holdsFanToken = false;
+        if (user.chiliz_wallet_address) {
+            try {
+                const { chz, anyFanToken } = await ChilizService.getUserOnChainData(user.chiliz_wallet_address);
+                onChainCHZBalance = chz;
+                holdsFanToken = anyFanToken;
+            } catch (e) {
+                console.error(`[SYNC-CHILIZ] Failed for ${userId}:`, e);
+            }
+        }
+
+        // 5. Fetch Recent Transactions & Referrals
+        const [ { data: txs }, { data: earningsData } ] = await Promise.all([
+            supabase.from('transactions').select('*').eq('user_id', userId).order('created_at', { ascending: false }).limit(10),
+            supabase.from('transactions').select('amount').eq('user_id', userId).or('type.eq.REFERRAL_BONUS,type.eq.REFERRAL_REWARD')
+        ]);
+        
+        const referralEarnings = (earningsData || []).reduce((sum, tx) => sum + tx.amount, 0);
+        const referralTier = calculateReferralTier(user.stats_referrals || 0);
+
+        socket.emit('profile_synced', {
+            stars: user.balance_stars,
+            ton: tonBalance,
+            xp: user.stats_xp || 0,
+            wins: user.stats_wins || 0,
+            totalGames: user.stats_total_games || 0,
+            balanceQP: user.balance_qp || 0,
+            balanceCHZ: user.balance_chz || 0,
+            onChainCHZBalance,
+            onChainFanTokenBalance: holdsFanToken ? 1 : 0,
+            walletConnected: !!user.wallet_address,
+            walletAddress: user.wallet_address,
+            chilizWalletConnected: !!user.chiliz_wallet_address,
+            chilizWalletAddress: user.chiliz_wallet_address,
+            isAdmin: (process.env.ADMIN_IDS || '').split(',').map(id => id.trim()).includes(userId.toString()),
+            referralCount: user.stats_referrals || 0,
+            referralEarnings,
+            referralTier,
+            recentTransactions: txs || [],
+            dailyGamesToday: user.daily_games_today || 0,
+            inventoryPowerups: user.inventory_powerups || {},
+            unlockedAvatars: user.unlocked_avatars || []
+        });
+
+        console.log(`[SYNC-SUCCESS] User ${userId} synced. CHZ: ${onChainCHZBalance}, Fan: ${holdsFanToken}`);
+    } catch (error) {
+        console.error(`[SYNC-ERROR] Fail for ${userId}:`, error);
+        socket.emit('error', { message: 'Failed to sync player data.' });
+    }
+}
 
 io.on('connection', (socket) => {
     console.log('User connected:', socket.id);
@@ -790,218 +888,7 @@ io.on('connection', (socket) => {
     });
 
     socket.on('sync_profile', async (data) => {
-        const { telegramId, username } = data;
-        const userId = telegramId ? parseInt(telegramId) : 0;
-        if (!userId) return;
-
-        // In-flight deduplication: If a request for this user is already running or was completed recently, reuse it
-        const existing = profileSyncInFlight.get(userId);
-        const now = Date.now();
-        if (existing && (now - existing.timestamp) < 5000) {
-            // Reuse the existing promise result
-            try {
-                const user = await existing.promise;
-                if (user) {
-                    console.log(`[SYNC] Reusing cached result for ${userId} from ${socket.id}`);
-                    // Fetch live TON balance (getTonBalance has its own 30s cache, so this is cheap)
-                    const liveTon = user.wallet_address ? await getTonBalance(user.wallet_address) : 0;
-                    // Still emit the result to THIS socket
-                    socket.emit('profile_synced', {
-                        stars: user.balance_stars,
-                        ton: liveTon,
-                        xp: user.stats_xp || 0,
-                        wins: user.stats_wins || 0,
-                        totalGames: user.stats_total_games || 0,
-                        walletConnected: !!user.wallet_address,
-                        walletAddress: user.wallet_address,
-                        isAdmin: (process.env.ADMIN_IDS || '').split(',').map(id => id.trim()).includes(userId.toString()),
-                        referralCount: 0,
-                        referralEarnings: 0,
-                        referralTier: 'NONE',
-                        recentReferrals: [],
-                        recentTransactions: []
-                    });
-                }
-            } catch (e) {
-                // The cached request also failed, just skip
-                console.warn(`[SYNC] Cached request failed for ${userId}, skipping`);
-            }
-            return;
-        }
-
-        // First request for this user: create the promise and cache it
-        console.log(`[SYNC] Profile request for ${telegramId} (${username}) from ${socket.id}`);
-        const fetchPromise = fetchUserWithRetry(userId, username);
-        profileSyncInFlight.set(userId, { promise: fetchPromise, timestamp: now });
-
-        // Clean up cache after 5 seconds
-        setTimeout(() => {
-            const cached = profileSyncInFlight.get(userId);
-            if (cached && cached.timestamp === now) {
-                profileSyncInFlight.delete(userId);
-            }
-        }, 5000);
-
-        let user: any;
-        try {
-            user = await fetchPromise;
-            if (!user) {
-                console.error(`[SYNC] No user data returned for ${userId}`);
-                return;
-            }
-
-            // DAILY RESET CHECK
-            const today = new Date().toISOString().split('T')[0];
-            if (user.daily_reset_date !== today) {
-                console.log(`[SYNC] Resetting daily limits for user ${userId} (${today})`);
-                const { data: updatedUser, error: resetError } = await supabase
-                    .from('users')
-                    .update({
-                        daily_games_today: 0,
-                        daily_wins_today: 0,
-                        daily_reset_date: today
-                    })
-                    .eq('telegram_id', userId)
-                    .select()
-                    .single();
-
-                if (!resetError && updatedUser) {
-                    user = updatedUser;
-                }
-            }
-        } catch (error: any) {
-            console.warn(`[SYNC-WARN] All retries failed for user ${userId}: ${error.message?.substring(0, 100)}`);
-            return;
-        }
-
-        // Fetch live TON balance from blockchain if wallet is connected (Async / Non-blocking)
-        let cachedTonBalance = user.balance_ton || 0; // Use DB value if available
-
-        if (user.wallet_address) {
-            // Background fetch
-            getTonBalance(user.wallet_address).then(async (liveBalance) => {
-                if (liveBalance !== cachedTonBalance) {
-                    // Update DB
-                    await supabase.from('users').update({ balance_ton: liveBalance }).eq('telegram_id', userId);
-
-                    // Emit update
-                    socket.emit('balance_update', {
-                        ton: liveBalance,
-                        stars: user.balance_stars,
-                        balanceQP: user.balance_qp || 0
-                    });
-                    console.log(`[SYNC] Updated live TON balance for ${userId}: ${liveBalance}`);
-                }
-            }).catch(err => console.error(`[SYNC] Background balance check failed for ${userId}`, err));
-        }
-
-        console.log(`[SYNC] User ${userId} data: wallet=${user.wallet_address}, stars=${user.balance_stars}, xp=${user.stats_xp}`);
-
-        let referralCount = 0;
-        let referrals: any[] | null = [];
-        let referralEarnings = 0;
-        let recentTransactions: any[] = [];
-
-        try {
-            // Fetch Referral Stats
-            const { count, data } = await supabase
-                .from('users')
-                .select('username, created_at, telegram_id', { count: 'exact' })
-                .eq('referred_by', userId)
-                .order('created_at', { ascending: false })
-                .limit(10);
-            referralCount = count || 0;
-            referrals = data;
-        } catch (e) {
-            console.error('[SYNC] Failed to fetch referrals:', e);
-        }
-
-        // Calculate and persist referral tier
-        const referralTier = calculateReferralTier(referralCount);
-        if (user.referral_tier !== referralTier) {
-            try {
-                await supabase.from('users').update({ referral_tier: referralTier }).eq('telegram_id', userId);
-                console.log(`[REFERRAL] User ${userId} tier updated: ${user.referral_tier} → ${referralTier}`);
-            } catch (e) {
-                console.error('[SYNC] Failed to update referral tier:', e);
-            }
-        }
-
-        try {
-            // Fetch Earnings
-            const { data: earningsData } = await supabase
-                .from('transactions')
-                .select('amount, metadata, created_at')
-                .eq('user_id', userId)
-                .or('type.eq.REFERRAL_BONUS,type.eq.REFERRAL_REWARD');
-            referralEarnings = (earningsData || []).reduce((sum, tx) => sum + tx.amount, 0);
-        } catch (e) {
-            console.error('[SYNC] Failed to fetch referral earnings:', e);
-        }
-
-        try {
-            // Fetch Recent Transactions (all types)
-            const { data: txs } = await supabase
-                .from('transactions')
-                .select('*')
-                .eq('user_id', userId)
-                .order('created_at', { ascending: false })
-                .limit(10);
-
-            // Merge and deduplicate — CHZ rewards are always included
-            recentTransactions = txs || [];
-        } catch (e) {
-            console.error('[SYNC] Failed to fetch transactions:', e);
-        }
-
-        // Map referrals
-        const recentReferrals = (referrals || []).map(ref => ({
-            username: ref.username,
-            date: ref.created_at,
-            earned: "+50 Stars"
-        }));
-
-        // ─── CHILIZ ON-CHAIN SYNC ─────────────────────────────────────
-        let onChainCHZBalance = 0;
-        let holdsFanToken = false;
-
-        if (user.chiliz_wallet_address) {
-            try {
-                // Fetch real-time on-chain data
-                const { chz, anyFanToken } = await ChilizService.getUserOnChainData(user.chiliz_wallet_address);
-                onChainCHZBalance = chz;
-                holdsFanToken = anyFanToken;
-                
-                console.log(`[SYNC-CHILIZ] User ${userId} (${user.chiliz_wallet_address}): ${onChainCHZBalance} $CHZ, Holds Fan Token: ${holdsFanToken}`);
-            } catch (e) {
-                console.error(`[SYNC-CHILIZ] Failed to fetch on-chain balances for ${userId}:`, e);
-            }
-        }
-
-        socket.emit('profile_synced', {
-            stars: user.balance_stars,
-            ton: cachedTonBalance, // Instant return
-            xp: user.stats_xp || 0,
-            wins: user.stats_wins || 0,
-            totalGames: user.stats_total_games || 0,
-            balanceQP: user.balance_qp || 0,
-            balanceCHZ: user.balance_chz || 0,
-            onChainCHZBalance,
-            onChainFanTokenBalance: holdsFanToken ? 1 : 0,
-            walletConnected: !!user.wallet_address,
-            walletAddress: user.wallet_address,
-            chilizWalletConnected: !!user.chiliz_wallet_address,
-            chilizWalletAddress: user.chiliz_wallet_address,
-            isAdmin: (process.env.ADMIN_IDS || '').split(',').map(id => id.trim()).includes(userId.toString()),
-            referralCount: user.stats_referrals || 0, // Use stored DB column
-            referralEarnings: referralEarnings,
-            referralTier: calculateReferralTier(user.stats_referrals || 0),
-            recentReferrals,
-            recentTransactions,
-            dailyGamesToday: user.daily_games_today || 0,
-            inventoryPowerups: user.inventory_powerups || {},
-            unlockedAvatars: user.unlocked_avatars || []
-        });
+        await syncUser(socket, data.telegramId, data.username);
     });
 
     socket.on('update_wallet', async (data) => {
@@ -1009,41 +896,12 @@ io.on('connection', (socket) => {
         console.log(`[WALLET] Received update_wallet for ${telegramId}: ${walletAddress}`);
 
         try {
-            const { data: updatedUser, error } = await supabase
+            await supabase
                 .from('users')
                 .update({ wallet_address: walletAddress })
-                .eq('telegram_id', parseInt(telegramId))
-                .select()
-                .single();
+                .eq('telegram_id', parseInt(telegramId));
 
-            if (error) {
-                console.error('[WALLET] Supabase Update Error:', error);
-            } else {
-                console.log(`[WALLET] Successfully updated wallet_address in DB for ${telegramId}`);
-
-                // Fetch live TON balance for the newly connected wallet
-                let liveTonBalance = 0;
-                if (walletAddress) {
-                    liveTonBalance = await getTonBalance(walletAddress);
-                }
-
-                // Emit full sync to update frontend immediately with all data
-                socket.emit('profile_synced', {
-                    stars: updatedUser.balance_stars,
-                    ton: liveTonBalance,
-                    xp: updatedUser.stats_xp || 0,
-                    wins: updatedUser.stats_wins || 0,
-                    totalGames: updatedUser.stats_total_games || 0,
-                    balanceQP: updatedUser.balance_qp || 0,
-                    walletConnected: !!updatedUser.wallet_address,
-                    walletAddress: updatedUser.wallet_address,
-                    referralCount: 0,
-                    referralEarnings: 0,
-                    referralTier: updatedUser.referral_tier || 'NONE',
-                    recentReferrals: [],
-                    recentTransactions: []
-                });
-            }
+            await syncUser(socket, telegramId, '');
         } catch (e) {
             console.error('[WALLET] Sync Exception:', e);
         }
@@ -1056,36 +914,23 @@ io.on('connection', (socket) => {
         console.log(`[CHILIZ-WALLET] Received update for ${telegramId}: ${chilizAddress}`);
 
         if (chilizAddress && !ChilizService.isValidAddress(chilizAddress)) {
-            socket.emit('error', { message: 'Invalid Chiliz wallet address. Please enter a valid 0x... address.' });
+            socket.emit('error', { message: 'Invalid Chiliz wallet address.' });
             return;
         }
 
         try {
-            // Ensure user exists (auto-register if missing)
-            await fetchUserWithRetry(userId, username || 'Anon_Player');
-
-            const { error } = await supabase
+            await supabase
                 .from('users')
                 .update({ chiliz_wallet_address: chilizAddress || null })
                 .eq('telegram_id', userId);
 
-            if (error) {
-                console.error('[CHILIZ-WALLET] Update Error:', error);
-                socket.emit('error', { message: 'Failed to save Chiliz wallet.' });
-            } else {
-                console.log(`[CHILIZ-WALLET] Saved for ${telegramId}`);
+            // Legacy emission for any component listening specifically to this
+            socket.emit('chiliz_wallet_updated', {
+                chilizWalletConnected: !!chilizAddress,
+                chilizWalletAddress: chilizAddress
+            });
 
-                let chzBalance = 0;
-                if (chilizAddress) {
-                    chzBalance = await ChilizService.getCHZBalance(chilizAddress);
-                }
-
-                socket.emit('chiliz_wallet_updated', {
-                    chilizWalletConnected: !!chilizAddress,
-                    chilizWalletAddress: chilizAddress,
-                    onChainCHZBalance: chzBalance
-                });
-            }
+            await syncUser(socket, telegramId, username);
         } catch (e) {
             console.error('[CHILIZ-WALLET] Exception:', e);
         }
