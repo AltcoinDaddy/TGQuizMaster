@@ -1026,7 +1026,8 @@ io.on('connection', (socket) => {
 
     // ─── Chiliz Wallet Link ────────────────────────────────────────
     socket.on('update_chiliz_wallet', async (data) => {
-        const { telegramId, chilizAddress } = data;
+        const { telegramId, username, chilizAddress } = data;
+        const userId = parseInt(telegramId);
         console.log(`[CHILIZ-WALLET] Received update for ${telegramId}: ${chilizAddress}`);
 
         if (chilizAddress && !ChilizService.isValidAddress(chilizAddress)) {
@@ -1035,10 +1036,13 @@ io.on('connection', (socket) => {
         }
 
         try {
+            // Ensure user exists (auto-register if missing)
+            await fetchUserWithRetry(userId, username || 'Anon_Player');
+
             const { error } = await supabase
                 .from('users')
                 .update({ chiliz_wallet_address: chilizAddress || null })
-                .eq('telegram_id', parseInt(telegramId));
+                .eq('telegram_id', userId);
 
             if (error) {
                 console.error('[CHILIZ-WALLET] Update Error:', error);
@@ -1064,11 +1068,14 @@ io.on('connection', (socket) => {
 
     // ─── Lucky Spin (Gacha) ─────────────────────────────────────────
     socket.on('lucky_spin', async (data) => {
-        const { telegramId } = data;
+        const { telegramId, username } = data;
         const userId = parseInt(telegramId);
         console.log(`[LUCKY-SPIN] Spin requested by ${telegramId}`);
 
         try {
+            // Ensure user exists (auto-register if missing)
+            await fetchUserWithRetry(userId, username || 'Anon_Player');
+
             const result = await RewardService.performLuckySpin(userId);
             
             if (!result.success) {

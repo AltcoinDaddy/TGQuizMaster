@@ -57,6 +57,7 @@ export const SportFi: React.FC = () => {
         if (realSocket) {
             realSocket.emit('update_chiliz_wallet', { 
                 telegramId: user.telegramId,
+                username: user.username,
                 chilizAddress: chilizInput 
             });
         } else {

@@ -86,7 +86,10 @@ export const LuckySpin: React.FC = () => {
         
         setIsSpinning(true);
         setResult(null);
-        socket.emit('lucky_spin', { telegramId: user.telegramId });
+        socket.emit('lucky_spin', { 
+            telegramId: user.telegramId,
+            username: user.username 
+        });
     };
 
     return (
