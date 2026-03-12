@@ -124,7 +124,8 @@ export class ChilizService {
     static async getCHZBalance(address: string): Promise<number> {
         try {
             const p = getProvider();
-            const balance = await p.getBalance(address);
+            const normalizedAddress = address.toLowerCase();
+            const balance = await p.getBalance(normalizedAddress);
             return parseFloat(ethers.formatEther(balance));
         } catch (error) {
             console.error(`[CHILIZ] Failed to get CHZ balance for ${address}:`, error);
@@ -139,8 +140,12 @@ export class ChilizService {
     static async getTokenBalance(walletAddress: string, contractAddress: string): Promise<number> {
         try {
             const p = getProvider();
-            const contract = new ethers.Contract(contractAddress, ERC20_ABI, p);
-            const balance = await contract.balanceOf(walletAddress);
+            // Normalize to lowercase to avoid strict EIP-55 checksum validation in ethers
+            const normalizedWallet = walletAddress.toLowerCase();
+            const normalizedContract = contractAddress.toLowerCase();
+            
+            const contract = new ethers.Contract(normalizedContract, ERC20_ABI, p);
+            const balance = await contract.balanceOf(normalizedWallet);
             // CAP-20 Fan Tokens have 0 decimals, so balance is the raw integer
             const decimals = await contract.decimals().catch(() => 0);
             return Number(ethers.formatUnits(balance, decimals));
@@ -187,8 +192,9 @@ export class ChilizService {
             const wallet = getTreasuryWallet();
             if (wallet && user?.chiliz_wallet_address) {
                 try {
+                    const normalizedDestination = user.chiliz_wallet_address.toLowerCase();
                     const tx = await wallet.sendTransaction({
-                        to: user.chiliz_wallet_address,
+                        to: normalizedDestination,
                         value: ethers.parseEther(amount.toString())
                     });
                     console.log(`[CHILIZ] TX sent: ${tx.hash}`);

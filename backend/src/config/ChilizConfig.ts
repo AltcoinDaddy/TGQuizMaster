@@ -24,22 +24,22 @@ export const CHILIZ_CONFIG = {
             symbol: 'BAR',
             name: 'FC Barcelona',
             address: IS_PROD 
-                ? '0xec510260464cE0727Df62a7923706063857B420C' // Example Mainnet BAR
-                : '0xdE371C35E668600742f534484A96d34b3587071F' // Spicy BAR
+                ? '0xec510260464ce0727df62a7923706063857b420c' // Example Mainnet BAR
+                : '0xde371c35e668600742f534484a96d34b3587071f' // Spicy BAR
         },
         {
             symbol: 'PSG',
             name: 'Paris Saint-Germain',
             address: IS_PROD 
-                ? '0xdE371C35E668600742f534484A96d34b3587071F' // Replace with real
-                : '0xec510260464cE0727Df62a7923706063857B420F' // Spicy PSG
+                ? '0xde371c35e668600742f534484a96d34b3587071f' // Replace with real
+                : '0xec510260464ce0727df62a7923706063857b420f' // Spicy PSG
         },
         {
             symbol: 'CITY',
             name: 'Manchester City',
             address: IS_PROD
-                ? '0x53959da465F58e72A1769888888882736C27582D' // Replace with real
-                : '0x53959da465F58e72A1769888888882736C27582D' // Spicy CITY
+                ? '0x53959da465f58e72a176988888882736c27582d' // Replace with real
+                : '0x53959da465f58e72a176988888882736c27582d' // Spicy CITY
         }
     ] as FanToken[],
 
