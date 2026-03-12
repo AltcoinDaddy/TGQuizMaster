@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { API_URL } from '../../config/api';
 import { authPost } from '../../utils/authFetch';
 import { MainLayout } from '../layout/MainLayout';
-import { ArrowRight, Users, Gamepad2, Star, Gem, Trophy, Zap } from 'lucide-react';
+import { ArrowRight, Users, Gamepad2, Star, Gem, Trophy, Zap, Gift } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { StreakPopup } from '../ui/StreakPopup';
 import { useAppStore } from '../../store/useAppStore';
@@ -273,6 +273,32 @@ export const Home: React.FC = () => {
                             <div className="flex flex-col items-center">
                                 <ArrowRight size={24} className="text-primary opacity-40 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
                             </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                {/* Lucky Spin Entry (Premium Card) */}
+                <div 
+                    onClick={() => navigate('/lucky-spin')}
+                    className="bg-gradient-to-r from-[#102216] to-[#1a3322] border border-primary/20 rounded-[32px] p-6 mb-4 relative overflow-hidden group cursor-pointer active:scale-95 transition-all shadow-lg"
+                >
+                    <div className="absolute top-0 right-0 w-40 h-40 bg-primary/5 rounded-full -mr-20 -mt-20 blur-3xl group-hover:bg-primary/10 transition-all" />
+                    <div className="flex items-center gap-5 relative z-10">
+                        <div className="w-16 h-16 rounded-2xl bg-primary/20 flex items-center justify-center text-primary border border-primary/30 shadow-[0_0_20px_rgba(0,255,136,0.2)]">
+                            <Gift size={32} />
+                        </div>
+                        <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                                <h3 className="font-black text-xl uppercase italic tracking-tighter text-white">Lucky Spin</h3>
+                                <span className="bg-primary text-[#102216] text-[8px] font-black px-2 py-0.5 rounded-full animate-pulse uppercase">DAILY FREE</span>
+                            </div>
+                            <p className="text-[10px] text-white/40 font-bold uppercase tracking-widest leading-none">
+                                Spin the wheel. Win Stars, QP, or $CHZ rewards.
+                            </p>
+                        </div>
+                        <div className="flex flex-col items-center">
+                            <ArrowRight size={24} className="text-primary group-hover:translate-x-1 transition-all" />
                         </div>
                     </div>
                 </div>

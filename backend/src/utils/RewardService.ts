@@ -46,6 +46,25 @@ export class RewardService {
     }
 
     /**
+     * Awards QP (Quiz Points) to a user.
+     */
+    static async awardQP(userId: number, amount: number): Promise<RewardResult> {
+        try {
+            const { data: user } = await supabase.from('users').select('balance_qp').eq('telegram_id', userId).single();
+            if (!user) throw new Error('User not found');
+
+            await supabase.from('users').update({
+                balance_qp: (user.balance_qp || 0) + amount
+            }).eq('telegram_id', userId);
+
+            return { success: true };
+        } catch (error: any) {
+            console.error(`[RewardService] QP award failed for ${userId}:`, error.message);
+            return { success: false, error: error.message };
+        }
+    }
+
+    /**
      * Awards a shard to a user.
      */
     static async awardShard(userId: number, amount: number = 1): Promise<RewardResult> {
@@ -214,6 +233,177 @@ export class RewardService {
             return { success: true };
         } catch (error: any) {
             console.error(`[RewardService] Failed to add Season XP to ${userId}:`, error.message);
+            return { success: false, error: error.message };
+        }
+    }
+
+    /**
+     * Performs a Lucky Spin for the user.
+     * Enforces a 24-hour cooldown.
+     */
+    static async performLuckySpin(userId: number): Promise<RewardResult> {
+        try {
+            const { data: user, error: fetchError } = await supabase
+                .from('users')
+                .select('last_lucky_spin, balance_stars, balance_qp, balance_chz, inventory_shards')
+                .eq('telegram_id', userId)
+                .single();
+
+            if (fetchError || !user) throw new Error('User not found');
+
+            // 1. Check Cooldown (24 hours)
+            if (user.last_lucky_spin) {
+                const lastSpin = new Date(user.last_lucky_spin).getTime();
+                const now = Date.now();
+                const hoursSince = (now - lastSpin) / (1000 * 60 * 60);
+                
+                if (hoursSince < 24) {
+                    const remaining = 24 - hoursSince;
+                    return { success: false, error: `Cooldown active. Wait ${Math.ceil(remaining)}h.` };
+                }
+            }
+
+            // 2. Roll the Reward
+            const roll = Math.random();
+            let rewardType: 'STARS' | 'QP' | 'CHZ' | 'SHARD';
+            let amount = 0;
+            let label = '';
+
+            if (roll < 0.6) {
+                rewardType = 'STARS';
+                amount = Math.floor(Math.random() * 451) + 50; // 50-500
+                label = `${amount} Stars`;
+                await this.awardStars(userId, amount, { type: 'LUCKY_SPIN' });
+            } else if (roll < 0.8) {
+                rewardType = 'QP';
+                amount = Math.floor(Math.random() * 91) + 10; // 10-100
+                label = `${amount} QP`;
+                await this.awardQP(userId, amount);
+            } else if (roll < 0.9) {
+                rewardType = 'CHZ';
+                amount = Math.floor(Math.random() * 5) + 1; // 1-5
+                label = `${amount} $CHZ`;
+                const { ChilizService } = await import('./ChilizService');
+                await ChilizService.distributeCHZReward(userId, amount, 'Lucky Spin daily reward');
+            } else {
+                rewardType = 'SHARD';
+                amount = 1;
+                label = `Avatar Shard`;
+                await this.awardShard(userId, amount);
+            }
+
+            // 3. Update last_lucky_spin
+            await supabase
+                .from('users')
+                .update({ last_lucky_spin: new Date().toISOString() })
+                .eq('telegram_id', userId);
+
+            return { 
+                success: true, 
+                data: { 
+                    type: rewardType, 
+                    amount, 
+                    label,
+                    roll 
+                } 
+            };
+        } catch (error: any) {
+            console.error(`[RewardService] Lucky Spin failed for ${userId}:`, error.message);
+            return { success: false, error: error.message };
+        }
+    }
+
+    /**
+     * Distributes prizes for a SportFi match from the match_stakes pool.
+     */
+    static async distributeSportFiPrizes(gameId: string, winners: { id: string, score: number }[]): Promise<RewardResult> {
+        try {
+            console.log(`[SportFi] Distributing prizes for Game ${gameId}...`);
+
+            // 1. Fetch match stake data
+            const { data: stake, error: stakeError } = await supabase
+                .from('match_stakes')
+                .select('*')
+                .eq('game_id', gameId)
+                .single();
+
+            if (stakeError || !stake) throw new Error('Match stakes not found');
+            if (stake.is_distributed) throw new Error('Prizes already distributed');
+
+            const totalPool = parseFloat(stake.total_pool);
+            if (totalPool <= 0) return { success: true, data: { message: 'Zero pool, skipping' } };
+
+            // 2. Calculate Platform Fee (e.g., 10%)
+            const platformFee = totalPool * stake.commission_rate;
+            const netPool = totalPool - platformFee;
+
+            // 3. Prize Split (Top 3)
+            // 1st: 60%, 2nd: 30%, 3rd: 10%
+            const splits = [0.6, 0.3, 0.1];
+            const distributions: any[] = [];
+
+            for (let i = 0; i < Math.min(winners.length, 3); i++) {
+                const winner = winners[i];
+                const prizeAmount = netPool * splits[i];
+                if (prizeAmount <= 0) continue;
+
+                const userId = parseInt(winner.id);
+                
+                // Tiered Commission Check: Holding Fan Tokens reduces commission
+                const { ChilizService } = await import('./ChilizService');
+                const isHolder = await ChilizService.verifyFanTokenHold(userId, { tokenSymbol: 'BAR', minAmount: 1 }); // BAR as placeholder
+                
+                // If holder, give them a 5% bonus (effectively reducing their commission share)
+                const holderBonus = isHolder ? 1.10 : 1.0; // 10% bonus on their share
+                const adjustedPrize = prizeAmount * holderBonus;
+
+                // Fetch user to update balance (Internal Credit)
+                const { data: user } = await supabase.from('users').select('balance_chz').eq('telegram_id', userId).single();
+                if (user) {
+                    await supabase.from('users').update({
+                        balance_chz: (user.balance_chz || 0) + adjustedPrize
+                    }).eq('telegram_id', userId);
+
+                    await supabase.from('transactions').insert({
+                        user_id: userId,
+                        type: 'SPORTFI_REWARD',
+                        amount: adjustedPrize,
+                        currency: 'CHZ',
+                        metadata: { 
+                            gameId, 
+                            rank: i + 1, 
+                            pool: totalPool,
+                            isHolder,
+                            bonusApplied: isHolder ? '10%' : 'None'
+                        },
+                        status: 'COMPLETED'
+                    });
+
+                    distributions.push({ userId, amount: adjustedPrize, rank: i + 1, isHolder });
+                }
+            }
+
+            // 4. Update match_stakes as distributed
+            await supabase.from('match_stakes').update({
+                is_distributed: true,
+                platform_fee: platformFee
+            }).eq('game_id', gameId);
+
+            // 5. Log Platform Fee as transaction
+            if (platformFee > 0) {
+                await supabase.from('transactions').insert({
+                    user_id: 0, // Platform Account
+                    type: 'PLATFORM_RAKE',
+                    amount: platformFee,
+                    currency: 'CHZ',
+                    metadata: { gameId, pool: totalPool },
+                    status: 'COMPLETED'
+                });
+            }
+
+            return { success: true, data: { distributions, platformFee } };
+        } catch (error: any) {
+            console.error(`[SportFi] Prize distribution failed for ${gameId}:`, error.message);
             return { success: false, error: error.message };
         }
     }

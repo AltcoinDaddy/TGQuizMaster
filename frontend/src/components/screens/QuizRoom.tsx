@@ -93,6 +93,7 @@ export const QuizRoom: React.FC = () => {
 
     const finalRoomId = cleanRoomId || tournamentId;
     const finalType = stateType || typeFromUrl || 'tournament';
+    const isSurvival = finalType === 'survival';
 
     useEffect(() => {
         // 1. Setup Listeners
@@ -442,21 +443,23 @@ export const QuizRoom: React.FC = () => {
             <MainLayout showNav={false}>
                 <div className="flex flex-col items-center justify-center min-h-[80dvh] space-y-8">
                     <div className="text-center">
-                        <h2 className="text-4xl font-black text-primary uppercase italic tracking-tighter drop-shadow-[0_0_15px_rgba(13,242,89,0.4)]">Game Over!</h2>
-                        <p className="opacity-50 mt-2 text-xs font-bold uppercase tracking-widest">Final Leaderboard</p>
+                        <h2 className={`text-4xl font-black uppercase italic tracking-tighter drop-shadow-[0_0_15px_rgba(13,242,89,0.4)] text-primary`}>
+                            {isSurvival ? 'Wasted!' : 'Game Over!'}
+                        </h2>
+                        <p className="opacity-50 mt-2 text-xs font-bold uppercase tracking-widest">{isSurvival ? 'Run Statistics' : 'Final Leaderboard'}</p>
                     </div>
                     <div className="w-full space-y-3 px-2">
                         {/* Game Stats Card */}
                         {gameResults && (
-                            <GlassCard className="p-6 mb-6 bg-gradient-to-br from-primary/10 to-transparent border-primary/20 text-center">
+                            <GlassCard className={`p-6 mb-6 bg-gradient-to-br from-transparent to-transparent border-white/10 text-center ${isSurvival ? 'border-primary/20 bg-primary/5' : 'border-primary/20 bg-primary/5'}`}>
                                 <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-60 mb-2">Your Performance</p>
                                 <div className="grid grid-cols-3 gap-4 mb-4">
                                     <div className="flex flex-col">
-                                        <span className="text-2xl font-black italic text-white">{gameResults.score}</span>
-                                        <span className="text-[8px] font-bold uppercase tracking-widest opacity-40">Score</span>
+                                        <span className={`text-2xl font-black italic ${isSurvival ? 'text-primary' : 'text-white'}`}>{isSurvival ? (gameResults as any).streak : gameResults.score}</span>
+                                        <span className="text-[8px] font-bold uppercase tracking-widest opacity-40">{isSurvival ? 'Streak' : 'Score'}</span>
                                     </div>
                                     <div className="flex flex-col">
-                                        <span className="text-2xl font-black italic text-primary">+{gameResults.xp}</span>
+                                        <span className={`text-2xl font-black italic text-primary`}>+{gameResults.xp}</span>
                                         <span className="text-[8px] font-bold uppercase tracking-widest opacity-40">XP</span>
                                     </div>
                                     <div className="flex flex-col">
@@ -519,9 +522,12 @@ export const QuizRoom: React.FC = () => {
             <header className="pt-8 pb-4">
                 <div className="flex items-center justify-between mb-6">
                     <div className="flex flex-col">
-                        <span className="text-[10px] font-black uppercase tracking-widest text-primary/80 italic">Trivia Battle</span>
+                        <span className={`text-[10px] font-black uppercase tracking-widest ${isSurvival ? 'text-primary animate-pulse' : 'text-primary/80'} italic`}>
+                            {isSurvival ? 'The Gauntlet • Run or Die' : 'Trivia Battle'}
+                        </span>
                         <h1 className="text-xl font-black flex items-center gap-2 uppercase italic tracking-tighter">
-                            Question {questionIndex}<span className="text-slate-500 font-medium">/{totalQuestions}</span>
+                            {isSurvival ? `Streak ${questionIndex}` : `Question ${questionIndex}`}
+                            <span className="text-slate-500 font-medium">{isSurvival ? '' : `/${totalQuestions}`}</span>
                         </h1>
                     </div>
                     <div className="flex items-center gap-2 bg-primary/10 px-4 py-2 rounded-full border border-primary/20">
@@ -530,7 +536,8 @@ export const QuizRoom: React.FC = () => {
                     </div>
                 </div>
                 <div className="w-full h-2.5 bg-white/10 rounded-full overflow-hidden">
-                    <div className="h-full bg-primary day-active-glow rounded-full transition-all duration-500" style={{ width: `${totalQuestions > 0 ? (questionIndex / totalQuestions) * 100 : 0}%` }}></div>
+                    <div className={`h-full ${isSurvival ? 'bg-primary shadow-[0_0_15px_rgba(13,242,89,0.5)]' : 'bg-primary day-active-glow'} rounded-full transition-all duration-500`} 
+                        style={{ width: isSurvival ? '100%' : `${totalQuestions > 0 ? (questionIndex / totalQuestions) * 100 : 0}%` }}></div>
                 </div>
             </header>
 
@@ -540,7 +547,7 @@ export const QuizRoom: React.FC = () => {
                     <svg className="absolute inset-0 w-full h-full -rotate-90 scale-110">
                         <circle className="text-white/5" cx="56" cy="56" fill="transparent" r="50" stroke="currentColor" strokeWidth="8"></circle>
                         <circle
-                            className="text-primary transition-all duration-1000 ease-linear"
+                            className={`${isSurvival ? 'text-primary shadow-[0_0_20px_rgba(13,242,89,0.6)]' : 'text-primary'} transition-all duration-1000 ease-linear`}
                             cx="56" cy="56"
                             fill="transparent"
                             r="50"
@@ -551,8 +558,8 @@ export const QuizRoom: React.FC = () => {
                             strokeLinecap="round"
                         ></circle>
                     </svg>
-                    <div className="timer-pulse bg-white/5 w-20 h-20 rounded-full flex flex-col items-center justify-center border border-primary/30">
-                        <span className="text-3xl font-black text-primary italic tracking-tighter">{timeLeft}</span>
+                    <div className={`timer-pulse ${isSurvival ? 'bg-primary/10 border-primary/30' : 'bg-white/5 border-primary/30'} w-20 h-20 rounded-full flex flex-col items-center justify-center border`}>
+                        <span className={`text-3xl font-black ${isSurvival ? 'text-primary' : 'text-primary'} italic tracking-tighter`}>{timeLeft}</span>
                         <span className="text-[10px] uppercase font-black opacity-40 italic tracking-tighter leading-none">Sec</span>
                     </div>
                 </div>
@@ -592,14 +599,12 @@ export const QuizRoom: React.FC = () => {
                                 className={`group w-full p-4 border-2 rounded-2xl flex items-center transition-all animate-in fade-in slide-in-from-bottom duration-300 active:scale-[0.98] ${buttonClass}`}
                                 style={{ animationDelay: `${idx * 100}ms` }}
                             >
-                                <div className={`w-10 h-10 rounded-full flex items-center justify-center font-black mr-4 transition-colors ${isSelected ? 'bg-primary text-background-dark' : 'bg-white/10'
-                                    }`}>
+                                <div className={`w-10 h-10 rounded-full flex items-center justify-center font-black mr-4 transition-colors ${isSelected ? 'bg-primary text-background-dark' : 'bg-white/10'}`}>
                                     {letters[idx]}
                                 </div>
                                 <span className={`text-lg font-black italic tracking-tighter ${isEliminated ? 'line-through' : ''}`}>{option}</span>
                                 {((isSelected && isCorrect !== null) || (isRevealed && option === revealedAnswer)) && (
-                                    <i className={`material-icons ml-auto ${(option === revealedAnswer || isCorrect === true) ? 'text-primary drop-shadow-[0_0_8px_rgba(13,242,89,0.8)]' : 'text-red-500 drop-shadow-[0_0_8px_rgba(239,68,68,0.8)]'
-                                        }`}>
+                                    <i className={`material-icons ml-auto ${(option === revealedAnswer || isCorrect === true) ? 'text-primary drop-shadow-[0_0_8px_rgba(13,242,89,0.8)]' : 'text-red-500'}`}>
                                         {(option === revealedAnswer || isCorrect === true) ? 'check_circle' : 'cancel'}
                                     </i>
                                 )}

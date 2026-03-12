@@ -11,6 +11,8 @@ export default {
         "primary": "#0df259",
         "background-light": "#f5f8f6",
         "background-dark": "#102216",
+        "accent-gold": "#FFD700",
+        "accent-purple": "#A855F7",
       },
       fontFamily: {
         "display": ["Plus Jakarta Sans", "sans-serif"]

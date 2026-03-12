@@ -8,9 +8,9 @@ export const getApiUrl = () => {
         return import.meta.env.VITE_API_URL;
     }
 
-    // 2. If in development mode, default to localhost
+    // 2. If in development mode, default to local network IP for mobile testing
     if (import.meta.env.DEV) {
-        return 'http://localhost:3001';
+        return 'http://192.168.12.13:3001';
     }
 
     // 3. Fallback for production if variable is missing

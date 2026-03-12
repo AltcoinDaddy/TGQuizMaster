@@ -19,6 +19,8 @@ import { GameManager } from './utils/GameManager';
 import { roomRegistry } from './utils/RoomRegistry';
 import './bot'; // Initialize Bot
 import { starsService, notificationService } from './bot';
+import { ChilizService } from './utils/ChilizService';
+import { RewardService } from './utils/RewardService';
 
 dotenv.config();
 
@@ -29,6 +31,7 @@ const server = http.createServer(app);
 const ALLOWED_ORIGINS = [
     "http://localhost:5173",
     "http://localhost:5174",
+    "http://192.168.12.13:5173",
     "https://tg-quiz-master.vercel.app",
     "https://tgquizmaster.online"
 ];
@@ -355,6 +358,22 @@ io.on('connection', (socket) => {
                 console.log(`[PRE-CHECK] ${username} has sufficient ${feeAmount} ${feeCurrency}`);
             }
 
+            // 2.5 Chiliz Fan Token Check (SportFi Hub)
+            if (category === 'Sports') {
+                const tokenContract = process.env.FAN_TOKEN_CONTRACT_ADDRESS;
+                const holdsToken = await ChilizService.verifyFanTokenHold(userId, {
+                    tokenSymbol: 'FAN',
+                    minAmount: 1,
+                    contractAddress: tokenContract
+                });
+                if (!holdsToken) {
+                    socket.emit('error', {
+                        message: 'SportFi Discovery: This Arena requires holding Fan Tokens. Connect your Chiliz-compatible wallet to enter!'
+                    });
+                    return;
+                }
+            }
+
             // 3. Matchmaking & Room Selection
             let roomId: string | undefined;
 
@@ -420,6 +439,34 @@ io.on('connection', (socket) => {
                     socket.emit('error', { message: `Need 50 Stars for Mega Match` });
                     return;
                 }
+            } else if (data.roomType === 'sportfi') {
+                const track = (data.track || 'PRO').toUpperCase();
+                if (track === 'PRO') {
+                    effectiveFee = 10; // Default 10 $CHZ
+                    effectiveCurrency = 'CHZ';
+                    if ((user.balance_chz || 0) < effectiveFee) {
+                        socket.emit('error', { message: `Need 10 $CHZ to join Pro Arena. Deposit some Chiliz first!` });
+                        return;
+                    }
+                } else if (track === 'SOCIAL') {
+                    effectiveFee = 0;
+                    effectiveCurrency = 'CHZ';
+                    // Verify Fan Token hold for Social Track
+                    const { ChilizService } = await import('./utils/ChilizService');
+                    const hasToken = await ChilizService.verifyFanTokenHold(userId, { tokenSymbol: 'BAR', minAmount: 1 }); // Mock check for BAR
+                    if (!hasToken) {
+                        socket.emit('error', { message: `Social Arena requires holding 1 $BAR Fan Token. Bridge your wallet to unlock!` });
+                        return;
+                    }
+                }
+            } else if (data.roomType === 'survival') {
+                effectiveFee = 5; // 5 $CHZ to enter the Gauntlet
+                effectiveCurrency = 'CHZ';
+                requestedMax = 1; // Survival is solo
+                if ((user.balance_chz || 0) < effectiveFee) {
+                    socket.emit('error', { message: `Need 5 $CHZ to enter The Gauntlet. High stakes, high rewards!` });
+                    return;
+                }
             }
 
             // EXTRACT ROOM ID FROM tournamentId (handle room_UUID_... format)
@@ -444,8 +491,10 @@ io.on('connection', (socket) => {
                 const matchesCategory = info.category === (category || 'General');
                 const hasSpace = info.players < info.maxPlayers;
                 const isWaiting = info.status === 'waiting';
-                const matchesSize = (data.roomType === 'quickplay' || data.roomType === 'mega') || (info.maxPlayers === requestedMax);
+                const matchesSize = (data.roomType === 'quickplay' || data.roomType === 'mega' || data.roomType === 'sportfi') || (info.maxPlayers === requestedMax);
                 const matchesType = (mgr as any).megaRoom === (data.roomType === 'mega');
+                const matchesTrack = data.roomType === 'sportfi' ? ((mgr as any).sportfiTrack === (data.track || 'PRO').toUpperCase()) : true;
+                const matchesSurvival = (mgr as any).tournamentType === 'survival' && (data.roomType === 'survival');
 
                 // Special: Mega matches can be joined even if LIVE (to feel like one ongoing room)
                 if (data.roomType === 'mega' && matchesType && hasSpace) {
@@ -463,8 +512,16 @@ io.on('connection', (socket) => {
                 const newRoomId = searchRoomId && searchRoomId.length > 20 ? searchRoomId : crypto.randomUUID();
                 roomId = newRoomId;
                 const isMega = data.roomType === 'mega';
-                const playersLimit = isMega ? 100 : (data.roomType === 'quickplay' ? 5 : Math.min(Math.max(requestedMax, 2), 20));
-                const newManager = new GameManager(newRoomId, io, effectiveCurrency.toLowerCase() as any, 0, effectiveFee, playersLimit, category || 'General', isMega);
+                const isSportFi = data.roomType === 'sportfi';
+                const isSurvival = data.roomType === 'survival';
+                const playersLimit = isMega ? 100 : (isSurvival ? 1 : (data.roomType === 'quickplay' ? 5 : Math.min(Math.max(requestedMax, 2), 20)));
+                const newManager = new GameManager(newRoomId, io, (isSurvival ? 'survival' : effectiveCurrency.toLowerCase()) as any, 0, effectiveFee, playersLimit, category || (isSportFi ? 'Sports' : 'General'), isMega);
+                
+                if (isSportFi) {
+                    newManager.chilizRoom = true;
+                    newManager.sportfiTrack = (data.track || 'PRO').toUpperCase() as any;
+                    newManager.currency = 'CHZ';
+                }
 
                 // If joining from a group deep link or specific link, mark as private to prevent global notifications
                 if (isGroup || (tournamentId && tournamentId.startsWith('room_'))) {
@@ -483,6 +540,18 @@ io.on('connection', (socket) => {
                             await m.start().catch(e => console.error("Mega auto-start failed:", e));
                         }
                     }, 5000);
+                }
+
+                if (isSurvival) {
+                    // Auto-start Survival Room immediately
+                    setTimeout(async () => {
+                        const m = roomRegistry.getRoom(newRoomId);
+                        if (m && !m.isStarted()) {
+                            console.log(`[SURVIVAL-START] Starting room ${newRoomId}`);
+                            io.to(newRoomId).emit('game_start');
+                            await m.start().catch(e => console.error("Survival start failed:", e));
+                        }
+                    }, 1000);
                 }
 
                 roomRegistry.setRoom(roomId, newManager);
@@ -508,20 +577,28 @@ io.on('connection', (socket) => {
             // 4. Database & Socket Joins (Awaits)
             try {
                 if (effectiveFee > 0) {
-                    // ... (keep deduction logic same)
-                    const { error: updateError } = await supabase
-                        .from('users')
-                        .update({ balance_stars: user.balance_stars - effectiveFee })
-                        .eq('telegram_id', userId);
-                    if (updateError) throw updateError;
-                    user.balance_stars -= effectiveFee;
+                    if (effectiveCurrency === 'CHZ') {
+                        const { error: updateError } = await supabase
+                            .from('users')
+                            .update({ balance_chz: (user.balance_chz || 0) - effectiveFee })
+                            .eq('telegram_id', userId);
+                        if (updateError) throw updateError;
+                        user.balance_chz -= effectiveFee;
+                    } else {
+                        const { error: updateError } = await supabase
+                            .from('users')
+                            .update({ balance_stars: user.balance_stars - effectiveFee })
+                            .eq('telegram_id', userId);
+                        if (updateError) throw updateError;
+                        user.balance_stars -= effectiveFee;
+                    }
 
                     await supabase.from('transactions').insert({
                         user_id: userId,
                         type: 'ENTRY_FEE',
                         amount: -effectiveFee,
                         currency: effectiveCurrency,
-                        metadata: { roomId, mode: data.roomType },
+                        metadata: { roomId, mode: data.roomType, track: data.track },
                         status: 'COMPLETED'
                     });
                 }
@@ -864,13 +941,15 @@ io.on('connection', (socket) => {
         }));
 
         try {
-            // Fetch Recent Transactions
+            // Fetch Recent Transactions (all types)
             const { data: txs } = await supabase
                 .from('transactions')
                 .select('*')
                 .eq('user_id', userId)
                 .order('created_at', { ascending: false })
-                .limit(5);
+                .limit(10);
+
+            // Merge and deduplicate — CHZ rewards are always included
             recentTransactions = txs || [];
         } catch (e) {
             console.error('[SYNC] Failed to fetch transactions:', e);
@@ -883,8 +962,11 @@ io.on('connection', (socket) => {
             wins: user.stats_wins || 0,
             totalGames: user.stats_total_games || 0,
             balanceQP: user.balance_qp || 0,
+            balanceCHZ: user.balance_chz || 0,
             walletConnected: !!user.wallet_address,
             walletAddress: user.wallet_address,
+            chilizWalletConnected: !!user.chiliz_wallet_address,
+            chilizWalletAddress: user.chiliz_wallet_address,
             isAdmin: (process.env.ADMIN_IDS || '').split(',').map(id => id.trim()).includes(userId.toString()),
             referralCount: user.stats_referrals || 0, // Use stored DB column
             referralEarnings: referralEarnings,
@@ -939,6 +1021,80 @@ io.on('connection', (socket) => {
             }
         } catch (e) {
             console.error('[WALLET] Sync Exception:', e);
+        }
+    });
+
+    // ─── Chiliz Wallet Link ────────────────────────────────────────
+    socket.on('update_chiliz_wallet', async (data) => {
+        const { telegramId, chilizAddress } = data;
+        console.log(`[CHILIZ-WALLET] Received update for ${telegramId}: ${chilizAddress}`);
+
+        if (chilizAddress && !ChilizService.isValidAddress(chilizAddress)) {
+            socket.emit('error', { message: 'Invalid Chiliz wallet address. Please enter a valid 0x... address.' });
+            return;
+        }
+
+        try {
+            const { error } = await supabase
+                .from('users')
+                .update({ chiliz_wallet_address: chilizAddress || null })
+                .eq('telegram_id', parseInt(telegramId));
+
+            if (error) {
+                console.error('[CHILIZ-WALLET] Update Error:', error);
+                socket.emit('error', { message: 'Failed to save Chiliz wallet.' });
+            } else {
+                console.log(`[CHILIZ-WALLET] Saved for ${telegramId}`);
+
+                let chzBalance = 0;
+                if (chilizAddress) {
+                    chzBalance = await ChilizService.getCHZBalance(chilizAddress);
+                }
+
+                socket.emit('chiliz_wallet_updated', {
+                    chilizWalletConnected: !!chilizAddress,
+                    chilizWalletAddress: chilizAddress,
+                    onChainCHZBalance: chzBalance
+                });
+            }
+        } catch (e) {
+            console.error('[CHILIZ-WALLET] Exception:', e);
+        }
+    });
+
+    // ─── Lucky Spin (Gacha) ─────────────────────────────────────────
+    socket.on('lucky_spin', async (data) => {
+        const { telegramId } = data;
+        const userId = parseInt(telegramId);
+        console.log(`[LUCKY-SPIN] Spin requested by ${telegramId}`);
+
+        try {
+            const result = await RewardService.performLuckySpin(userId);
+            
+            if (!result.success) {
+                socket.emit('error', { message: result.error });
+                return;
+            }
+
+            // Sync full profile after spin to ensure all balances reflect correctly
+            const { data: user } = await supabase.from('users').select('*').eq('telegram_id', userId).single();
+            
+            socket.emit('lucky_spin_result', {
+                ...result.data,
+                newBalances: {
+                    stars: user.balance_stars,
+                    ton: 0, // TON balance handled separately
+                    xp: user.stats_xp || 0,
+                    qp: user.balance_qp || 0,
+                    chz: user.balance_chz || 0,
+                    shards: user.inventory_shards || 0
+                }
+            });
+
+            // Log the achievement if it's their first spin (Optional logic can be added here)
+        } catch (e) {
+            console.error('[LUCKY-SPIN] Exception:', e);
+            socket.emit('error', { message: 'Failed to perform lucky spin.' });
         }
     });
 

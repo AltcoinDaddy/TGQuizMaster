@@ -51,7 +51,7 @@ export class GameManager {
     private currentIndex = 0;
     private timer = 15;
     private io: any;
-    private tournamentType: 'free' | 'stars' | 'ton' | 'practice' = 'free';
+    private tournamentType: 'free' | 'stars' | 'ton' | 'practice' | 'survival' = 'free';
     private prizePool = 0;
     private entryFee = 0;
     private questionCount = 10;
@@ -61,10 +61,13 @@ export class GameManager {
     private expired = false;
     public onGameOver?: (roomId: string, results: any[]) => void;
     public onExpire?: (manager: GameManager) => void; // Callback for timeout
-    public groupId?: number; // Chat ID for group results
+    public groupId?: number | string; // Chat ID for group results
     public category: string;
     private categoryId: number | null = null;
     public megaRoom: boolean = false;
+    public chilizRoom: boolean = false;
+    public sportfiTrack: 'SOCIAL' | 'PRO' | 'NONE' = 'NONE';
+    public currency: 'STARS' | 'TON' | 'CHZ' = 'STARS';
 
     private readonly CATEGORY_MAP: Record<string, number> = {
         'General': 9,
@@ -79,7 +82,7 @@ export class GameManager {
         'Gadgets': 30
     };
 
-    constructor(roomId: string, io: any, type: 'free' | 'stars' | 'ton' | 'practice' = 'free', prize = 0, fee = 0, maxPlayers = 5, category = 'General', isMega = false) {
+    constructor(roomId: string, io: any, type: 'free' | 'stars' | 'ton' | 'practice' | 'survival' = 'free', prize = 0, fee = 0, maxPlayers = 5, category = 'General', isMega = false) {
         this.roomId = roomId;
         this.players = [];
         this.io = io;
@@ -90,7 +93,16 @@ export class GameManager {
         this.category = category;
         this.categoryId = this.CATEGORY_MAP[category] || null;
         this.megaRoom = isMega;
-        this.questionCount = type === 'practice' ? 5 : (this.megaRoom ? 50 : 10);
+        this.chilizRoom = category === 'Sports' || category === 'Entertainment'; 
+        this.questionCount = type === 'practice' ? 5 : (type === 'survival' ? 100 : (this.megaRoom ? 50 : 10));
+        this.currency = type === 'ton' ? 'TON' : (type === 'stars' ? 'STARS' : (type === 'survival' ? 'CHZ' : 'STARS'));
+        
+        // Handle SportFi Track initialization
+        if (this.chilizRoom) {
+            // Default to PRO for Sports rooms in this logic, but index.ts can override
+            this.sportfiTrack = 'PRO';
+            this.currency = 'CHZ';
+        }
 
         // Auto-expire rooms after 5 minutes if not filled (skip for practice — instant start)
         if (type !== 'practice') {
@@ -105,6 +117,10 @@ export class GameManager {
                     if (this.onExpire) this.onExpire(this);
                 }
             }, 5 * 60 * 1000); // 5 minutes
+        }
+
+        if (this.sportfiTrack !== 'NONE') {
+            this.initializeStakes().catch(e => console.error(`[SportFi] Initial stake setup failed:`, e));
         }
     }
 
@@ -126,6 +142,10 @@ export class GameManager {
             this.players[existingIndex] = player;
         } else {
             this.players.push(player);
+            // Increment the prize pool in the DB if this is a PRO SportFi room
+            if (this.sportfiTrack === 'PRO') {
+                this.updatePool(this.entryFee).catch(e => console.error(`[SportFi] Pool update failed:`, e));
+            }
         }
     }
 
@@ -282,7 +302,14 @@ export class GameManager {
     private timerInterval: NodeJS.Timeout | null = null;
 
     private startTimer() {
-        this.timer = 15;
+        // Survival Mode ramps difficulty: starts at 15s, drops every 5 levels
+        if (this.tournamentType === 'survival') {
+            const level = Math.floor(this.currentIndex / 5);
+            this.timer = Math.max(7, 15 - level); // Minimum 7 seconds
+        } else {
+            this.timer = 15;
+        }
+
         this.timerInterval = setInterval(() => {
             this.timer--;
             this.io.to(this.roomId).emit('timer_update', this.timer);
@@ -290,7 +317,12 @@ export class GameManager {
             if (this.timer <= 0) {
                 clearInterval(this.timerInterval!);
                 this.timerInterval = null;
-                this.revealAnswer();
+                // In Survival Mode, timing out is Game Over
+                if (this.tournamentType === 'survival') {
+                    this.endGame();
+                } else {
+                    this.revealAnswer();
+                }
             }
         }, 1000);
     }
@@ -319,7 +351,7 @@ export class GameManager {
             player.score += Math.round(points);
 
             // Add Season XP if this is a tournament/ranked game
-            if (this.tournamentType === 'stars' || this.tournamentType === 'ton') {
+            if (this.tournamentType === 'stars' || this.tournamentType === 'ton' || this.tournamentType === 'survival') {
                 const userId = parseInt(player.id);
                 if (!isNaN(userId)) {
                     RewardService.addSeasonXP(userId, Math.round(points)).catch(e =>
@@ -330,6 +362,12 @@ export class GameManager {
         } else {
             // Wrong answer — clear double points if active
             player.doublePoints = false;
+            // Survival Mode: One strike and you're out
+            if (this.tournamentType === 'survival') {
+                this.revealAnswer();
+                setTimeout(() => this.endGame(), 2000);
+                return;
+            }
         }
 
         this.io.to(this.roomId).emit('score_update', this.players);
@@ -376,6 +414,11 @@ export class GameManager {
     }
 
     private async endGame() {
+        if (this.timerInterval) {
+            clearInterval(this.timerInterval);
+            this.timerInterval = null;
+        }
+
         const winners = [...this.players].sort((a, b) => b.score - a.score);
 
         // Calculate rake and net prize pool
@@ -509,13 +552,68 @@ export class GameManager {
 
                 console.log(`Practice game over in ${this.roomId}. Winner: ${winners[0]?.username} (+5 Stars, +10 XP)`);
 
-                // Fix: Ensure we clean up the room!
                 if (this.onGameOver) this.onGameOver(this.roomId, []);
                 return;
             } catch (e) {
                 console.error('Failed to save practice results:', e);
             }
         }
+
+        // Survival Mode — Save High Score and award $CHZ
+        if (this.tournamentType === 'survival') {
+            try {
+                for (const player of winners) {
+                    const userId = parseInt(player.id);
+                    if (isNaN(userId)) continue;
+
+                    const streak = this.currentIndex; // Index is current question count reached
+                    const { data: user } = await supabase.from('users').select('survival_high_score, balance_chz').eq('telegram_id', userId).single();
+                    
+                    if (user) {
+                        const updates: any = {
+                            survival_last_played: new Date().toISOString()
+                        };
+                        if (streak > (user.survival_high_score || 0)) {
+                            updates.survival_high_score = streak;
+                        }
+
+                        // Rewards for Survival
+                        let chzReward = 0;
+                        if (streak >= 25) chzReward = 5; // Legendary Airdrop
+                        else if (streak >= 15) chzReward = 2;
+                        else if (streak >= 10) chzReward = 1;
+
+                        if (chzReward > 0) {
+                            updates.balance_chz = (user.balance_chz || 0) + chzReward;
+                            await supabase.from('transactions').insert({
+                                user_id: userId,
+                                type: 'SPORTFI_REWARD',
+                                amount: chzReward,
+                                currency: 'CHZ',
+                                metadata: { reason: 'Survival Streak reached', streak },
+                                status: 'COMPLETED'
+                            });
+                        }
+
+                        await supabase.from('users').update(updates).eq('telegram_id', userId);
+                        
+                        // Emit results
+                        this.io.to(this.roomId).emit('game_over', {
+                            winners,
+                            streak,
+                            prizes: { survival: chzReward },
+                            currency: 'CHZ',
+                            xpEarned: Math.round(player.score / 10)
+                        });
+                    }
+                }
+                if (this.onGameOver) this.onGameOver(this.roomId, []);
+                return;
+            } catch (e) {
+                console.error('[SURVIVAL] Failed to save results:', e);
+            }
+        }
+
         try {
 
 
@@ -600,6 +698,13 @@ export class GameManager {
                             metadata: { tournamentId: tournamentRecord.id },
                             status: 'COMPLETED'
                         });
+                    }
+
+                    // 3. SportFi / Chiliz Rewards ($CHZ)
+                    if (this.chilizRoom && prize > 0) {
+                        const { ChilizService } = await import('./ChilizService');
+                        const chzAmount = Math.floor(prize * 0.1); // Mock: 10% of Star pool converted to $CHZ bonus
+                        await ChilizService.distributeCHZReward(userId, chzAmount, `SportFi Winner - Room ${this.roomId}`);
                     }
 
                     await supabase.from('users').update(updates).eq('telegram_id', userId);
@@ -696,5 +801,47 @@ export class GameManager {
 
         // Notify index.ts to clean up this room
         if (this.onGameOver) this.onGameOver(this.roomId, winners);
+
+        // SportFi Prize Distribution
+        if (this.sportfiTrack === 'PRO') {
+            RewardService.distributeSportFiPrizes(this.roomId, winners).then(res => {
+                if (res.success) {
+                    console.log(`[SportFi] Prizes successfully distributed for ${this.roomId}`);
+                }
+            }).catch(e => console.error(`[SportFi] Distribution error:`, e));
+        }
+    }
+
+    private async initializeStakes() {
+        if (this.sportfiTrack === 'NONE') return;
+
+        try {
+            const { error } = await supabase.from('match_stakes').upsert({
+                game_id: this.roomId,
+                track: this.sportfiTrack,
+                entry_fee: this.entryFee,
+                currency: this.currency,
+                total_pool: 0,
+                commission_rate: 0.10 // Default
+            });
+            if (error) throw error;
+            console.log(`[SportFi] Initialized stakes for room ${this.roomId} (${this.sportfiTrack})`);
+        } catch (e) {
+            console.error(`[SportFi] Stake initialization failed for ${this.roomId}:`, e);
+        }
+    }
+
+    private async updatePool(amount: number) {
+        try {
+            // Use SQL raw or rpc to atomically increment if possible, but for mvp we select/update
+            const { data: stake } = await supabase.from('match_stakes').select('total_pool').eq('game_id', this.roomId).single();
+            if (stake) {
+                const newPool = parseFloat(stake.total_pool) + amount;
+                await supabase.from('match_stakes').update({ total_pool: newPool }).eq('game_id', this.roomId);
+                console.log(`[SportFi] Room ${this.roomId} pool updated: ${newPool} ${this.currency}`);
+            }
+        } catch (e) {
+            console.error(`[SportFi] Pool update error for ${this.roomId}:`, e);
+        }
     }
 }
