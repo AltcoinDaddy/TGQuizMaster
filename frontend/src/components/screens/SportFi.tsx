@@ -73,6 +73,22 @@ export const SportFi: React.FC = () => {
         }
     };
 
+    const handleUnlinkChiliz = async () => {
+        if (!window.confirm('Are you sure you want to unlink your Chiliz wallet?')) return;
+        
+        setLoading(true);
+        const { socket } = import.meta.env.DEV ? (window as any) : { socket: null };
+        const realSocket = socket || (window as any).socket;
+
+        if (realSocket) {
+            realSocket.emit('update_chiliz_wallet', { 
+                telegramId: user.telegramId,
+                username: user.username,
+                chilizAddress: null 
+            });
+        }
+    };
+
     return (
         <MainLayout>
             <div className="p-6 pt-4 pb-32">
@@ -85,8 +101,15 @@ export const SportFi: React.FC = () => {
                     {user.chilizWalletConnected ? (
                         <div className="flex flex-col items-end">
                             <span className="text-[8px] font-black text-primary uppercase tracking-widest mb-1 italic">Chiliz Elite</span>
-                            <div className="px-3 py-1.5 rounded-xl bg-primary/10 border border-primary/20 text-primary text-[10px] font-black italic">
+                            <div className="px-3 py-1.5 rounded-xl bg-primary/10 border border-primary/20 text-primary text-[10px] font-black italic flex items-center gap-2">
                                 {user.chilizWalletAddress?.slice(0, 6)}...{user.chilizWalletAddress?.slice(-4)}
+                                <button 
+                                    onClick={handleUnlinkChiliz}
+                                    className="ml-1 p-1 text-white/30 hover:text-red-400 transition-colors"
+                                    title="Unlink Wallet"
+                                >
+                                    <Zap size={10} className="rotate-180" />
+                                </button>
                             </div>
                         </div>
                     ) : (
