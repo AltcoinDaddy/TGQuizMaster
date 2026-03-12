@@ -453,7 +453,13 @@ io.on('connection', (socket) => {
                     effectiveCurrency = 'CHZ';
                     // Verify Fan Token hold for Social Track
                     const { ChilizService } = await import('./utils/ChilizService');
-                    const hasToken = await ChilizService.verifyFanTokenHold(userId, { tokenSymbol: 'BAR', minAmount: 1 }); // Mock check for BAR
+                    const { CHILIZ_CONFIG, getFanTokenBySymbol } = await import('./config/ChilizConfig');
+                    const barToken = getFanTokenBySymbol('BAR');
+                    const hasToken = await ChilizService.verifyFanTokenHold(userId, { 
+                        tokenSymbol: 'BAR', 
+                        minAmount: 1,
+                        contractAddress: barToken?.address
+                    }); 
                     if (!hasToken) {
                         socket.emit('error', { message: `Social Arena requires holding 1 $BAR Fan Token. Bridge your wallet to unlock!` });
                         return;
@@ -933,13 +939,6 @@ io.on('connection', (socket) => {
             console.error('[SYNC] Failed to fetch referral earnings:', e);
         }
 
-        // Map referrals
-        const recentReferrals = (referrals || []).map(ref => ({
-            username: ref.username,
-            date: ref.created_at,
-            earned: "+50 Stars"
-        }));
-
         try {
             // Fetch Recent Transactions (all types)
             const { data: txs } = await supabase
@@ -955,6 +954,30 @@ io.on('connection', (socket) => {
             console.error('[SYNC] Failed to fetch transactions:', e);
         }
 
+        // Map referrals
+        const recentReferrals = (referrals || []).map(ref => ({
+            username: ref.username,
+            date: ref.created_at,
+            earned: "+50 Stars"
+        }));
+
+        // ─── CHILIZ ON-CHAIN SYNC ─────────────────────────────────────
+        let onChainCHZBalance = 0;
+        let holdsFanToken = false;
+
+        if (user.chiliz_wallet_address) {
+            try {
+                // Fetch real-time on-chain data
+                const { chz, anyFanToken } = await ChilizService.getUserOnChainData(user.chiliz_wallet_address);
+                onChainCHZBalance = chz;
+                holdsFanToken = anyFanToken;
+                
+                console.log(`[SYNC-CHILIZ] User ${userId} (${user.chiliz_wallet_address}): ${onChainCHZBalance} $CHZ, Holds Fan Token: ${holdsFanToken}`);
+            } catch (e) {
+                console.error(`[SYNC-CHILIZ] Failed to fetch on-chain balances for ${userId}:`, e);
+            }
+        }
+
         socket.emit('profile_synced', {
             stars: user.balance_stars,
             ton: cachedTonBalance, // Instant return
@@ -963,6 +986,8 @@ io.on('connection', (socket) => {
             totalGames: user.stats_total_games || 0,
             balanceQP: user.balance_qp || 0,
             balanceCHZ: user.balance_chz || 0,
+            onChainCHZBalance,
+            onChainFanTokenBalance: holdsFanToken ? 1 : 0,
             walletConnected: !!user.wallet_address,
             walletAddress: user.wallet_address,
             chilizWalletConnected: !!user.chiliz_wallet_address,

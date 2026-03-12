@@ -15,7 +15,14 @@ export const SportFi: React.FC = () => {
 
     // Filter $CHZ specific rewards for the recent list
     const chzRewards = user.transactions?.filter(t => t.currency === 'CHZ') || [];
-    const totalCHZEarned = user.balanceCHZ || chzRewards.reduce((sum, t) => sum + (t.amount || 0), 0);
+    const internalCHZBalance = user.balanceCHZ || 0;
+    const onChainCHZBalance = user.onChainCHZBalance || 0;
+    const totalCHZ = internalCHZBalance + onChainCHZBalance;
+
+    const holdsFanToken = (user.onChainFanTokenBalance || 0) > 0;
+    const canEnterFanClash = holdsFanToken;
+    const canEnterGauntlet = totalCHZ >= 5;
+    const canEnterPro = totalCHZ >= 10;
 
     React.useEffect(() => {
         const { socket } = import.meta.env.DEV ? (window as any) : { socket: null };
@@ -166,9 +173,14 @@ export const SportFi: React.FC = () => {
                             <GlassCard className="p-5 mb-8 border-primary/20 bg-gradient-to-br from-primary/10 to-transparent">
                                 <div className="flex justify-between items-start mb-4">
                                     <div className="flex flex-col">
-                                        <span className="text-[10px] font-black uppercase tracking-widest opacity-60 italic mb-1">My SportFi Wallet</span>
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <span className="text-[10px] font-black uppercase tracking-widest opacity-60 italic">My SportFi Wallet</span>
+                                            {holdsFanToken && (
+                                                <span className="text-[8px] font-black bg-primary/20 text-primary px-2 py-0.5 rounded-full border border-primary/30 uppercase italic">Verified Fan Holder</span>
+                                            )}
+                                        </div>
                                         <h3 className="text-3xl font-black italic tracking-tighter text-white">
-                                            {totalCHZEarned.toLocaleString()} <span className="text-primary text-xl">$CHZ</span>
+                                            {(user.onChainCHZBalance || 0).toLocaleString()} <span className="text-primary text-xl">$CHZ</span>
                                         </h3>
                                     </div>
                                     <div className="flex gap-2">
@@ -196,9 +208,27 @@ export const SportFi: React.FC = () => {
  
                             {/* The Gauntlet (Survival) Entry Card - SportFi Exclusive */}
                             <div 
-                                onClick={() => navigate('/gauntlet')}
-                                className="mb-8 bg-gradient-to-br from-primary/10 via-black/40 to-black/60 border border-primary/20 rounded-3xl p-6 relative overflow-hidden group cursor-pointer shadow-[0_0_20px_rgba(13,242,89,0.1)] active:scale-95 transition-all"
+                                onClick={() => {
+                                    if (canEnterGauntlet) {
+                                        navigate('/gauntlet');
+                                    } else {
+                                        window.open('https://chiliz.com/exchange', '_blank');
+                                    }
+                                }}
+                                className={`mb-8 bg-gradient-to-br from-primary/10 via-black/40 to-black/60 border rounded-3xl p-6 relative overflow-hidden group cursor-pointer transition-all active:scale-95 ${
+                                    canEnterGauntlet 
+                                    ? 'border-primary/20 shadow-[0_0_20px_rgba(13,242,89,0.1)]' 
+                                    : 'border-white/5 opacity-80 grayscale-[0.5]'
+                                }`}
                             >
+                                {!canEnterGauntlet && (
+                                    <div className="absolute inset-0 bg-background-dark/40 backdrop-blur-[1px] flex items-center justify-end pr-10 z-20">
+                                        <div className="flex flex-col items-end">
+                                            <span className="bg-red-500 text-white text-[8px] font-black px-2 py-1 rounded italic mb-1">INSUFFICIENT $CHZ</span>
+                                            <span className="text-[10px] text-white/40 font-bold uppercase tracking-widest">Needs 5 $CHZ</span>
+                                        </div>
+                                    </div>
+                                )}
                                 <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 blur-3xl group-hover:bg-primary/10 transition-all duration-500" />
                                 <div className="flex items-center gap-5 relative z-10">
                                     <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center text-primary border border-primary/20 shadow-[0_0_15px_rgba(13,242,89,0.2)] group-hover:scale-110 transition-transform">
@@ -214,7 +244,11 @@ export const SportFi: React.FC = () => {
                                         </p>
                                     </div>
                                     <div className="flex flex-col items-center">
-                                        <ArrowRight size={24} className="text-primary opacity-40 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
+                                        {canEnterGauntlet ? (
+                                            <ArrowRight size={24} className="text-primary opacity-40 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
+                                        ) : (
+                                            <Zap size={24} className="text-white/20" />
+                                        )}
                                     </div>
                                 </div>
                             </div>
@@ -247,9 +281,27 @@ export const SportFi: React.FC = () => {
                                 /* SOCIAL TRACK CARDS */
                                 <div className="space-y-4">
                                     <GlassCard
-                                        onClick={() => navigate('/quiz', { state: { roomType: 'sportfi', track: 'SOCIAL', category: 'Sports', entryFee: 'Free' } })}
-                                        className="group p-6 relative overflow-hidden active:scale-[0.98] transition-all cursor-pointer border-primary/20 bonus-glow h-56 flex flex-col justify-between"
+                                        onClick={() => {
+                                            if (canEnterFanClash) {
+                                                navigate('/quiz', { state: { roomType: 'sportfi', track: 'SOCIAL', category: 'Sports', entryFee: 'Free' } });
+                                            } else {
+                                                window.open('https://www.socios.com/', '_blank');
+                                            }
+                                        }}
+                                        className={`group p-6 relative overflow-hidden active:scale-[0.98] transition-all cursor-pointer h-56 flex flex-col justify-between ${
+                                            canEnterFanClash ? 'border-primary/20 bonus-glow' : 'border-white/5 grayscale-[0.8] opacity-60'
+                                        }`}
                                     >
+                                        {!canEnterFanClash && (
+                                            <div className="absolute inset-0 bg-background-dark/60 backdrop-blur-[2px] flex flex-col items-center justify-center z-20 text-center px-4">
+                                                <Trophy size={32} className="text-white/20 mb-3" />
+                                                <span className="bg-white/10 text-white text-[8px] font-black px-2 py-1 rounded italic mb-2 tracking-[0.2em]">LOCKED</span>
+                                                <p className="text-[10px] font-black text-white/60 uppercase tracking-tighter leading-tight">
+                                                    Hold 1+ Fan Token to unlock<br/>this daily arena.
+                                                </p>
+                                                <span className="mt-4 text-[9px] font-black text-primary underline underline-offset-4 tracking-[0.1em]">GET TOKENS NOW</span>
+                                            </div>
+                                        )}
                                         <div className="absolute top-0 right-0 bg-primary px-4 py-1.5 rounded-bl-2xl shadow-lg">
                                             <span className="text-[8px] font-black uppercase tracking-widest text-background-dark">FAN EXCLUSIVE</span>
                                         </div>
@@ -285,9 +337,27 @@ export const SportFi: React.FC = () => {
                                 /* PRO TRACK CARDS */
                                 <div className="space-y-4">
                                     <GlassCard
-                                        onClick={() => navigate('/quiz', { state: { roomType: 'sportfi', track: 'PRO', category: 'Sports', entryFee: '10 $CHZ' } })}
-                                        className="group p-6 relative overflow-hidden active:scale-[0.98] transition-all cursor-pointer border-accent-gold/20 h-56 flex flex-col justify-between shadow-[0_0_30px_rgba(255,215,0,0.05)]"
+                                        onClick={() => {
+                                            if (canEnterPro) {
+                                                navigate('/quiz', { state: { roomType: 'sportfi', track: 'PRO', category: 'Sports', entryFee: '10 $CHZ' } });
+                                            } else {
+                                                window.open('https://chiliz.com/exchange', '_blank');
+                                            }
+                                        }}
+                                        className={`group p-6 relative overflow-hidden active:scale-[0.98] transition-all cursor-pointer h-56 flex flex-col justify-between shadow-[0_0_30px_rgba(255,215,0,0.05)] ${
+                                            canEnterPro ? 'border-accent-gold/20' : 'border-white/5 grayscale opacity-60'
+                                        }`}
                                     >
+                                        {!canEnterPro && (
+                                            <div className="absolute inset-0 bg-background-dark/60 backdrop-blur-[2px] flex flex-col items-center justify-center z-20 text-center px-4">
+                                                <Zap size={32} className="text-white/20 mb-3" />
+                                                <span className="bg-red-500/20 text-red-500 text-[8px] font-black px-2 py-1 rounded italic mb-2 tracking-[0.2em]">INSUFFICIENT FUNDS</span>
+                                                <p className="text-[10px] font-black text-white/60 uppercase tracking-tighter leading-tight">
+                                                    Needs 10 $CHZ for Pro entry.<br/>(Total: {totalCHZ} $CHZ)
+                                                </p>
+                                                <span className="mt-4 text-[9px] font-black text-accent-gold underline underline-offset-4 tracking-[0.1em]">TOP UP $CHZ</span>
+                                            </div>
+                                        )}
                                         <div className="absolute top-0 right-0 bg-accent-gold px-4 py-1.5 rounded-bl-2xl shadow-lg">
                                             <span className="text-[8px] font-black uppercase tracking-widest text-background-dark">STAKES MATCH</span>
                                         </div>
@@ -356,21 +426,21 @@ export const SportFi: React.FC = () => {
                             <div className="bg-white/5 border border-white/5 p-5 rounded-3xl">
                                 <div className="flex justify-between items-center mb-4">
                                     <h3 className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-1">Fan Utility & Rewards</h3>
-                                    {totalCHZEarned > 0 && (
+                                    {totalCHZ > 0 && (
                                         <span className="text-[10px] font-black text-primary italic bg-primary/10 px-2 py-0.5 rounded-lg border border-primary/20">
-                                            {totalCHZEarned} $CHZ Earned
+                                            {totalCHZ} $CHZ Total Balance
                                         </span>
                                     )}
                                 </div>
 
                                 <div className="grid grid-cols-2 gap-3 mb-4">
                                     <div className="bg-background-dark/50 p-3 rounded-2xl border border-white/5">
-                                        <p className="text-[8px] font-black uppercase tracking-widest opacity-40 mb-1">Fan Token Hold</p>
-                                        <p className="text-xs font-black italic text-primary">Free Entry</p>
+                                        <p className="text-[8px] font-black uppercase tracking-widest opacity-40 mb-1">Game Winnings</p>
+                                        <p className="text-xs font-black italic text-accent-gold">{user.balanceCHZ || 0} $CHZ</p>
                                     </div>
                                     <div className="bg-background-dark/50 p-3 rounded-2xl border border-white/5">
                                         <p className="text-[8px] font-black uppercase tracking-widest opacity-40 mb-1">$CHZ Holders</p>
-                                        <p className="text-xs font-black italic text-accent-gold">1.2x Multiplier</p>
+                                        <p className="text-xs font-black italic text-primary">1.2x Multiplier</p>
                                     </div>
                                 </div>
 

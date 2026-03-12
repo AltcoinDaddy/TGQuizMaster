@@ -701,11 +701,9 @@ export class GameManager {
                     }
 
                     // 3. SportFi / Chiliz Rewards ($CHZ)
-                    if (this.chilizRoom && prize > 0) {
-                        const { ChilizService } = await import('./ChilizService');
-                        const chzAmount = Math.floor(prize * 0.1); // Mock: 10% of Star pool converted to $CHZ bonus
-                        await ChilizService.distributeCHZReward(userId, chzAmount, `SportFi Winner - Room ${this.roomId}`);
-                    }
+                    // Note: In PRO track, prizes are distributed via RewardService.distributeSportFiPrizes 
+                    // which uses the actual match_stakes pool.
+                    // We remove this mock logic to prevent double distribution and ensure real-time accuracy.
 
                     await supabase.from('users').update(updates).eq('telegram_id', userId);
 

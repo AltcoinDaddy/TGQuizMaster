@@ -350,16 +350,21 @@ export class RewardService {
                 const userId = parseInt(winner.id);
                 
                 // Tiered Commission Check: Holding Fan Tokens reduces commission
-                const { ChilizService } = await import('./ChilizService');
-                const isHolder = await ChilizService.verifyFanTokenHold(userId, { tokenSymbol: 'BAR', minAmount: 1 }); // BAR as placeholder
-                
-                // If holder, give them a 5% bonus (effectively reducing their commission share)
-                const holderBonus = isHolder ? 1.10 : 1.0; // 10% bonus on their share
-                const adjustedPrize = prizeAmount * holderBonus;
-
                 // Fetch user to update balance (Internal Credit)
-                const { data: user } = await supabase.from('users').select('balance_chz').eq('telegram_id', userId).single();
+                const { data: user } = await supabase.from('users').select('balance_chz, chiliz_wallet_address').eq('telegram_id', userId).single();
+                
                 if (user) {
+                    const { ChilizService } = await import('./ChilizService');
+                    const { CHILIZ_CONFIG } = await import('../config/ChilizConfig');
+                    
+                    // Check for ANY configured Fan Token hold for a bonus
+                    const { anyFanToken } = await ChilizService.getUserOnChainData(user.chiliz_wallet_address || '');
+                    const isHolder = anyFanToken;
+                    
+                    // If holder, give them a 5% bonus (effectively reducing their commission share)
+                    const holderBonus = isHolder ? 1.05 : 1.0; 
+                    const adjustedPrize = prizeAmount * holderBonus;
+
                     await supabase.from('users').update({
                         balance_chz: (user.balance_chz || 0) + adjustedPrize
                     }).eq('telegram_id', userId);

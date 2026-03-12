@@ -1,13 +1,10 @@
 import { ethers } from 'ethers';
 import { supabase } from '../config/supabase';
+import { CHILIZ_CONFIG, getFanTokenBySymbol } from '../config/ChilizConfig';
 
 // ─── Chiliz Chain Configuration ───────────────────────────────────────
-const CHILIZ_MAINNET_RPC = process.env.CHILIZ_RPC_URL || 'https://rpc.chiliz.com';
-const CHILIZ_TESTNET_RPC = 'https://spicy-rpc.chiliz.com';
-
-// Use testnet by default during development, mainnet in production
-const RPC_URL = process.env.NODE_ENV === 'production' ? CHILIZ_MAINNET_RPC : CHILIZ_TESTNET_RPC;
-const CHAIN_ID = process.env.NODE_ENV === 'production' ? 88888 : 88882;
+const RPC_URL = CHILIZ_CONFIG.RPC_URL;
+const CHAIN_ID = CHILIZ_CONFIG.CHAIN_ID;
 
 // Treasury wallet for distributing $CHZ rewards
 const TREASURY_PRIVATE_KEY = process.env.CHILIZ_TREASURY_PRIVATE_KEY || '';
@@ -90,8 +87,34 @@ export class ChilizService {
 
         } catch (error) {
             console.error('[CHILIZ] Verification error:', error);
-            // On RPC failure, fall back to DB check (graceful degradation)
-            return this.fallbackVerification(telegramId);
+            // On RPC failure, we no longer fall back to DB check to ensure real-time accuracy
+            return false;
+        }
+    }
+
+    /**
+     * Fetches balances for all configured Fan Tokens and native $CHZ.
+     */
+    static async getUserOnChainData(walletAddress: string): Promise<{ 
+        chz: number; 
+        fanTokens: Record<string, number>;
+        anyFanToken: boolean;
+    }> {
+        try {
+            const chz = await this.getCHZBalance(walletAddress);
+            const fanTokens: Record<string, number> = {};
+            let anyFanToken = false;
+
+            for (const token of CHILIZ_CONFIG.FAN_TOKENS) {
+                const balance = await this.getTokenBalance(walletAddress, token.address);
+                fanTokens[token.symbol] = balance;
+                if (balance > 0) anyFanToken = true;
+            }
+
+            return { chz, fanTokens, anyFanToken };
+        } catch (error) {
+            console.error(`[CHILIZ] Failed to get full on-chain data for ${walletAddress}:`, error);
+            return { chz: 0, fanTokens: {}, anyFanToken: false };
         }
     }
 
@@ -198,18 +221,10 @@ export class ChilizService {
     }
 
     /**
-     * Fallback: If RPC is down, check if user has a Chiliz wallet linked at all.
-     * This is a graceful degradation — better to let users play than block everyone.
+     * Internal balance sync — not used anymore for gating, but kept for DB consistency if needed.
      */
-    private static async fallbackVerification(telegramId: number): Promise<boolean> {
-        console.warn(`[CHILIZ] Using fallback verification for ${telegramId} (RPC may be down)`);
-        const { data: user } = await supabase
-            .from('users')
-            .select('chiliz_wallet_address')
-            .eq('telegram_id', telegramId)
-            .single();
-
-        return !!user?.chiliz_wallet_address;
+    static async syncInternalBalances(telegramId: number) {
+        // ... implementation could go here to update users.balance_chz from on-chain if desired
     }
 
     /**

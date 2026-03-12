@@ -13,6 +13,8 @@ interface UserState {
     tonBalance: number;
     balanceQP: number;
     balanceCHZ: number;
+    onChainCHZBalance: number;
+    onChainFanTokenBalance: number;
     balanceShards: number;
     inventory: string[];
     inventoryPowerups: Record<string, number>;
@@ -63,6 +65,8 @@ export const useAppStore = create<AppStore>((set, get) => ({
         tonBalance: 0,
         balanceQP: 0,
         balanceCHZ: 0,
+        onChainCHZBalance: 0,
+        onChainFanTokenBalance: 0,
         balanceShards: 0,
         inventory: [],
         inventoryPowerups: {},
@@ -105,6 +109,8 @@ export const useAppStore = create<AppStore>((set, get) => ({
                 totalGames: data.totalGames ?? state.user.totalGames,
                 balanceQP: data.balanceQP ?? state.user.balanceQP,
                 balanceCHZ: data.balanceCHZ ?? state.user.balanceCHZ,
+                onChainCHZBalance: data.onChainCHZBalance ?? state.user.onChainCHZBalance,
+                onChainFanTokenBalance: data.onChainFanTokenBalance ?? state.user.onChainFanTokenBalance,
                 balanceShards: data.balanceShards ?? state.user.balanceShards,
                 inventoryPowerups: data.inventoryPowerups ?? state.user.inventoryPowerups,
                 unlockedAvatars: data.unlockedAvatars ?? state.user.unlockedAvatars,
