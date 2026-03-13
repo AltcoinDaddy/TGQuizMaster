@@ -1,8 +1,10 @@
+import dotenv from 'dotenv';
+dotenv.config();
+
 import express from 'express';
 import http from 'http';
 import { Server } from 'socket.io';
 import cors from 'cors';
-import dotenv from 'dotenv';
 import crypto from 'crypto';
 import dns from 'dns';
 
@@ -22,7 +24,10 @@ import { starsService, notificationService } from './bot';
 import { ChilizService } from './utils/ChilizService';
 import { RewardService } from './utils/RewardService';
 
-dotenv.config();
+// ─── Environment Verification ──────────────────────────────────────────
+const IS_PROD = process.env.NODE_ENV === 'production';
+console.log(`[INIT] Running in ${IS_PROD ? 'PRODUCTION' : 'DEVELOPMENT'} mode`);
+console.log(`[CHILIZ-INIT] Network: ${IS_PROD ? 'Mainnet (88888)' : 'Spicy Testnet (88882)'}`);
 
 const app = express();
 app.set('trust proxy', 1); // Trust first proxy (e.g. Vercel, Nginx)
