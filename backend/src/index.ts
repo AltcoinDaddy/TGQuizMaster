@@ -299,12 +299,17 @@ async function syncUser(socket: any, telegramId: string, username: string) {
         let holdsFanToken = false;
         if (user.chiliz_wallet_address) {
             try {
+                const isProd = process.env.NODE_ENV === 'production';
+                console.log(`[SYNC-CHILIZ] Fetching for ${userId} (${user.chiliz_wallet_address}) in ${isProd ? 'PROD' : 'DEV'} mode...`);
                 const { chz, anyFanToken } = await ChilizService.getUserOnChainData(user.chiliz_wallet_address);
                 onChainCHZBalance = chz;
                 holdsFanToken = anyFanToken;
+                console.log(`[SYNC-CHILIZ] Fetched: ${chz} CHZ, Fan: ${anyFanToken}`);
             } catch (e) {
                 console.error(`[SYNC-CHILIZ] Failed for ${userId}:`, e);
             }
+        } else {
+            console.log(`[SYNC-CHILIZ] No wallet for user ${userId}`);
         }
 
         // 5. Fetch Recent Transactions & Referrals
