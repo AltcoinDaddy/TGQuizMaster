@@ -122,10 +122,12 @@ export class ChilizService {
      * Get native $CHZ balance of an address on Chiliz Chain.
      */
     static async getCHZBalance(address: string): Promise<number> {
+        if (!address || !ethers.isAddress(address)) return 0;
         try {
             const p = getProvider();
-            const normalizedAddress = address.toLowerCase();
-            const balance = await p.getBalance(normalizedAddress);
+            // Use getAddress to ensure proper checksum and avoid ENS resolution attempts
+            const target = ethers.getAddress(address);
+            const balance = await p.getBalance(target);
             return parseFloat(ethers.formatEther(balance));
         } catch (error) {
             console.error(`[CHILIZ] Failed to get CHZ balance for ${address}:`, error);
@@ -138,19 +140,35 @@ export class ChilizService {
      * Fan Tokens on Chiliz use 0 decimals.
      */
     static async getTokenBalance(walletAddress: string, contractAddress: string): Promise<number> {
+        if (!walletAddress || !contractAddress || !ethers.isAddress(walletAddress) || !ethers.isAddress(contractAddress)) {
+            return 0;
+        }
+
         try {
             const p = getProvider();
-            // Normalize to lowercase to avoid strict EIP-55 checksum validation in ethers
-            const normalizedWallet = walletAddress.toLowerCase();
-            const normalizedContract = contractAddress.toLowerCase();
+            const targetWallet = ethers.getAddress(walletAddress);
+            const targetContract = ethers.getAddress(contractAddress);
+
+            // Resiliency: Check if code exists at this address to avoid BAD_DATA (0x result)
+            const code = await p.getCode(targetContract);
+            if (code === '0x' || code === '0x0') {
+                console.warn(`[CHILIZ] No contract code at ${targetContract} on current network.`);
+                return 0;
+            }
             
-            const contract = new ethers.Contract(normalizedContract, ERC20_ABI, p);
-            const balance = await contract.balanceOf(normalizedWallet);
+            const contract = new ethers.Contract(targetContract, ERC20_ABI, p);
+            const balance = await contract.balanceOf(targetWallet);
+            
             // CAP-20 Fan Tokens have 0 decimals, so balance is the raw integer
             const decimals = await contract.decimals().catch(() => 0);
             return Number(ethers.formatUnits(balance, decimals));
-        } catch (error) {
-            console.error(`[CHILIZ] Failed to get token balance:`, error);
+        } catch (error: any) {
+            // Silence common expected errors like "could not decode result data" which happen on certain RPC nodes
+            if (error.code === 'BAD_DATA') {
+                console.warn(`[CHILIZ] Bad data returned from token contract at ${contractAddress}. Likely not a valid token on this chain.`);
+            } else {
+                console.error(`[CHILIZ] Failed to get token balance:`, error.message);
+            }
             return 0;
         }
     }
