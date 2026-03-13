@@ -1,5 +1,5 @@
 import dotenv from 'dotenv';
-dotenv.config();
+dotenv.config({ override: true });
 
 import express from 'express';
 import http from 'http';
@@ -903,13 +903,17 @@ io.on('connection', (socket) => {
 
     socket.on('update_wallet', async (data) => {
         const { telegramId, walletAddress } = data;
+        const userId = parseInt(telegramId);
         console.log(`[WALLET] Received update_wallet for ${telegramId}: ${walletAddress}`);
 
         try {
+            // Clear in-flight sync to ensure next sync fetches fresh data
+            profileSyncInFlight.delete(userId);
+
             await supabase
                 .from('users')
                 .update({ wallet_address: walletAddress })
-                .eq('telegram_id', parseInt(telegramId));
+                .eq('telegram_id', userId);
 
             await syncUser(socket, telegramId, '');
         } catch (e) {
@@ -929,11 +933,14 @@ io.on('connection', (socket) => {
         }
 
         try {
+            // Clear in-flight sync to ensure next sync fetches fresh data
+            profileSyncInFlight.delete(userId);
+
             await supabase
                 .from('users')
                 .update({ chiliz_wallet_address: chilizAddress || null })
                 .eq('telegram_id', userId);
-
+            
             // Legacy emission for any component listening specifically to this
             socket.emit('chiliz_wallet_updated', {
                 chilizWalletConnected: !!chilizAddress,

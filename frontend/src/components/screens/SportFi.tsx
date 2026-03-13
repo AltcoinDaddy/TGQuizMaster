@@ -101,14 +101,16 @@ export const SportFi: React.FC = () => {
                     {user.chilizWalletConnected ? (
                         <div className="flex flex-col items-end">
                             <span className="text-[8px] font-black text-primary uppercase tracking-widest mb-1 italic">Chiliz Elite</span>
-                            <div className="px-3 py-1.5 rounded-xl bg-primary/10 border border-primary/20 text-primary text-[10px] font-black italic flex items-center gap-2">
-                                {user.chilizWalletAddress?.slice(0, 6)}...{user.chilizWalletAddress?.slice(-4)}
+                            <div className="flex gap-2">
+                                <div className="px-3 py-1.5 rounded-xl bg-primary/10 border border-primary/20 text-primary text-[10px] font-black italic">
+                                    {user.chilizWalletAddress?.slice(0, 6)}...{user.chilizWalletAddress?.slice(-4)}
+                                </div>
                                 <button 
                                     onClick={handleUnlinkChiliz}
-                                    className="ml-1 p-1 text-white/30 hover:text-red-400 transition-colors"
+                                    className="px-3 py-1.5 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 text-[8px] font-black uppercase italic hover:bg-red-500/20 transition-all active:scale-90"
                                     title="Unlink Wallet"
                                 >
-                                    <Zap size={10} className="rotate-180" />
+                                    Unlink
                                 </button>
                             </div>
                         </div>
