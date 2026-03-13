@@ -18,6 +18,7 @@ const ERC20_ABI = [
 
 // ─── Provider & Wallet Setup ──────────────────────────────────────────
 let provider: ethers.JsonRpcProvider;
+let lastChainId: number | null = null;
 let treasuryWallet: ethers.Wallet | null = null;
 
 function getProvider(): ethers.JsonRpcProvider {
@@ -25,12 +26,14 @@ function getProvider(): ethers.JsonRpcProvider {
     const currentChain = CHILIZ_CONFIG.CHAIN_ID;
 
     // Resiliency: If config changed or provider not init, re-init
-    if (!provider || (provider as any)._network?.chainId !== BigInt(currentChain)) {
+    if (!provider || lastChainId !== currentChain) {
         provider = new ethers.JsonRpcProvider(currentRpc, {
             name: currentChain === 88888 ? 'chiliz' : 'chiliz-spicy',
             chainId: currentChain
-        });
-        console.log(`[CHILIZ] Connected to ${currentChain === 88888 ? 'Mainnet' : 'Spicy Testnet'} via ${currentRpc}`);
+        }, { staticNetwork: true });
+        
+        lastChainId = currentChain;
+        console.log(`[CHILIZ] Connected to ${currentChain === 88888 ? 'Mainnet' : 'Spicy Testnet'} via ${currentRpc} (Static Network)`);
     }
     return provider;
 }
