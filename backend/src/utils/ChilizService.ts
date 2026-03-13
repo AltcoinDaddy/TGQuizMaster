@@ -3,8 +3,8 @@ import { supabase } from '../config/supabase';
 import { CHILIZ_CONFIG, getFanTokenBySymbol } from '../config/ChilizConfig';
 
 // ─── Chiliz Chain Configuration ───────────────────────────────────────
-const RPC_URL = CHILIZ_CONFIG.RPC_URL;
-const CHAIN_ID = CHILIZ_CONFIG.CHAIN_ID;
+// ─── Chiliz Chain Configuration (Use dynamic config directly)
+// Remove static constants to avoid import-time evaluation issues
 
 // Treasury wallet for distributing $CHZ rewards
 const TREASURY_PRIVATE_KEY = process.env.CHILIZ_TREASURY_PRIVATE_KEY || '';
@@ -21,12 +21,16 @@ let provider: ethers.JsonRpcProvider;
 let treasuryWallet: ethers.Wallet | null = null;
 
 function getProvider(): ethers.JsonRpcProvider {
-    if (!provider) {
-        provider = new ethers.JsonRpcProvider(RPC_URL, {
-            name: CHAIN_ID === 88888 ? 'chiliz' : 'chiliz-spicy',
-            chainId: CHAIN_ID
+    const currentRpc = CHILIZ_CONFIG.RPC_URL;
+    const currentChain = CHILIZ_CONFIG.CHAIN_ID;
+
+    // Resiliency: If config changed or provider not init, re-init
+    if (!provider || (provider as any)._network?.chainId !== BigInt(currentChain)) {
+        provider = new ethers.JsonRpcProvider(currentRpc, {
+            name: currentChain === 88888 ? 'chiliz' : 'chiliz-spicy',
+            chainId: currentChain
         });
-        console.log(`[CHILIZ] Connected to ${CHAIN_ID === 88888 ? 'Mainnet' : 'Spicy Testnet'} via ${RPC_URL}`);
+        console.log(`[CHILIZ] Connected to ${currentChain === 88888 ? 'Mainnet' : 'Spicy Testnet'} via ${currentRpc}`);
     }
     return provider;
 }

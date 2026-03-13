@@ -11,35 +11,48 @@ export interface FanToken {
     address: string;
 }
 
+import dotenv from 'dotenv';
+dotenv.config({ override: true });
+
 const IS_PROD = process.env.NODE_ENV === 'production';
 
 export const CHILIZ_CONFIG = {
     // RPCs
-    RPC_URL: process.env.CHILIZ_RPC_URL || (IS_PROD ? 'https://rpc.chiliz.com' : 'https://spicy-rpc.chiliz.com'),
-    CHAIN_ID: IS_PROD ? 88888 : 88882,
+    get RPC_URL() {
+        return process.env.CHILIZ_RPC_URL || (process.env.NODE_ENV === 'production' ? 'https://rpc.chiliz.com' : 'https://spicy-rpc.chiliz.com');
+    },
+    get CHAIN_ID() {
+        return process.env.NODE_ENV === 'production' ? 88888 : 88882;
+    },
 
     // Configured Fan Tokens for gating and rewards
     FAN_TOKENS: [
         {
             symbol: 'BAR',
             name: 'FC Barcelona',
-            address: IS_PROD 
-                ? '0xec510260464ce0727df62a7923706063857b420c' // Example Mainnet BAR
-                : '0xde371c35e668600742f534484a96d34b3587071f' // Spicy BAR
+            get address() {
+                return process.env.NODE_ENV === 'production'
+                    ? '0xec510260464ce0727df62a7923706063857b420c' // Mainnet BAR
+                    : '0xde371c35e668600742f534484a96d34b3587071f'; // Spicy BAR
+            }
         },
         {
             symbol: 'PSG',
             name: 'Paris Saint-Germain',
-            address: IS_PROD 
-                ? '0xde371c35e668600742f534484a96d34b3587071f' // Replace with real
-                : '0xec510260464ce0727df62a7923706063857b420f' // Spicy PSG
+            get address() {
+                return process.env.NODE_ENV === 'production'
+                    ? '0xde371c35e668600742f534484a96d34b3587071f' // PSG mainnet address would go here
+                    : '0xec510260464ce0727df62a7923706063857b420f'; // Spicy PSG
+            }
         },
         {
             symbol: 'CITY',
             name: 'Manchester City',
-            address: IS_PROD
-                ? '0x53959da465f58e72a176988888882736c27582d' // Replace with real
-                : '0x53959da465f58e72a176988888882736c27582d' // Spicy CITY
+            get address() {
+                return process.env.NODE_ENV === 'production'
+                    ? '0x53959da465f58e72a17698888882736c27582d' 
+                    : '0x53959da465f58e72a176988888882736c27582d'; // Spicy CITY
+            }
         }
     ] as FanToken[],
 
