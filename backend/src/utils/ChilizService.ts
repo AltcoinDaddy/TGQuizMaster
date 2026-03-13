@@ -48,6 +48,20 @@ export interface TokenRequirement {
 
 // ─── Main Chiliz Service ──────────────────────────────────────────────
 export class ChilizService {
+    /**
+     * Lenient address normalization:
+     * - Fixes 0X prefix to lowercase 0x
+     * - Converts to lowercase for standard processing
+     */
+    private static normalizeAddress(address: string | null | undefined): string {
+        if (!address) return '';
+        let normalized = address.trim();
+        if (normalized.startsWith('0X')) {
+            normalized = '0x' + normalized.slice(2);
+        }
+        return normalized.toLowerCase();
+    }
+
 
     /**
      * Verifies if a user holds a specific Fan Token on the Chiliz Chain.
@@ -122,11 +136,12 @@ export class ChilizService {
      * Get native $CHZ balance of an address on Chiliz Chain.
      */
     static async getCHZBalance(address: string): Promise<number> {
-        if (!address || !ethers.isAddress(address)) return 0;
+        const normalizedInput = this.normalizeAddress(address);
+        if (!normalizedInput || !ethers.isAddress(normalizedInput)) return 0;
         try {
             const p = getProvider();
             // Use getAddress to ensure proper checksum and avoid ENS resolution attempts
-            const target = ethers.getAddress(address);
+            const target = ethers.getAddress(normalizedInput);
             const balance = await p.getBalance(target);
             return parseFloat(ethers.formatEther(balance));
         } catch (error) {
@@ -140,14 +155,17 @@ export class ChilizService {
      * Fan Tokens on Chiliz use 0 decimals.
      */
     static async getTokenBalance(walletAddress: string, contractAddress: string): Promise<number> {
-        if (!walletAddress || !contractAddress || !ethers.isAddress(walletAddress) || !ethers.isAddress(contractAddress)) {
+        const normalizedWallet = this.normalizeAddress(walletAddress);
+        const normalizedContract = this.normalizeAddress(contractAddress);
+
+        if (!normalizedWallet || !normalizedContract || !ethers.isAddress(normalizedWallet) || !ethers.isAddress(normalizedContract)) {
             return 0;
         }
 
         try {
             const p = getProvider();
-            const targetWallet = ethers.getAddress(walletAddress);
-            const targetContract = ethers.getAddress(contractAddress);
+            const targetWallet = ethers.getAddress(normalizedWallet);
+            const targetContract = ethers.getAddress(normalizedContract);
 
             // Resiliency: Check if code exists at this address to avoid BAD_DATA (0x result)
             const code = await p.getCode(targetContract);
@@ -210,7 +228,7 @@ export class ChilizService {
             const wallet = getTreasuryWallet();
             if (wallet && user?.chiliz_wallet_address) {
                 try {
-                    const normalizedDestination = user.chiliz_wallet_address.toLowerCase();
+                    const normalizedDestination = ethers.getAddress(this.normalizeAddress(user.chiliz_wallet_address));
                     const tx = await wallet.sendTransaction({
                         to: normalizedDestination,
                         value: ethers.parseEther(amount.toString())
@@ -255,6 +273,6 @@ export class ChilizService {
      * Validate that a string is a valid Chiliz/EVM wallet address.
      */
     static isValidAddress(address: string): boolean {
-        return ethers.isAddress(address);
+        return ethers.isAddress(this.normalizeAddress(address));
     }
 }
