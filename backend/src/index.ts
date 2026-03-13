@@ -941,6 +941,8 @@ io.on('connection', (socket) => {
                 .update({ chiliz_wallet_address: chilizAddress || null })
                 .eq('telegram_id', userId);
             
+            console.log(`[CHILIZ-WALLET] Successfully updated DB for ${telegramId} to ${chilizAddress || 'NULL'}`);
+
             // Legacy emission for any component listening specifically to this
             socket.emit('chiliz_wallet_updated', {
                 chilizWalletConnected: !!chilizAddress,
@@ -950,6 +952,7 @@ io.on('connection', (socket) => {
             await syncUser(socket, telegramId, username);
         } catch (e) {
             console.error('[CHILIZ-WALLET] Exception:', e);
+            socket.emit('error', { message: 'Failed to update Chiliz wallet.' });
         }
     });
 

@@ -32,7 +32,7 @@ export const CHILIZ_CONFIG = {
             name: 'FC Barcelona',
             get address() {
                 return process.env.NODE_ENV === 'production'
-                    ? '0xec510260464ce0727df62a7923706063857b420c' // Mainnet BAR
+                    ? '0xFD3C73b3B09D418841dd6Aff341b2d6e3abA433b' // Mainnet BAR
                     : '0xde371c35e668600742f534484a96d34b3587071f'; // Spicy BAR
             }
         },
@@ -41,7 +41,7 @@ export const CHILIZ_CONFIG = {
             name: 'Paris Saint-Germain',
             get address() {
                 return process.env.NODE_ENV === 'production'
-                    ? '0xde371c35e668600742f534484a96d34b3587071f' // PSG mainnet address would go here
+                    ? '0xc2661815C69c2B3924D3dd0C2C1358A1E38A3105' // Mainnet PSG
                     : '0xec510260464ce0727df62a7923706063857b420f'; // Spicy PSG
             }
         },
@@ -50,7 +50,7 @@ export const CHILIZ_CONFIG = {
             name: 'Manchester City',
             get address() {
                 return process.env.NODE_ENV === 'production'
-                    ? '0x53959da465f58e72a17698888882736c27582d' 
+                    ? '0x6401b29F40a02578Ae44241560625232A01B3F79' // Mainnet CITY
                     : '0x53959da465f58e72a176988888882736c27582d'; // Spicy CITY
             }
         }

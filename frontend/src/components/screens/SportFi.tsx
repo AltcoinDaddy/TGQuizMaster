@@ -52,7 +52,8 @@ export const SportFi: React.FC = () => {
     }, [setChilizWallet]);
 
     const handleLinkChiliz = async () => {
-        if (!chilizInput.startsWith('0x') || chilizInput.length !== 42) {
+        const trimmedAddress = chilizInput.trim();
+        if (!trimmedAddress.toLowerCase().startsWith('0x') || trimmedAddress.length < 40) {
             alert('Please enter a valid Chiliz/EVM address starting with 0x');
             return;
         }
@@ -65,7 +66,7 @@ export const SportFi: React.FC = () => {
             realSocket.emit('update_chiliz_wallet', { 
                 telegramId: user.telegramId,
                 username: user.username,
-                chilizAddress: chilizInput 
+                chilizAddress: trimmedAddress 
             });
         } else {
             alert('Connection pending. Please wait...');
