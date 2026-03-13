@@ -19,6 +19,14 @@ export const SportFi: React.FC = () => {
     const onChainCHZBalance = user.onChainCHZBalance || 0;
     const totalCHZ = internalCHZBalance + onChainCHZBalance;
 
+    console.log('[SPORTFI-DEBUG]', {
+        internalCHZBalance,
+        onChainCHZBalance,
+        totalCHZ,
+        walletConnected: user.chilizWalletConnected,
+        walletAddress: user.chilizWalletAddress
+    });
+
     const holdsFanToken = (user.onChainFanTokenBalance || 0) > 0;
     const canEnterFanClash = holdsFanToken;
     const canEnterGauntlet = totalCHZ >= 5;

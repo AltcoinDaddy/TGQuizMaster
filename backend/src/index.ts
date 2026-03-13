@@ -345,6 +345,12 @@ async function syncUser(socket: any, telegramId: string, username: string) {
             unlockedAvatars: user.unlocked_avatars || []
         });
 
+        // Explicitly emit on-chain balances for UI reactivity (ensures SportFi refreshes)
+        socket.emit('balance_update', {
+            onChainCHZBalance,
+            onChainFanTokenBalance: holdsFanToken ? 1 : 0
+        });
+
         console.log(`[SYNC-SUCCESS] User ${userId} synced. CHZ: ${onChainCHZBalance}, Fan: ${holdsFanToken}`);
     } catch (error) {
         console.error(`[SYNC-ERROR] Fail for ${userId}:`, error);
