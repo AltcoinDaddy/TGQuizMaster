@@ -144,15 +144,25 @@ export class ChilizService {
      */
     static async getCHZBalance(address: string): Promise<number> {
         const normalizedInput = this.normalizeAddress(address);
-        if (!normalizedInput || !ethers.isAddress(normalizedInput)) return 0;
+        if (!normalizedInput || !ethers.isAddress(normalizedInput)) {
+            console.warn(`[CHILIZ-TRACE] EXCEPTION: Invalid address format: "${address}"`);
+            return 0;
+        }
         try {
             const p = getProvider();
-            // Use getAddress to ensure proper checksum and avoid ENS resolution attempts
             const target = ethers.getAddress(normalizedInput);
-            const balance = await p.getBalance(target);
-            return parseFloat(ethers.formatEther(balance));
-        } catch (error) {
-            console.error(`[CHILIZ] Failed to get CHZ balance for ${address}:`, error);
+            
+            // Set a timeout for the balance fetch
+            const balancePromise = p.getBalance(target);
+            const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('RPC Timeout')), 5000));
+            
+            const balance = await Promise.race([balancePromise, timeoutPromise]) as bigint;
+            const formatted = parseFloat(ethers.formatEther(balance));
+            
+            console.log(`[CHILIZ-TRACE] Fetched ${formatted} CHZ for ${normalizedInput}`);
+            return formatted;
+        } catch (error: any) {
+            console.error(`[CHILIZ-TRACE] ERROR fetching CHZ balance for ${address}:`, error.message || error);
             return 0;
         }
     }
@@ -175,24 +185,32 @@ export class ChilizService {
             const targetContract = ethers.getAddress(normalizedContract);
 
             // Resiliency: Check if code exists at this address to avoid BAD_DATA (0x result)
-            const code = await p.getCode(targetContract);
+            const codePromise = p.getCode(targetContract);
+            const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('RPC Timeout')), 5000));
+            
+            const code = await Promise.race([codePromise, timeoutPromise]) as string;
+            
             if (code === '0x' || code === '0x0') {
                 console.warn(`[CHILIZ] No contract code at ${targetContract} on current network.`);
                 return 0;
             }
             
             const contract = new ethers.Contract(targetContract, ERC20_ABI, p);
-            const balance = await contract.balanceOf(targetWallet);
+            
+            // Set timeout for balanceOf call
+            const balancePromise = contract.balanceOf(targetWallet);
+            const balance = await Promise.race([balancePromise, timeoutPromise]) as bigint;
             
             // CAP-20 Fan Tokens have 0 decimals, so balance is the raw integer
             const decimals = await contract.decimals().catch(() => 0);
             return Number(ethers.formatUnits(balance, decimals));
         } catch (error: any) {
-            // Silence common expected errors like "could not decode result data" which happen on certain RPC nodes
             if (error.code === 'BAD_DATA') {
                 console.warn(`[CHILIZ] Bad data returned from token contract at ${contractAddress}. Likely not a valid token on this chain.`);
+            } else if (error.message === 'RPC Timeout') {
+                console.error(`[CHILIZ] Timeout fetching token balance for contract ${contractAddress}`);
             } else {
-                console.error(`[CHILIZ] Failed to get token balance:`, error.message);
+                console.error(`[CHILIZ] Failed to get token balance for ${contractAddress}:`, error.message || error);
             }
             return 0;
         }

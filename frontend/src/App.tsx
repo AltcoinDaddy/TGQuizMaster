@@ -119,9 +119,9 @@ function App() {
       } else {
         if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
           console.warn('[DEV] No Telegram WebApp script — using test fallback');
-          const testId = "123456789";
+          const testId = "1215058702";
           socket.connect();
-          socket.emit('sync_profile', { telegramId: testId, username: "@Dev_Test" });
+          socket.emit('sync_profile', { telegramId: testId, username: "Altcoindaddy" });
         } else {
           console.error('Telegram WebApp not available in production');
           return;

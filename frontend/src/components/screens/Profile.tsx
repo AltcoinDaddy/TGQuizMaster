@@ -1,7 +1,7 @@
 import React from 'react';
 import { MainLayout } from '../layout/MainLayout';
 import { GlassCard } from '../ui/GlassCard';
-import { Wallet, Settings, ChevronRight, LogOut, Award, PlayCircle, Zap, HelpCircle, ExternalLink, Users, Target, Timer, Sparkles } from 'lucide-react';
+import { Gem, Settings, ChevronRight, LogOut, Award, PlayCircle, Zap, HelpCircle, Users, Target, Timer, Sparkles } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../../store/useAppStore';
 import { useTonConnectUI } from '@tonconnect/ui-react';
@@ -168,22 +168,19 @@ export const Profile: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Premium Wallet Card */}
-                <GlassCard className="p-6 mb-8 bg-gradient-to-br from-primary/10 to-transparent border-primary/20 bonus-glow">
+                {/* TON Wallet Card */}
+                <GlassCard className="p-6 mb-8 bg-gradient-to-br from-blue-500/10 to-transparent border-blue-500/20">
                     <div className="flex items-center justify-between mb-8">
                         <div className="flex items-center gap-2">
-                            <Wallet className="text-primary" size={16} />
-                            <h3 className="text-[10px] font-black text-white uppercase tracking-[0.2em] italic">Total Balance</h3>
+                            <Gem size={16} className="text-blue-400" />
+                            <h3 className="text-[10px] font-black text-white uppercase tracking-[0.2em] italic">TON Balance</h3>
                         </div>
-                        <button className="text-[10px] font-black text-white/40 uppercase tracking-widest flex items-center gap-1 hover:text-primary transition-colors">
-                            TON SPACE <ExternalLink size={12} />
-                        </button>
                     </div>
 
                     <div className="space-y-1 mb-8">
                         <div className="flex items-baseline gap-2">
                             <span className="text-4xl font-black text-white italic tracking-tighter">{user.tonBalance?.toFixed(2) || '0.00'}</span>
-                            <span className="text-lg font-black text-primary italic">TON</span>
+                            <span className="text-lg font-black text-blue-400 italic">TON</span>
                         </div>
                         <p className="text-xs font-bold text-white/40 uppercase tracking-widest italic animate-pulse">≈ ${((user.tonBalance ?? 0) * 5.15).toFixed(2)} USD</p>
                     </div>
@@ -191,15 +188,14 @@ export const Profile: React.FC = () => {
                     <div className="grid grid-cols-2 gap-4">
                         <button
                             onClick={() => {
-                                // Simplified Deposit Alert/Modal
                                 const tg = (window as any).Telegram?.WebApp;
                                 tg?.showPopup({
                                     title: 'Deposit TON',
-                                    message: `Send TON to your wallet address:\n\n${user.walletAddress || 'Please connect wallet first'}\n\n(Copy feature coming soon)`,
+                                    message: `Send TON to your wallet address:\n\n${user.walletAddress || 'Please connect wallet first'}`,
                                     buttons: [{ type: 'ok' }]
                                 });
                             }}
-                            className="bg-primary text-background-dark font-black py-4 rounded-2xl text-[10px] uppercase tracking-[0.2em] italic shadow-lg shadow-primary/20 active:scale-95 transition-all"
+                            className="bg-blue-500 text-white font-black py-4 rounded-2xl text-[10px] uppercase tracking-[0.2em] italic active:scale-95 transition-all shadow-lg shadow-blue-500/20"
                         >
                             DEPOSIT TON
                         </button>
@@ -210,6 +206,55 @@ export const Profile: React.FC = () => {
                             WITHDRAW
                         </button>
                     </div>
+                </GlassCard>
+
+                {/* Chiliz / SportFi Wallet Card */}
+                <GlassCard className="p-6 mb-8 bg-gradient-to-br from-[#102216] to-[#0d1a11] border-primary/20 shadow-[0_0_30px_rgba(13,242,89,0.05)] relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 blur-2xl group-hover:bg-primary/10 transition-all duration-500" />
+                    <div className="flex items-center justify-between mb-6 relative z-10">
+                        <div className="flex items-center gap-2">
+                            <Zap className="text-primary" size={16} fill="currentColor" fillOpacity={0.1} />
+                            <h3 className="text-[10px] font-black text-white uppercase tracking-[0.2em] italic">SportFi Balance</h3>
+                        </div>
+                        {user.chilizWalletConnected && (
+                            <span className="text-[8px] font-black bg-primary text-background-dark px-2 py-0.5 rounded italic uppercase tracking-tighter">Verified Fan</span>
+                        )}
+                    </div>
+
+                    <div className="space-y-1 mb-6 relative z-10">
+                        <div className="flex items-baseline gap-2">
+                            <span className="text-4xl font-black text-white italic tracking-tighter">
+                                {((user.balanceCHZ || 0) + (user.onChainCHZBalance || 0)).toLocaleString()}
+                            </span>
+                            <span className="text-lg font-black text-primary italic">$CHZ</span>
+                        </div>
+                        <div className="flex gap-4 opacity-40">
+                            <div className="flex flex-col">
+                                <span className="text-[7px] font-black uppercase tracking-widest leading-none">On-Chain</span>
+                                <span className="text-[10px] font-black italic">{(user.onChainCHZBalance || 0).toLocaleString()}</span>
+                            </div>
+                            <div className="flex flex-col">
+                                <span className="text-[7px] font-black uppercase tracking-widest leading-none">Internal</span>
+                                <span className="text-[10px] font-black italic">{(user.balanceCHZ || 0).toLocaleString()}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {user.chilizWalletConnected ? (
+                        <div className="flex items-center gap-2 p-3 bg-background-dark/50 rounded-2xl border border-white/5 relative z-10">
+                            <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></div>
+                            <span className="text-[8px] font-bold text-white/30 uppercase tracking-[0.2em] truncate">
+                                {user.chilizWalletAddress}
+                            </span>
+                        </div>
+                    ) : (
+                        <button
+                            onClick={() => navigate('/sportfi')}
+                            className="w-full bg-primary/10 border border-primary/20 text-primary font-black py-3 rounded-2xl text-[9px] uppercase tracking-[0.2em] italic hover:bg-primary/20 transition-all relative z-10"
+                        >
+                            LINK CHILIZ WALLET
+                        </button>
+                    )}
                 </GlassCard>
 
                 {/* Power-Ups Inventory */}

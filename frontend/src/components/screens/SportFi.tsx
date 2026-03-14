@@ -1,7 +1,7 @@
 import React from 'react';
 import { MainLayout } from '../layout/MainLayout';
 import { GlassCard } from '../ui/GlassCard';
-import { Trophy, ArrowRight, Zap, Star, Flame } from 'lucide-react';
+import { Trophy, ArrowRight, Zap, Star, Flame, RefreshCw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../../store/useAppStore';
 
@@ -32,7 +32,31 @@ export const SportFi: React.FC = () => {
     const canEnterGauntlet = totalCHZ >= 5;
     const canEnterPro = totalCHZ >= 10;
 
+    const [refreshing, setRefreshing] = React.useState(false);
+
+    const handleRefresh = async () => {
+        if (refreshing) return;
+        setRefreshing(true);
+        console.log('[SPORTFI] Triggering manual balance refresh...');
+        const { socket } = import.meta.env.DEV ? (window as any) : { socket: null };
+        const realSocket = socket || (window as any).socket;
+
+        if (realSocket && user.telegramId) {
+            realSocket.emit('sync_profile', { 
+                telegramId: user.telegramId,
+                username: user.username 
+            });
+            // Wait a bit for the socket to return data
+            setTimeout(() => setRefreshing(false), 2000);
+        } else {
+            setRefreshing(false);
+        }
+    };
+
     React.useEffect(() => {
+        // Auto-refresh on mount
+        handleRefresh();
+
         const { socket } = import.meta.env.DEV ? (window as any) : { socket: null };
         const realSocket = socket || (window as any).socket;
 
@@ -45,19 +69,27 @@ export const SportFi: React.FC = () => {
             setIsLinking(false);
         };
 
+        const onSynced = (data: any) => {
+            console.log('[SPORTFI] Profile re-synced:', data);
+            setRefreshing(false);
+        };
+
         const onError = (err: any) => {
             alert(err.message || 'Failed to update wallet');
             setLoading(false);
+            setRefreshing(false);
         };
 
         realSocket.on('chiliz_wallet_updated', onUpdated);
+        realSocket.on('profile_synced', onSynced);
         realSocket.on('error', onError);
 
         return () => {
             realSocket.off('chiliz_wallet_updated', onUpdated);
+            realSocket.off('profile_synced', onSynced);
             realSocket.off('error', onError);
         };
-    }, [setChilizWallet]);
+    }, []);
 
     const handleLinkChiliz = async () => {
         const trimmedAddress = chilizInput.trim();
@@ -105,7 +137,17 @@ export const SportFi: React.FC = () => {
                 <header className="flex justify-between items-center mb-6">
                     <div className="flex flex-col">
                         <span className="text-[10px] font-black uppercase tracking-[0.3em] text-primary italic underline decoration-primary/30 underline-offset-4">Powered by Chiliz</span>
-                        <h1 className="text-3xl font-black italic tracking-tighter uppercase text-white drop-shadow-[0_0_15px_rgba(13,242,89,0.3)]">SportFi Arena</h1>
+                        <div className="flex items-center gap-3">
+                            <h1 className="text-3xl font-black italic tracking-tighter uppercase text-white drop-shadow-[0_0_15px_rgba(13,242,89,0.3)]">SportFi Arena</h1>
+                            <button 
+                                onClick={handleRefresh}
+                                disabled={refreshing}
+                                className={`p-2 rounded-xl bg-white/5 border border-white/10 text-white/40 hover:text-primary transition-all active:scale-90 ${refreshing ? 'animate-spin text-primary' : ''}`}
+                                title="Refresh Balance"
+                            >
+                                <RefreshCw size={16} />
+                            </button>
+                        </div>
                     </div>
                     {user.chilizWalletConnected ? (
                         <div className="flex flex-col items-end">
