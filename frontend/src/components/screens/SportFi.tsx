@@ -256,7 +256,7 @@ export const SportFi: React.FC = () => {
                                             )}
                                         </div>
                                         <h3 className="text-3xl font-black italic tracking-tighter text-white">
-                                            {(user.onChainCHZBalance || 0).toLocaleString()} <span className="text-primary text-xl">$CHZ</span>
+                                            {totalCHZ.toLocaleString()} <span className="text-primary text-xl">$CHZ</span>
                                         </h3>
                                     </div>
                                     <div className="flex gap-2">

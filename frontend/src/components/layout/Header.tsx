@@ -1,6 +1,6 @@
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Star, Gem } from 'lucide-react';
+import { ArrowLeft, Star, Gem, Zap } from 'lucide-react';
 import { useTonConnectUI, useTonAddress } from '@tonconnect/ui-react';
 import { useAppStore } from '../../store/useAppStore';
 import { socket } from '../../utils/socket';
@@ -72,30 +72,29 @@ export const Header: React.FC = () => {
             </div>
 
             {/* Balances Grid */}
-            <div className="grid grid-cols-2 gap-3 pb-2">
+            <div className="grid grid-cols-3 gap-2 pb-2">
                 <button
                     onClick={() => navigate('/shop')}
-                    className="bg-white/5 border border-white/10 p-4 rounded-3xl flex items-center justify-between active:scale-95 transition-all hover:bg-white/10 group"
+                    className="bg-white/5 border border-white/10 p-3 rounded-2xl flex flex-col items-center active:scale-95 transition-all hover:bg-white/10 group"
                 >
-                    <div className="flex flex-col items-start">
-                        <span className="text-[10px] uppercase tracking-[0.2em] opacity-40 font-black italic">Stars</span>
-                        <span className="text-xl font-black italic tracking-tighter">{(user.stars || 0).toLocaleString()}</span>
-                    </div>
-                    <div className="w-10 h-10 rounded-2xl bg-yellow-400/10 flex items-center justify-center text-yellow-400 border border-yellow-400/20 group-hover:scale-110 transition-transform">
-                        <Star size={20} fill="currentColor" className="drop-shadow-[0_0_8px_rgba(250,204,21,0.4)]" />
-                    </div>
+                    <Star size={14} fill="currentColor" className="text-yellow-400 mb-1" />
+                    <span className="text-[10px] font-black italic tracking-tighter">{(user.stars || 0).toLocaleString()}</span>
                 </button>
                 <button
-                    onClick={() => navigate('/shop')}
-                    className="bg-white/5 border border-white/10 p-4 rounded-3xl flex items-center justify-between active:scale-95 transition-all hover:bg-white/10 group"
+                    onClick={() => navigate('/sportfi')}
+                    className="bg-white/5 border border-[#0df259]/20 p-3 rounded-2xl flex flex-col items-center active:scale-95 transition-all hover:bg-[#0df259]/10 group"
                 >
-                    <div className="flex flex-col items-start">
-                        <span className="text-[10px] uppercase tracking-[0.2em] opacity-40 font-black italic">TON Balance</span>
-                        <span className="text-xl font-black italic tracking-tighter">{(user.tonBalance ?? 0).toFixed(2)}</span>
-                    </div>
-                    <div className="w-10 h-10 rounded-2xl bg-blue-400/10 flex items-center justify-center text-blue-400 border border-blue-400/20 group-hover:scale-110 transition-transform">
-                        <Gem size={20} fill="currentColor" className="drop-shadow-[0_0_8px_rgba(96,165,250,0.4)]" />
-                    </div>
+                    <Zap size={14} fill="currentColor" className="text-primary mb-1" />
+                    <h3 className="text-[10px] font-black italic tracking-tighter text-primary">
+                        {((user.balanceCHZ || 0) + (user.onChainCHZBalance || 0)).toLocaleString()}
+                    </h3>
+                </button>
+                <button
+                    onClick={() => navigate('/onboarding')}
+                    className="bg-white/5 border border-white/10 p-3 rounded-2xl flex flex-col items-center active:scale-95 transition-all hover:bg-white/10 group"
+                >
+                    <Gem size={14} fill="currentColor" className="text-blue-400 mb-1" />
+                    <span className="text-[10px] font-black italic tracking-tighter">{(user.tonBalance ?? 0).toFixed(1)}</span>
                 </button>
             </div>
         </header>
