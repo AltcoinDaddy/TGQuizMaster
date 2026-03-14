@@ -159,9 +159,11 @@ export class ChilizService {
             const balance = await Promise.race([balancePromise, timeoutPromise]) as bigint;
             const formatted = parseFloat(ethers.formatEther(balance));
             
+            require('fs').appendFileSync('chiliz_debug.log', `[${new Date().toISOString()}] Fetched ${formatted} CHZ for ${normalizedInput}\n`);
             console.log(`[CHILIZ-TRACE] Fetched ${formatted} CHZ for ${normalizedInput}`);
             return formatted;
         } catch (error: any) {
+            require('fs').appendFileSync('chiliz_debug.log', `[${new Date().toISOString()}] ERROR for ${normalizedInput}: ${error.message || error}\n`);
             console.error(`[CHILIZ-TRACE] ERROR fetching CHZ balance for ${address}:`, error.message || error);
             return 0;
         }
