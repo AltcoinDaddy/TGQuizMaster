@@ -10,7 +10,7 @@ export const getApiUrl = () => {
 
     // 2. If in development mode, default to local network IP for mobile testing
     if (import.meta.env.DEV) {
-        return 'http://192.168.12.13:3001';
+        return `http://${window.location.hostname}:3001`;
     }
 
     // 3. Fallback for production if variable is missing

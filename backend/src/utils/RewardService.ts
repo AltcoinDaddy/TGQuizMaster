@@ -69,11 +69,11 @@ export class RewardService {
      */
     static async awardShard(userId: number, amount: number = 1): Promise<RewardResult> {
         try {
-            const { data: user } = await supabase.from('users').select('inventory_shards').eq('telegram_id', userId).single();
+            const { data: user } = await supabase.from('users').select('balance_shards').eq('telegram_id', userId).single();
             if (!user) throw new Error('User not found');
 
             await supabase.from('users').update({
-                inventory_shards: (user.inventory_shards || 0) + amount
+                balance_shards: (user.balance_shards || 0) + amount
             }).eq('telegram_id', userId);
 
             return { success: true };
@@ -245,7 +245,7 @@ export class RewardService {
         try {
             const { data: user, error: fetchError } = await supabase
                 .from('users')
-                .select('last_lucky_spin, balance_stars, balance_qp, inventory_shards')
+                .select('last_lucky_spin, balance_stars, balance_qp, balance_shards')
                 .eq('telegram_id', userId)
                 .single();
 

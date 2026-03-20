@@ -843,10 +843,10 @@ io.on('connection', (socket) => {
                 ...result.data,
                 newBalances: {
                     stars: user.balance_stars,
-                    ton: 0, // TON balance handled separately
+                    ton: 0,
                     xp: user.stats_xp || 0,
-                    qp: user.balance_qp || 0,
-                    shards: user.inventory_shards || 0
+                    balanceQP: user.balance_qp || 0,
+                    balanceShards: user.balance_shards || 0
                 }
             });
 
