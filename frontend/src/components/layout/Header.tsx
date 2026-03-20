@@ -81,13 +81,11 @@ export const Header: React.FC = () => {
                     <span className="text-[10px] font-black italic tracking-tighter">{(user.stars || 0).toLocaleString()}</span>
                 </button>
                 <button
-                    onClick={() => navigate('/sportfi')}
-                    className="bg-white/5 border border-[#0df259]/20 p-3 rounded-2xl flex flex-col items-center active:scale-95 transition-all hover:bg-[#0df259]/10 group"
+                    onClick={() => navigate('/quests')}
+                    className="bg-white/5 border border-primary/20 p-3 rounded-2xl flex flex-col items-center active:scale-95 transition-all hover:bg-primary/10 group"
                 >
                     <Zap size={14} fill="currentColor" className="text-primary mb-1" />
-                    <h3 className="text-[10px] font-black italic tracking-tighter text-primary">
-                        {((user.balanceCHZ || 0) + (user.onChainCHZBalance || 0)).toLocaleString()}
-                    </h3>
+                    <span className="text-[10px] font-black italic tracking-tighter text-primary">{(user.balanceQP || 0).toLocaleString()}</span>
                 </button>
                 <button
                     onClick={() => navigate('/onboarding')}

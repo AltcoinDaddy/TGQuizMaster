@@ -208,54 +208,6 @@ export const Profile: React.FC = () => {
                     </div>
                 </GlassCard>
 
-                {/* Chiliz / SportFi Wallet Card */}
-                <GlassCard className="p-6 mb-8 bg-gradient-to-br from-[#102216] to-[#0d1a11] border-primary/20 shadow-[0_0_30px_rgba(13,242,89,0.05)] relative overflow-hidden group">
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 blur-2xl group-hover:bg-primary/10 transition-all duration-500" />
-                    <div className="flex items-center justify-between mb-6 relative z-10">
-                        <div className="flex items-center gap-2">
-                            <Zap className="text-primary" size={16} fill="currentColor" fillOpacity={0.1} />
-                            <h3 className="text-[10px] font-black text-white uppercase tracking-[0.2em] italic">SportFi Balance</h3>
-                        </div>
-                        {user.chilizWalletConnected && (
-                            <span className="text-[8px] font-black bg-primary text-background-dark px-2 py-0.5 rounded italic uppercase tracking-tighter">Verified Fan</span>
-                        )}
-                    </div>
-
-                    <div className="space-y-1 mb-6 relative z-10">
-                        <div className="flex items-baseline gap-2">
-                            <span className="text-4xl font-black text-white italic tracking-tighter">
-                                {((user.balanceCHZ || 0) + (user.onChainCHZBalance || 0)).toLocaleString()}
-                            </span>
-                            <span className="text-lg font-black text-primary italic">$CHZ</span>
-                        </div>
-                        <div className="flex gap-4 opacity-40">
-                            <div className="flex flex-col">
-                                <span className="text-[7px] font-black uppercase tracking-widest leading-none">On-Chain</span>
-                                <span className="text-[10px] font-black italic">{(user.onChainCHZBalance || 0).toLocaleString()}</span>
-                            </div>
-                            <div className="flex flex-col">
-                                <span className="text-[7px] font-black uppercase tracking-widest leading-none">Internal</span>
-                                <span className="text-[10px] font-black italic">{(user.balanceCHZ || 0).toLocaleString()}</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    {user.chilizWalletConnected ? (
-                        <div className="flex items-center gap-2 p-3 bg-background-dark/50 rounded-2xl border border-white/5 relative z-10">
-                            <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></div>
-                            <span className="text-[8px] font-bold text-white/30 uppercase tracking-[0.2em] truncate">
-                                {user.chilizWalletAddress}
-                            </span>
-                        </div>
-                    ) : (
-                        <button
-                            onClick={() => navigate('/sportfi')}
-                            className="w-full bg-primary/10 border border-primary/20 text-primary font-black py-3 rounded-2xl text-[9px] uppercase tracking-[0.2em] italic hover:bg-primary/20 transition-all relative z-10"
-                        >
-                            LINK CHILIZ WALLET
-                        </button>
-                    )}
-                </GlassCard>
 
                 {/* Power-Ups Inventory */}
                 <div className="mb-10">

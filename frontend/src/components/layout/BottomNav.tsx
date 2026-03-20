@@ -17,13 +17,6 @@ export const BottomNav: React.FC = () => {
                     <span className="text-[9px] font-black uppercase tracking-widest italic leading-none">Home</span>
                 </button>
 
-                <button
-                    onClick={() => navigate('/sportfi')}
-                    className={`flex flex-col items-center gap-1 transition-all ${isActive('/sportfi') ? 'text-primary' : 'opacity-40 hover:opacity-100'}`}
-                >
-                    <span className="material-icons">sports_soccer</span>
-                    <span className="text-[9px] font-black uppercase tracking-widest italic leading-none">SportFi</span>
-                </button>
 
                 <button
                     onClick={() => navigate('/shop')}
@@ -45,13 +38,6 @@ export const BottomNav: React.FC = () => {
                     </div>
                 </div>
 
-                <button
-                    onClick={() => navigate('/leaderboard')}
-                    className={`flex flex-col items-center gap-1 transition-all ${isActive('/leaderboard') ? 'text-primary' : 'opacity-40 hover:opacity-100'}`}
-                >
-                    <span className="material-icons">leaderboard</span>
-                    <span className="text-[9px] font-black uppercase tracking-widest italic leading-none">Rank</span>
-                </button>
 
                 <button
                     onClick={() => navigate('/yield')}

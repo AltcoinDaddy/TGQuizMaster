@@ -12,17 +12,12 @@ interface UserState {
     stars: number;
     tonBalance: number;
     balanceQP: number;
-    balanceCHZ: number;
-    onChainCHZBalance: number;
-    onChainFanTokenBalance: number;
     balanceShards: number;
     inventory: string[];
     inventoryPowerups: Record<string, number>;
     unlockedAvatars: string[];
     walletConnected: boolean;
     walletAddress?: string;
-    chilizWalletConnected: boolean;
-    chilizWalletAddress?: string;
     isAdmin: boolean;
     referralCount?: number;
     referralEarnings?: number;
@@ -48,7 +43,6 @@ interface AppStore {
     updateStars: (amount: number) => void;
     updateTON: (amount: number) => void;
     syncFromBackend: (data: any) => void;
-    setChilizWallet: (connected: boolean, address?: string) => void;
     updateSettings: (settings: { soundEnabled: boolean; hapticsEnabled: boolean }) => void;
     setParamProcessed: (val: boolean) => void;
 }
@@ -64,17 +58,12 @@ export const useAppStore = create<AppStore>((set, get) => ({
         stars: 0,
         tonBalance: 0,
         balanceQP: 0,
-        balanceCHZ: 0,
-        onChainCHZBalance: 0,
-        onChainFanTokenBalance: 0,
         balanceShards: 0,
         inventory: [],
         inventoryPowerups: {},
         unlockedAvatars: [],
         walletConnected: false,
         walletAddress: '',
-        chilizWalletConnected: false,
-        chilizWalletAddress: '',
         isAdmin: false,
         referralTier: 'NONE',
         referrals: [],
@@ -108,16 +97,11 @@ export const useAppStore = create<AppStore>((set, get) => ({
                 wins: data.wins ?? state.user.wins,
                 totalGames: data.totalGames ?? state.user.totalGames,
                 balanceQP: data.balanceQP ?? state.user.balanceQP,
-                balanceCHZ: data.balanceCHZ ?? state.user.balanceCHZ,
-                onChainCHZBalance: data.onChainCHZBalance ?? state.user.onChainCHZBalance,
-                onChainFanTokenBalance: data.onChainFanTokenBalance ?? state.user.onChainFanTokenBalance,
                 balanceShards: data.balanceShards ?? state.user.balanceShards,
                 inventoryPowerups: data.inventoryPowerups ?? state.user.inventoryPowerups,
                 unlockedAvatars: data.unlockedAvatars ?? state.user.unlockedAvatars,
                 walletConnected: data.walletConnected ?? state.user.walletConnected,
                 walletAddress: data.walletAddress ?? state.user.walletAddress,
-                chilizWalletConnected: data.chilizWalletConnected ?? state.user.chilizWalletConnected,
-                chilizWalletAddress: data.chilizWalletAddress ?? state.user.chilizWalletAddress,
                 isAdmin: data.isAdmin ?? state.user.isAdmin,
                 referralCount: data.referralCount ?? state.user.referralCount,
                 referralEarnings: data.referralEarnings ?? state.user.referralEarnings,
@@ -130,14 +114,6 @@ export const useAppStore = create<AppStore>((set, get) => ({
                 lastLuckySpin: data.lastLuckySpin ?? state.user.lastLuckySpin,
                 isSynced: true
             }
-        })),
-    setChilizWallet: (connected, address) =>
-        set((state) => ({ 
-            user: { 
-                ...state.user, 
-                chilizWalletConnected: connected, 
-                chilizWalletAddress: address || state.user.chilizWalletAddress 
-            } 
         })),
     updateSettings: async (settings) => {
         const currentUser = get().user;

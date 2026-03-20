@@ -7,7 +7,7 @@ dotenv.config({ path: path.resolve(__dirname, '../.env') });
 const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_KEY!);
 
 async function runMigration() {
-    console.log('Running Migration 013: SportFi Dual-Track Schema...');
+    console.log('Running Migration 013: Match Stakes & Survival Schema...');
 
     const sql = `
         -- Table for tracking match pools and stakes
@@ -18,7 +18,7 @@ async function runMigration() {
             commission_rate numeric DEFAULT 0.10, -- 10% default
             track text DEFAULT 'PRO', -- SOCIAL or PRO
             entry_fee numeric DEFAULT 0,
-            currency text DEFAULT 'CHZ',
+            currency text DEFAULT 'STARS',
             is_distributed boolean DEFAULT false,
             created_at timestamp with time zone DEFAULT now()
         );

@@ -21,13 +21,11 @@ import { GameManager } from './utils/GameManager';
 import { roomRegistry } from './utils/RoomRegistry';
 import './bot'; // Initialize Bot
 import { starsService, notificationService } from './bot';
-import { ChilizService } from './utils/ChilizService';
 import { RewardService } from './utils/RewardService';
 
 // ─── Environment Verification ──────────────────────────────────────────
 const IS_PROD = process.env.NODE_ENV === 'production';
 console.log(`[INIT] Running in ${IS_PROD ? 'PRODUCTION' : 'DEVELOPMENT'} mode`);
-console.log(`[CHILIZ-INIT] Network: ${IS_PROD ? 'Mainnet (88888)' : 'Spicy Testnet (88882)'}`);
 
 const app = express();
 app.set('trust proxy', 1); // Trust first proxy (e.g. Vercel, Nginx)
@@ -294,23 +292,6 @@ async function syncUser(socket: any, telegramId: string, username: string) {
             }
         }
 
-        // 4. Fetch Chiliz Balances
-        let onChainCHZBalance = 0;
-        let holdsFanToken = false;
-        if (user.chiliz_wallet_address) {
-            try {
-                const isProd = process.env.NODE_ENV === 'production';
-                console.log(`[SYNC-CHILIZ] Fetching for ${userId} (${user.chiliz_wallet_address}) in ${isProd ? 'PROD' : 'DEV'} mode...`);
-                const { chz, anyFanToken } = await ChilizService.getUserOnChainData(user.chiliz_wallet_address);
-                onChainCHZBalance = chz;
-                holdsFanToken = anyFanToken;
-                console.log(`[SYNC-CHILIZ] Fetched: ${chz} CHZ, Fan: ${anyFanToken}`);
-            } catch (e) {
-                console.error(`[SYNC-CHILIZ] Failed for ${userId}:`, e);
-            }
-        } else {
-            console.log(`[SYNC-CHILIZ] No wallet for user ${userId}`);
-        }
 
         // 5. Fetch Recent Transactions & Referrals
         const [ { data: txs }, { data: earningsData } ] = await Promise.all([
@@ -328,13 +309,8 @@ async function syncUser(socket: any, telegramId: string, username: string) {
             wins: user.stats_wins || 0,
             totalGames: user.stats_total_games || 0,
             balanceQP: user.balance_qp || 0,
-            balanceCHZ: user.balance_chz || 0,
-            onChainCHZBalance,
-            onChainFanTokenBalance: holdsFanToken ? 1 : 0,
             walletConnected: !!user.wallet_address,
             walletAddress: user.wallet_address,
-            chilizWalletConnected: !!user.chiliz_wallet_address,
-            chilizWalletAddress: user.chiliz_wallet_address,
             isAdmin: (process.env.ADMIN_IDS || '').split(',').map(id => id.trim()).includes(userId.toString()),
             referralCount: user.stats_referrals || 0,
             referralEarnings,
@@ -345,15 +321,8 @@ async function syncUser(socket: any, telegramId: string, username: string) {
             unlockedAvatars: user.unlocked_avatars || []
         });
 
-        // Explicitly emit on-chain balances for UI reactivity (ensures SportFi refreshes)
-        const balanceUpdate = {
-            onChainCHZBalance,
-            onChainFanTokenBalance: holdsFanToken ? 1 : 0
-        };
-        require('fs').appendFileSync('chiliz_debug.log', `[${new Date().toISOString()}] Emitting balance_update to ${userId}: ${JSON.stringify(balanceUpdate)}\n`);
-        socket.emit('balance_update', balanceUpdate);
 
-        console.log(`[SYNC-SUCCESS] User ${userId} synced. CHZ: ${onChainCHZBalance}, Fan: ${holdsFanToken}`);
+        console.log(`[SYNC-SUCCESS] User ${userId} synced.`);
     } catch (error) {
         console.error(`[SYNC-ERROR] Fail for ${userId}:`, error);
         socket.emit('error', { message: 'Failed to sync player data.' });
@@ -474,21 +443,6 @@ io.on('connection', (socket) => {
                 console.log(`[PRE-CHECK] ${username} has sufficient ${feeAmount} ${feeCurrency}`);
             }
 
-            // 2.5 Chiliz Fan Token Check (SportFi Hub)
-            if (category === 'Sports') {
-                const tokenContract = process.env.FAN_TOKEN_CONTRACT_ADDRESS;
-                const holdsToken = await ChilizService.verifyFanTokenHold(userId, {
-                    tokenSymbol: 'FAN',
-                    minAmount: 1,
-                    contractAddress: tokenContract
-                });
-                if (!holdsToken) {
-                    socket.emit('error', {
-                        message: 'SportFi Discovery: This Arena requires holding Fan Tokens. Connect your Chiliz-compatible wallet to enter!'
-                    });
-                    return;
-                }
-            }
 
             // 3. Matchmaking & Room Selection
             let roomId: string | undefined;
@@ -555,40 +509,6 @@ io.on('connection', (socket) => {
                     socket.emit('error', { message: `Need 50 Stars for Mega Match` });
                     return;
                 }
-            } else if (data.roomType === 'sportfi') {
-                const track = (data.track || 'PRO').toUpperCase();
-                if (track === 'PRO') {
-                    effectiveFee = 10; // Default 10 $CHZ
-                    effectiveCurrency = 'CHZ';
-                    if ((user.balance_chz || 0) < effectiveFee) {
-                        socket.emit('error', { message: `Need 10 $CHZ to join Pro Arena. Deposit some Chiliz first!` });
-                        return;
-                    }
-                } else if (track === 'SOCIAL') {
-                    effectiveFee = 0;
-                    effectiveCurrency = 'CHZ';
-                    // Verify Fan Token hold for Social Track
-                    const { ChilizService } = await import('./utils/ChilizService');
-                    const { CHILIZ_CONFIG, getFanTokenBySymbol } = await import('./config/ChilizConfig');
-                    const barToken = getFanTokenBySymbol('BAR');
-                    const hasToken = await ChilizService.verifyFanTokenHold(userId, { 
-                        tokenSymbol: 'BAR', 
-                        minAmount: 1,
-                        contractAddress: barToken?.address
-                    }); 
-                    if (!hasToken) {
-                        socket.emit('error', { message: `Social Arena requires holding 1 $BAR Fan Token. Bridge your wallet to unlock!` });
-                        return;
-                    }
-                }
-            } else if (data.roomType === 'survival') {
-                effectiveFee = 5; // 5 $CHZ to enter the Gauntlet
-                effectiveCurrency = 'CHZ';
-                requestedMax = 1; // Survival is solo
-                if ((user.balance_chz || 0) < effectiveFee) {
-                    socket.emit('error', { message: `Need 5 $CHZ to enter The Gauntlet. High stakes, high rewards!` });
-                    return;
-                }
             }
 
             // EXTRACT ROOM ID FROM tournamentId (handle room_UUID_... format)
@@ -613,17 +533,14 @@ io.on('connection', (socket) => {
                 const matchesCategory = info.category === (category || 'General');
                 const hasSpace = info.players < info.maxPlayers;
                 const isWaiting = info.status === 'waiting';
-                const matchesSize = (data.roomType === 'quickplay' || data.roomType === 'mega' || data.roomType === 'sportfi') || (info.maxPlayers === requestedMax);
                 const matchesType = (mgr as any).megaRoom === (data.roomType === 'mega');
-                const matchesTrack = data.roomType === 'sportfi' ? ((mgr as any).sportfiTrack === (data.track || 'PRO').toUpperCase()) : true;
-                const matchesSurvival = (mgr as any).tournamentType === 'survival' && (data.roomType === 'survival');
 
                 // Special: Mega matches can be joined even if LIVE (to feel like one ongoing room)
                 if (data.roomType === 'mega' && matchesType && hasSpace) {
                     return true;
                 }
 
-                return matchesFee && matchesCurrency && matchesCategory && hasSpace && isWaiting && matchesSize && matchesType;
+                return matchesFee && matchesCurrency && matchesCategory && hasSpace && isWaiting && matchesType;
             });
 
             if (matchedRoom) {
@@ -634,16 +551,8 @@ io.on('connection', (socket) => {
                 const newRoomId = searchRoomId && searchRoomId.length > 20 ? searchRoomId : crypto.randomUUID();
                 roomId = newRoomId;
                 const isMega = data.roomType === 'mega';
-                const isSportFi = data.roomType === 'sportfi';
-                const isSurvival = data.roomType === 'survival';
-                const playersLimit = isMega ? 100 : (isSurvival ? 1 : (data.roomType === 'quickplay' ? 5 : Math.min(Math.max(requestedMax, 2), 20)));
-                const newManager = new GameManager(newRoomId, io, (isSurvival ? 'survival' : effectiveCurrency.toLowerCase()) as any, 0, effectiveFee, playersLimit, category || (isSportFi ? 'Sports' : 'General'), isMega);
-                
-                if (isSportFi) {
-                    newManager.chilizRoom = true;
-                    newManager.sportfiTrack = (data.track || 'PRO').toUpperCase() as any;
-                    newManager.currency = 'CHZ';
-                }
+                const playersLimit = isMega ? 100 : (data.roomType === 'quickplay' ? 5 : Math.min(Math.max(requestedMax, 2), 20));
+                const newManager = new GameManager(newRoomId, io, effectiveCurrency.toLowerCase() as any, 0, effectiveFee, playersLimit, category || 'General', isMega);
 
                 // If joining from a group deep link or specific link, mark as private to prevent global notifications
                 if (isGroup || (tournamentId && tournamentId.startsWith('room_'))) {
@@ -664,17 +573,6 @@ io.on('connection', (socket) => {
                     }, 5000);
                 }
 
-                if (isSurvival) {
-                    // Auto-start Survival Room immediately
-                    setTimeout(async () => {
-                        const m = roomRegistry.getRoom(newRoomId);
-                        if (m && !m.isStarted()) {
-                            console.log(`[SURVIVAL-START] Starting room ${newRoomId}`);
-                            io.to(newRoomId).emit('game_start');
-                            await m.start().catch(e => console.error("Survival start failed:", e));
-                        }
-                    }, 1000);
-                }
 
                 roomRegistry.setRoom(roomId, newManager);
                 console.log(`[CREATE] Room ${roomId} created for ${username} (Atomic) (tournamentId: ${tournamentId}, type: ${data.roomType})`);
@@ -699,21 +597,12 @@ io.on('connection', (socket) => {
             // 4. Database & Socket Joins (Awaits)
             try {
                 if (effectiveFee > 0) {
-                    if (effectiveCurrency === 'CHZ') {
-                        const { error: updateError } = await supabase
-                            .from('users')
-                            .update({ balance_chz: (user.balance_chz || 0) - effectiveFee })
-                            .eq('telegram_id', userId);
-                        if (updateError) throw updateError;
-                        user.balance_chz -= effectiveFee;
-                    } else {
-                        const { error: updateError } = await supabase
-                            .from('users')
-                            .update({ balance_stars: user.balance_stars - effectiveFee })
-                            .eq('telegram_id', userId);
-                        if (updateError) throw updateError;
-                        user.balance_stars -= effectiveFee;
-                    }
+                    const { error: updateError } = await supabase
+                        .from('users')
+                        .update({ balance_stars: user.balance_stars - effectiveFee })
+                        .eq('telegram_id', userId);
+                    if (updateError) throw updateError;
+                    user.balance_stars -= effectiveFee;
 
                     await supabase.from('transactions').insert({
                         user_id: userId,
@@ -929,40 +818,6 @@ io.on('connection', (socket) => {
         }
     });
 
-    // ─── Chiliz Wallet Link ────────────────────────────────────────
-    socket.on('update_chiliz_wallet', async (data) => {
-        const { telegramId, username, chilizAddress } = data;
-        const userId = parseInt(telegramId);
-        console.log(`[CHILIZ-WALLET] Received update for ${telegramId}: ${chilizAddress}`);
-
-        if (chilizAddress && !ChilizService.isValidAddress(chilizAddress)) {
-            socket.emit('error', { message: 'Invalid Chiliz wallet address.' });
-            return;
-        }
-
-        try {
-            // Clear in-flight sync to ensure next sync fetches fresh data
-            profileSyncInFlight.delete(userId);
-
-            await supabase
-                .from('users')
-                .update({ chiliz_wallet_address: chilizAddress || null })
-                .eq('telegram_id', userId);
-            
-            console.log(`[CHILIZ-WALLET] Successfully updated DB for ${telegramId} to ${chilizAddress || 'NULL'}`);
-
-            // Legacy emission for any component listening specifically to this
-            socket.emit('chiliz_wallet_updated', {
-                chilizWalletConnected: !!chilizAddress,
-                chilizWalletAddress: chilizAddress
-            });
-
-            await syncUser(socket, telegramId, username);
-        } catch (e) {
-            console.error('[CHILIZ-WALLET] Exception:', e);
-            socket.emit('error', { message: 'Failed to update Chiliz wallet.' });
-        }
-    });
 
     // ─── Lucky Spin (Gacha) ─────────────────────────────────────────
     socket.on('lucky_spin', async (data) => {
@@ -991,7 +846,6 @@ io.on('connection', (socket) => {
                     ton: 0, // TON balance handled separately
                     xp: user.stats_xp || 0,
                     qp: user.balance_qp || 0,
-                    chz: user.balance_chz || 0,
                     shards: user.inventory_shards || 0
                 }
             });

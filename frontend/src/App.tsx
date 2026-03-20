@@ -31,9 +31,7 @@ import { Squads } from './components/screens/Squads';
 import { SquadDetail } from './components/screens/SquadDetail';
 import { SquadCreate } from './components/screens/SquadCreate';
 import { MegaTournament } from './components/screens/MegaTournament';
-import { SportFi } from './components/screens/SportFi';
 import { LuckySpin } from './components/screens/LuckySpin';
-import { Gauntlet } from './components/screens/Gauntlet';
 
 function WalletSyncer() {
   const userFriendlyAddress = useTonAddress();
@@ -199,9 +197,7 @@ function App() {
           <Route path="/squad/:id" element={<SquadDetail />} />
           <Route path="/squad/create" element={<SquadCreate />} />
           <Route path="/mega-tournament" element={<MegaTournament />} />
-          <Route path="/sportfi" element={<SportFi />} />
           <Route path="/lucky-spin" element={<LuckySpin />} />
-          <Route path="/gauntlet" element={<Gauntlet />} />
         </Routes>
       </Router>
     </ErrorBoundary>

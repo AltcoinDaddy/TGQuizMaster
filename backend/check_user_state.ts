@@ -22,8 +22,6 @@ async function checkUser(userId: number) {
         id: user.id,
         telegram_id: user.telegram_id,
         username: user.username,
-        chiliz_wallet_address: user.chiliz_wallet_address,
-        balance_chz: user.balance_chz,
         balance_stars: user.balance_stars
     }, null, 2));
 }

@@ -294,7 +294,7 @@ export const Home: React.FC = () => {
                                 <span className="bg-primary text-[#102216] text-[8px] font-black px-2 py-0.5 rounded-full animate-pulse uppercase">DAILY FREE</span>
                             </div>
                             <p className="text-[10px] text-white/40 font-bold uppercase tracking-widest leading-none">
-                                Spin the wheel. Win Stars, QP, or $CHZ rewards.
+                                Spin the wheel. Win Stars, QP, or Avatar Shards.
                             </p>
                         </div>
                         <div className="flex flex-col items-center">

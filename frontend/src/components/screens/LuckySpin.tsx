@@ -6,7 +6,6 @@ import {
     Zap, 
     Star, 
     Trophy, 
-    Coins, 
     User, 
     Loader2, 
     ArrowLeft,
@@ -18,12 +17,12 @@ import { useNavigate } from 'react-router-dom';
 const REWARDS = [
     { type: 'STARS', label: '50 Stars', color: '#ffcc00', icon: Star },
     { type: 'QP', label: '10 QP', color: '#00ffcc', icon: Trophy },
-    { type: 'CHZ', label: '1 $CHZ', color: '#ff3333', icon: Coins },
     { type: 'SHARD', label: 'Avatar Shard', color: '#cc33ff', icon: User },
     { type: 'STARS', label: '500 Stars', color: '#ffcc00', icon: Star },
     { type: 'QP', label: '100 QP', color: '#00ffcc', icon: Trophy },
-    { type: 'CHZ', label: '5 $CHZ', color: '#ff3333', icon: Coins },
+    { type: 'SHARD', label: 'Avatar Shard', color: '#cc33ff', icon: User },
     { type: 'STARS', label: '200 Stars', color: '#ffcc00', icon: Star },
+    { type: 'STARS', label: '100 Stars', color: '#ffcc00', icon: Star },
 ];
 
 export const LuckySpin: React.FC = () => {
@@ -183,7 +182,7 @@ export const LuckySpin: React.FC = () => {
                         )}
                     </button>
                     <p className="text-center text-xs text-white/40 mt-4 leading-relaxed tracking-wider italic font-bold">
-                        DAILY FREE LUCK • WIN STARS, QP, OR $CHZ
+                        DAILY FREE LUCK • WIN STARS, QP, OR SHARDS
                     </p>
                 </div>
             </div>
