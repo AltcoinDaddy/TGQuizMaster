@@ -13,9 +13,9 @@ export const Support: React.FC = () => {
     const faqs = [
         {
             id: '1',
-            category: 'Payments & TON',
+            category: 'Payments & CHZ',
             questions: [
-                { q: 'How do I link my TON wallet?', a: 'Go to the Profile tab, click "Link Wallet" and follow the prompts from Tonkeeper or your preferred wallet.' },
+                { q: 'How do I link my Chiliz wallet?', a: 'Go to the Profile tab, click "Link Wallet" and follow the prompts from your preferred wallet via AppKit.' },
                 { q: 'How long do withdrawals take?', a: 'Most withdrawals are instant, but some may take up to 24 hours for security review.' }
             ]
         },

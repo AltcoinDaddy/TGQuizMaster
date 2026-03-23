@@ -11,7 +11,7 @@ interface ShopItem {
     title: string;
     description: string;
     price: number;
-    currency: 'TON' | 'Stars' | 'USD';
+    currency: 'CHZ' | 'Stars' | 'USD';
     reward: string;
     icon?: React.ComponentType<{ size?: number; className?: string }>;
     image?: string;

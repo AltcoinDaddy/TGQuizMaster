@@ -46,7 +46,7 @@ class RoomRegistry {
 
     public createRoom(
         roomId: string,
-        type: 'stars' | 'ton' | 'free' | 'practice' = 'free',
+        type: 'stars' | 'chz' | 'free' | 'practice' = 'free',
         prize = 0,
         fee = 10,
         maxPlayers = 5,

@@ -9,7 +9,7 @@ interface Tournament {
     id: string;
     title: string;
     prizePool: string;
-    currency: 'TON' | 'Stars';
+    currency: 'CHZ' | 'Stars';
     entryFee: string;
     joined: number;
     maxPlayers: number;
@@ -20,7 +20,7 @@ interface Tournament {
     type: string;
 }
 
-type TabType = 'free' | 'stars' | 'ton';
+type TabType = 'free' | 'stars' | 'chz';
 
 export const Tournaments: React.FC = () => {
     const [tab, setTab] = useState<TabType>('free');
@@ -40,7 +40,7 @@ export const Tournaments: React.FC = () => {
                         title: `Room ${t.id.slice(0, 4)}`,
                         prizePool: t.prizePool.toString(),
                         currency: t.currency,
-                        entryFee: `${t.entryFee} ${t.currency === 'Stars' ? 'Stars' : 'TON'}`,
+                        entryFee: `${t.entryFee} ${t.currency === 'Stars' ? 'Stars' : 'CHZ'}`,
                         joined: t.players,
                         maxPlayers: t.maxPlayers,
                         timeLeft: t.status === 'live' ? 'Live' : 'Waiting...',
@@ -64,7 +64,7 @@ export const Tournaments: React.FC = () => {
     }, []);
 
     const starsTournaments = tournaments.filter(t => t.type === 'stars');
-    const tonTournaments = tournaments.filter(t => t.type === 'ton');
+    const chzTournaments = tournaments.filter(t => t.type === 'chz');
 
 
     return (
@@ -111,17 +111,17 @@ export const Tournaments: React.FC = () => {
                     </button>
 
                     <button
-                        onClick={() => setTab('ton')}
-                        className={`relative py-5 rounded-2xl flex flex-col items-center gap-2 transition-all active:scale-95 border-2 group ${tab === 'ton'
-                            ? 'bg-blue-500/15 border-blue-400 shadow-lg shadow-blue-500/20'
+                        onClick={() => setTab('chz')}
+                        className={`relative py-5 rounded-2xl flex flex-col items-center gap-2 transition-all active:scale-95 border-2 group ${tab === 'chz'
+                            ? 'bg-primary/15 border-primary shadow-lg shadow-primary/20'
                             : 'bg-white/5 border-white/10'
                             }`}
                     >
-                        <div className={`p-2 rounded-xl transition-all ${tab === 'ton' ? 'bg-blue-400 text-background-dark shadow-[0_0_15px_rgba(96,165,250,0.5)]' : 'bg-white/5 text-white/40 group-hover:bg-white/10'}`}>
+                        <div className={`p-2 rounded-xl transition-all ${tab === 'chz' ? 'bg-primary text-background-dark shadow-[0_0_15px_rgba(13,242,89,0.5)]' : 'bg-white/5 text-white/40 group-hover:bg-white/10'}`}>
                             <Diamond size={24} fill="currentColor" />
                         </div>
-                        <span className={`text-[10px] font-black uppercase tracking-wider ${tab === 'ton' ? 'text-blue-400' : 'text-white/50'}`}>TON</span>
-                        <span className="absolute -top-1 -right-1 bg-blue-400/20 text-blue-300 text-[7px] font-black px-1.5 py-0.5 rounded-full">SOON</span>
+                        <span className={`text-[10px] font-black uppercase tracking-wider ${tab === 'chz' ? 'text-primary' : 'text-white/50'}`}>CHZ</span>
+                        <span className="absolute -top-1 -right-1 bg-primary/20 text-primary text-[7px] font-black px-1.5 py-0.5 rounded-full">SOON</span>
                     </button>
                 </div>
 
@@ -256,18 +256,18 @@ export const Tournaments: React.FC = () => {
                     </div>
                 )}
 
-                {/* TON Tab */}
-                {tab === 'ton' && (
+                {/* CHZ Tab */}
+                {tab === 'chz' && (
                     <div className="space-y-6">
                         {/* Coming Soon Hero */}
                         <div className="relative p-8 rounded-[2rem] bg-gradient-to-br from-primary/20 to-transparent border border-primary/20 overflow-hidden text-center">
                             <div className="absolute inset-0 bg-primary/5 backdrop-blur-sm"></div>
                             <div className="relative z-10">
                                 <Lock size={40} className="text-primary mx-auto mb-4 opacity-60" />
-                                <h3 className="text-xl font-black italic tracking-tighter uppercase text-primary mb-2">TON Tournaments</h3>
+                                <h3 className="text-xl font-black italic tracking-tighter uppercase text-primary mb-2">CHZ Tournaments</h3>
                                 <p className="text-xs text-white/50 font-bold mb-1">Coming in Phase 2</p>
                                 <p className="text-[10px] text-white/30 leading-relaxed max-w-xs mx-auto mt-3">
-                                    Compete for real TON prizes, host your own rooms, and climb the leaderboard.
+                                    Compete for real CHZ prizes, host your own rooms, and climb the leaderboard.
                                 </p>
                             </div>
                         </div>
@@ -280,7 +280,7 @@ export const Tournaments: React.FC = () => {
                                     <Trophy size={16} className="text-primary" />
                                     <div>
                                         <p className="text-xs font-black italic text-white">Platform Tournaments</p>
-                                        <p className="text-[10px] text-white/40">Free entry, TON prizes funded by us</p>
+                                        <p className="text-[10px] text-white/40">Free entry, CHZ prizes funded by us</p>
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-3 p-3 rounded-xl bg-white/5">
@@ -294,14 +294,14 @@ export const Tournaments: React.FC = () => {
                                     <Zap size={16} className="text-accent-purple" />
                                     <div>
                                         <p className="text-xs font-black italic text-white">Smart Contract Prizes</p>
-                                        <p className="text-[10px] text-white/40">Secure, instant payouts via TON blockchain</p>
+                                        <p className="text-[10px] text-white/40">Secure, instant payouts via Chiliz Chain</p>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        {/* Show existing TON tournaments if any */}
-                        {tonTournaments.length > 0 && tonTournaments.map((t) => (
+                        {/* Show existing CHZ tournaments if any */}
+                        {chzTournaments.length > 0 && chzTournaments.map((t) => (
                             <TournamentCard key={t.id} tournament={t} navigate={navigate} />
                         ))}
                     </div>

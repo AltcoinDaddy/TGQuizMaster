@@ -26,7 +26,7 @@ export const WithdrawalSuccess: React.FC = () => {
                 <div className="relative z-10 w-full animate-in zoom-in duration-700 delay-200">
                     <div className="bg-white/5 border border-white/10 rounded-[3rem] p-10 backdrop-blur-xl text-center">
                         <p className="text-[10px] font-black text-white/30 uppercase tracking-[0.3em] mb-4">You Received</p>
-                        <div className="text-5xl font-black text-white italic italic mb-4">5.35 <span className="text-lg not-italic opacity-40">TON</span></div>
+                        <div className="text-5xl font-black text-white italic italic mb-4">5.35 <span className="text-lg not-italic opacity-40">CHZ</span></div>
 
                         <div className="h-[1px] bg-white/5 my-8"></div>
 
@@ -35,12 +35,12 @@ export const WithdrawalSuccess: React.FC = () => {
                                 <span className="text-[8px] font-black text-white/20 uppercase tracking-[0.2em] mb-2">Transferred to</span>
                                 <div className="flex items-center gap-2 bg-white/5 px-4 py-2 rounded-full border border-white/5">
                                     <Wallet size={12} className="text-white/40" />
-                                    <span className="font-mono text-xs font-bold text-white/60">EQB1...4z9p</span>
+                                    <span className="font-mono text-xs font-bold text-white/60">0x71C...349p</span>
                                 </div>
                             </div>
 
                             <button className="flex items-center gap-2 mx-auto text-primary text-[8px] font-black uppercase tracking-widest italic active:scale-95 transition-all">
-                                VIEW ON TON SCAN
+                                VIEW ON CHILIZSCAN
                                 <ExternalLink size={12} />
                             </button>
                         </div>

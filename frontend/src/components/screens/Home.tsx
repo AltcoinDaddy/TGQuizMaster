@@ -171,7 +171,7 @@ export const Home: React.FC = () => {
                                         <h2 className="font-black text-xl uppercase italic tracking-tighter text-yellow-400 drop-shadow-[0_0_10px_rgba(250,204,21,0.5)]">
                                             {activeSeason.title}
                                         </h2>
-                                        <span className="bg-red-500 text-white text-[8px] font-black px-2 py-0.5 rounded-full animate-pulse uppercase">LIVE</span>
+                                        <span className="bg-primary text-background-dark text-[8px] font-black px-2 py-0.5 rounded-full animate-pulse uppercase">LIVE</span>
                                     </div>
                                     <p className="text-[10px] text-white/60 font-black uppercase tracking-[0.2em] leading-none mb-1">
                                         PRIZE POOL: {parseInt(activeSeason.prize_pool).toLocaleString()} STARS
@@ -237,18 +237,21 @@ export const Home: React.FC = () => {
                         <ArrowRight size={20} className="text-white/20 group-hover:text-yellow-400 group-hover:translate-x-1 transition-all" />
                     </div>
 
-                    {/* TON Arena */}
                     <div
-                        className="bg-white/5 border border-white/10 rounded-[32px] p-4 flex items-center gap-4 opacity-50 relative overflow-hidden group transition-all"
+                        onClick={() => {
+                            const tg = (window as any).Telegram?.WebApp;
+                            tg?.showAlert('CHILIZ Arena is coming soon! Get ready for real CHZ prize pools.');
+                        }}
+                        className="bg-white/5 border border-white/10 rounded-3xl p-5 flex items-center gap-5 group cursor-pointer active:scale-[0.98] transition-all"
                     >
-                        <div className="w-16 h-16 rounded-2xl bg-blue-500/10 flex items-center justify-center text-blue-400 border border-blue-500/20 group-hover:scale-110 transition-transform">
-                            <Gem size={32} fill="currentColor" fillOpacity={0.1} className="drop-shadow-[0_0_10px_rgba(96,165,250,0.4)]" />
+                        <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center text-primary border border-primary/20 group-hover:scale-110 transition-transform">
+                            <Gem size={32} fill="currentColor" fillOpacity={0.1} className="drop-shadow-[0_0_10px_rgba(13,242,89,0.4)]" />
                         </div>
                         <div className="flex-1">
-                            <h3 className="font-black text-lg uppercase italic tracking-tighter text-white mb-0.5">TON Arena</h3>
-                            <p className="text-[10px] text-white/40 font-bold uppercase tracking-widest leading-none">Real TON prizes • Coming Soon</p>
+                            <h3 className="font-black text-lg uppercase italic tracking-tighter text-white mb-0.5">CHILIZ Arena</h3>
+                            <p className="text-[10px] text-white/40 font-bold uppercase tracking-widest leading-none">Real CHZ prizes • Coming Soon</p>
                         </div>
-                        <span className="bg-blue-500/20 text-blue-300 text-[8px] font-black px-3 py-1 rounded-full uppercase italic tracking-tighter border border-blue-500/20 mr-2">Soon</span>
+                        <span className="bg-primary/20 text-primary text-[8px] font-black px-3 py-1 rounded-full uppercase italic tracking-tighter border border-primary/20 mr-2">Soon</span>
                     </div>
 
                     {/* Squads Global Battle */}
@@ -264,7 +267,7 @@ export const Home: React.FC = () => {
                             <div className="flex-1">
                                 <div className="flex items-center gap-2 mb-1">
                                     <h3 className="font-black text-xl uppercase italic tracking-tighter text-white">Squads</h3>
-                                    <span className="bg-amber-500 text-black text-[8px] font-black px-2 py-0.5 rounded italic">100 TON POOL</span>
+                                    <span className="bg-amber-500 text-black text-[8px] font-black px-2 py-0.5 rounded italic">1000 CHZ POOL</span>
                                 </div>
                                 <p className="text-[10px] text-white/40 font-bold uppercase tracking-widest leading-none">
                                     Join/Create a squad and battle for the global weekly prize.

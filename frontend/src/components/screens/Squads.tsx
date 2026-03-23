@@ -74,8 +74,8 @@ export const Squads = () => {
                                 <span className="text-[10px] font-black text-primary uppercase tracking-widest">My Squad</span>
                                 <h2 className="text-xl font-black text-white italic">{mySquad.name}</h2>
                                 <div className="flex items-center gap-4 mt-3">
-                                    <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-500/10 border border-blue-500/20 rounded-xl">
-                                        <Users size={12} className="text-blue-400" />
+                                    <div className="flex items-center gap-2 px-3 py-1.5 bg-primary/10 border border-primary/20 rounded-xl">
+                                        <Users size={12} className="text-primary" />
                                         <span className="text-[10px] font-black text-white/80">{mySquad.member_count}</span>
                                     </div>
                                     <div className="flex items-center gap-2 px-3 py-1.5 bg-amber-500/10 border border-amber-500/20 rounded-xl shadow-[0_0_10px_rgba(245,158,11,0.05)]">
@@ -96,7 +96,7 @@ export const Squads = () => {
                         </div>
                         <h2 className="text-lg font-black text-white uppercase italic">Not in a Squad</h2>
                         <p className="text-white/40 text-xs max-w-[240px] mt-2 mb-6">
-                            Join a squad to compete for the weekly **100 TON** prize pool!
+                            Join a squad to compete for the weekly **1000 CHZ** prize pool!
                         </p>
                         <div className="flex gap-3 w-full max-w-[280px]">
                             <Button variant="outline" className="flex-1 text-[10px]" onClick={() => navigate('/squad/create')}>
@@ -125,8 +125,8 @@ export const Squads = () => {
                             <div>
                                 <h3 className="text-xs font-black text-white uppercase italic tracking-wider">Weekly Global Pool</h3>
                                 <div className="flex items-baseline gap-1">
-                                    <span className="text-2xl font-black text-amber-400">100</span>
-                                    <span className="text-sm font-black text-amber-500/80">TON</span>
+                                    <span className="text-2xl font-black text-amber-400">1000</span>
+                                    <span className="text-sm font-black text-amber-500/80">CHZ</span>
                                 </div>
                             </div>
                         </div>
@@ -178,7 +178,7 @@ export const Squads = () => {
                                 <span className="text-xs font-black text-primary italic block">{squad.weekly_xp} XP</span>
                                 {index < 3 && (
                                     <span className="text-[8px] font-black text-amber-500 uppercase">
-                                        +{[50, 30, 20][index]} TON
+                                        +{[500, 300, 200][index]} CHZ
                                     </span>
                                 )}
                             </div>
@@ -202,7 +202,7 @@ export const Squads = () => {
                     <div>
                         <h4 className="text-xs font-black text-white uppercase italic">Viral Tip</h4>
                         <p className="text-[10px] text-white/60 leading-relaxed mt-1">
-                            Recruit members from other Telegram groups to boost your squad's XP and win the **Global TON Prize**!
+                            Recruit members from other Telegram groups to boost your squad's XP and win the **Global CHZ Prize**!
                         </p>
                     </div>
                 </GlassCard>

@@ -1,6 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import ErrorBoundary from './components/ErrorBoundary';
-import { useTonAddress } from '@tonconnect/ui-react';
 import { socket } from './utils/socket';
 import { useState, useEffect } from 'react';
 import { Home } from './components/screens/Home';
@@ -33,34 +32,7 @@ import { SquadCreate } from './components/screens/SquadCreate';
 import { MegaTournament } from './components/screens/MegaTournament';
 import { LuckySpin } from './components/screens/LuckySpin';
 
-function WalletSyncer() {
-  const userFriendlyAddress = useTonAddress();
-  const { user } = useAppStore();
 
-  useEffect(() => {
-    if (user.telegramId && userFriendlyAddress) {
-      // Sync if not connected OR if the address has changed
-      if (!user.walletConnected || user.walletAddress !== userFriendlyAddress) {
-        console.log('Syncing wallet address:', userFriendlyAddress);
-        socket.emit('update_wallet', {
-          telegramId: user.telegramId,
-          walletAddress: userFriendlyAddress
-        });
-        // The backend will emit 'profile_synced' with all user data after updating the wallet.
-        // The frontend's 'profile_synced' listener will handle updating the store.
-        // No need to partially update here.
-      }
-    } else if (user.telegramId && !userFriendlyAddress && user.walletConnected) {
-      // Handle disconnect
-      useAppStore.getState().setUser({
-        walletConnected: false,
-        walletAddress: undefined
-      });
-    }
-  }, [userFriendlyAddress, user.telegramId, user.walletConnected, user.walletAddress]);
-
-  return null;
-}
 
 function App() {
   const [showOnboarding, setShowOnboarding] = useState<boolean | null>(null);
@@ -106,7 +78,8 @@ function App() {
           // No Telegram user object found
           if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
             console.warn('[DEV] No Telegram user — using test fallback');
-            const testId = "123456789";
+            const testId = "1215058702";
+            useAppStore.getState().setUser({ telegramId: testId, username: "@Dev_Test" });
             socket.connect();
             socket.emit('sync_profile', { telegramId: testId, username: "@Dev_Test" });
           } else {
@@ -118,6 +91,7 @@ function App() {
         if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
           console.warn('[DEV] No Telegram WebApp script — using test fallback');
           const testId = "1215058702";
+          useAppStore.getState().setUser({ telegramId: testId, username: "Altcoindaddy" });
           socket.connect();
           socket.emit('sync_profile', { telegramId: testId, username: "Altcoindaddy" });
         } else {
@@ -168,7 +142,6 @@ function App() {
   return (
     <ErrorBoundary>
       <Router>
-        <WalletSyncer />
         <NavigationController />
         <Routes>
           <Route path="/onboarding" element={<Onboarding onComplete={() => setShowOnboarding(false)} />} />

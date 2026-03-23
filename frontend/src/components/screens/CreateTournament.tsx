@@ -6,7 +6,7 @@ import { ChevronLeft, Info, Brain, Coins, Film, Trophy, Gamepad2, Lock, Link as 
 import { useNavigate } from 'react-router-dom';
 
 const STAR_PRESETS = [10, 25, 50, 100];
-const TON_PRESETS = [0.5, 1, 2.5, 5];
+const CHZ_PRESETS = [10, 50, 100, 250];
 
 export const CreateTournament: React.FC = () => {
     const navigate = useNavigate();
@@ -14,7 +14,7 @@ export const CreateTournament: React.FC = () => {
     const [players, setPlayers] = useState(5);
     const [feeType, setFeeType] = useState<'free' | 'stars' | 'custom'>('free');
     const [starAmount, setStarAmount] = useState(10);
-    const [tonAmount, setTonAmount] = useState(1);
+    const [chzAmount, setChzAmount] = useState(50);
     const [isPrivate, setIsPrivate] = useState(false);
 
     const categories = [
@@ -33,13 +33,13 @@ export const CreateTournament: React.FC = () => {
     const getEntryFeeStr = () => {
         if (feeType === 'free') return 'Free';
         if (feeType === 'stars') return `${starAmount} Stars`;
-        return `${tonAmount} TON`;
+        return `${chzAmount} CHZ`;
     };
 
     const getPrizePool = () => {
         if (feeType === 'free') return '0';
         if (feeType === 'stars') return `${starAmount * players} Stars`;
-        return `${(tonAmount * players).toFixed(1)} TON`;
+        return `${(chzAmount * players).toFixed(0)} CHZ`;
     };
 
     return (
@@ -132,7 +132,7 @@ export const CreateTournament: React.FC = () => {
                                 <div className={`p-2 rounded-xl transition-all ${feeType === 'custom' ? 'bg-primary text-background-dark shadow-[0_0_15px_rgba(13,242,89,0.3)]' : 'bg-white/5 text-white/40 group-hover:bg-white/10'}`}>
                                     <Diamond size={20} fill="currentColor" />
                                 </div>
-                                <span className={`text-[10px] font-black uppercase tracking-wider ${feeType === 'custom' ? 'text-primary' : 'text-white/40'}`}>TON</span>
+                                <span className={`text-[10px] font-black uppercase tracking-wider ${feeType === 'custom' ? 'text-primary' : 'text-white/40'}`}>CHZ</span>
                             </button>
                         </div>
 
@@ -174,24 +174,24 @@ export const CreateTournament: React.FC = () => {
                             </div>
                         )}
 
-                        {/* TON Amount Selector */}
+                        {/* CHZ Amount Selector */}
                         {feeType === 'custom' && (
                             <div className="mt-4 space-y-3 animate-in slide-in-from-top-2 duration-300">
                                 <div className="flex items-center justify-between p-4 rounded-2xl bg-white/5 border border-white/10">
                                     <div>
                                         <p className="text-[10px] font-black text-white/40 uppercase tracking-widest">Entry Per Player</p>
-                                        <p className="text-2xl font-black text-blue-400">{tonAmount} <span className="text-sm opacity-40">TON</span></p>
+                                        <p className="text-2xl font-black text-primary">{chzAmount} <span className="text-sm opacity-40">CHZ</span></p>
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <button
-                                            onClick={() => setTonAmount(Math.max(0.1, +(tonAmount - 0.5).toFixed(1)))}
+                                            onClick={() => setChzAmount(Math.max(10, chzAmount - 10))}
                                             className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center text-white active:scale-90 transition-all"
                                         >
                                             <Minus size={16} />
                                         </button>
                                         <button
-                                            onClick={() => setTonAmount(Math.min(50, +(tonAmount + 0.5).toFixed(1)))}
-                                            className="w-10 h-10 rounded-xl bg-blue-500/20 flex items-center justify-center text-blue-400 active:scale-90 transition-all"
+                                            onClick={() => setChzAmount(Math.min(5000, chzAmount + 10))}
+                                            className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center text-primary active:scale-90 transition-all"
                                         >
                                             <Plus size={16} />
                                         </button>
@@ -199,21 +199,21 @@ export const CreateTournament: React.FC = () => {
                                 </div>
                                 {/* Quick presets */}
                                 <div className="flex gap-2">
-                                    {TON_PRESETS.map(val => (
+                                    {CHZ_PRESETS.map(val => (
                                         <button
                                             key={val}
-                                            onClick={() => setTonAmount(val)}
-                                            className={`flex-1 py-2 rounded-xl text-[10px] font-black uppercase transition-all flex items-center justify-center gap-1 ${tonAmount === val ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/20' : 'bg-white/5 text-white/40'}`}
+                                            onClick={() => setChzAmount(val)}
+                                            className={`flex-1 py-2 rounded-xl text-[10px] font-black uppercase transition-all flex items-center justify-center gap-1 ${chzAmount === val ? 'bg-primary text-background-dark shadow-lg shadow-primary/20' : 'bg-white/5 text-white/40'}`}
                                         >
                                             {val} <Diamond size={10} fill="currentColor" />
                                         </button>
                                     ))}
                                 </div>
 
-                                {/* TON Coming Soon Notice */}
-                                <div className="flex items-center gap-3 p-3 bg-blue-500/10 rounded-xl border border-blue-500/20">
-                                    <Info size={14} className="text-blue-400 shrink-0" />
-                                    <p className="text-[10px] text-blue-400/80 font-bold">TON tournaments launch in Phase 2. Star rooms are live now!</p>
+                                {/* CHZ Coming Soon Notice */}
+                                <div className="flex items-center gap-3 p-3 bg-primary/10 rounded-xl border border-primary/20">
+                                    <Info size={14} className="text-primary shrink-0" />
+                                    <p className="text-[10px] text-primary/80 font-bold">CHZ tournaments launch in Phase 2. Star rooms are live now!</p>
                                 </div>
                             </div>
                         )}
@@ -275,10 +275,10 @@ export const CreateTournament: React.FC = () => {
                     fullWidth
                     onClick={() => {
                         if (feeType === 'custom') {
-                            // TON tournaments not yet supported
+                            // CHZ tournaments not yet supported
                             const tg = (window as any).Telegram?.WebApp;
                             if (tg?.showAlert) {
-                                tg.showAlert('TON tournaments are coming soon! Try creating a Star room instead.');
+                                tg.showAlert('CHZ tournaments are coming soon! Try creating a Star room instead.');
                             }
                             return;
                         }

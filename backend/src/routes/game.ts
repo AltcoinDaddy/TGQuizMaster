@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { supabase } from '../config/supabase';
-import { getTonBalance } from '../utils/tonBalance';
+// import { getTonBalance } from '../utils/tonBalance'; // Removed
+import { getChilizBalance } from '../utils/chilizBalance';
 import { telegramAuthMiddleware } from '../middleware/auth';
 import { withdrawalRateLimit } from '../middleware/rateLimit';
 
@@ -122,22 +123,22 @@ router.post('/withdraw', withdrawalRateLimit, telegramAuthMiddleware, async (req
         // 1. Verify wallet ownership
         const { data: user } = await supabase
             .from('users')
-            .select('wallet_address')
+            .select('chiliz_wallet_address')
             .eq('telegram_id', userId)
             .single();
 
-        if (!user || !user.wallet_address) {
-            return res.status(400).json({ error: 'No wallet connected to your account' });
+        if (!user || !user.chiliz_wallet_address) {
+            return res.status(400).json({ error: 'No Chiliz wallet connected to your account' });
         }
 
-        if (user.wallet_address !== address) {
-            console.warn(`[SECURITY] Withdrawal wallet mismatch for user ${userId}: stored=${user.wallet_address}, requested=${address}`);
+        if (user.chiliz_wallet_address.toLowerCase() !== address.toLowerCase()) {
+            console.warn(`[SECURITY] Withdrawal wallet mismatch for user ${userId}: stored=${user.chiliz_wallet_address}, requested=${address}`);
             return res.status(403).json({ error: 'Wallet address does not match your account' });
         }
 
         // 2. Minimum withdrawal
-        if (withdrawAmount < 0.1) {
-            return res.status(400).json({ error: 'Minimum withdrawal is 0.1 TON' });
+        if (withdrawAmount < 10) {
+            return res.status(400).json({ error: 'Minimum withdrawal is 10 CHZ' });
         }
 
         // 3. Daily limit
@@ -155,7 +156,7 @@ router.post('/withdraw', withdrawalRateLimit, telegramAuthMiddleware, async (req
         }
 
         // 4. Check on-chain balance
-        const liveBalance = await getTonBalance(address);
+        const liveBalance = await getChilizBalance(address);
         if (liveBalance < withdrawAmount) {
             return res.status(400).json({ error: 'Insufficient on-chain balance' });
         }
@@ -167,14 +168,14 @@ router.post('/withdraw', withdrawalRateLimit, telegramAuthMiddleware, async (req
                 user_id: userId,
                 type: 'WITHDRAWAL',
                 amount: -withdrawAmount,
-                currency: 'TON',
-                metadata: { destination: address },
+                currency: 'CHZ',
+                metadata: { destination: address, chain: 'Chiliz Chain' },
                 status: 'PENDING'
             });
 
         if (txError) throw txError;
 
-        console.log(`[WITHDRAW] User ${userId} requested ${withdrawAmount} TON to ${address}`);
+        console.log(`[WITHDRAW] User ${userId} requested ${withdrawAmount} CHZ to ${address}`);
         res.json({ success: true, message: 'Withdrawal request submitted for processing' });
     } catch (error: any) {
         console.error('Withdrawals API Error:', error.message);

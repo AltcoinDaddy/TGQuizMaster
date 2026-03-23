@@ -22,14 +22,14 @@ export const PowerUp: React.FC<PowerUpProps> = ({ type, count, disabled, onUse }
         'extraLife': {
             icon: <Heart size={20} />,
             label: 'Life',
-            color: 'text-red-400',
-            bgColor: 'bg-red-400/10',
+            color: 'text-accent-gold',
+            bgColor: 'bg-accent-gold/10',
         },
         'timeFreeze': {
             icon: <Watch size={20} />,
             label: 'Freeze',
-            color: 'text-blue-400',
-            bgColor: 'bg-blue-400/10',
+            color: 'text-primary',
+            bgColor: 'bg-primary/10',
         }
     };
 

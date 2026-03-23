@@ -90,7 +90,7 @@ export const SquadDetail = () => {
                         <Share2 size={20} />
                     </button>
                     {isMySquad && (
-                        <button onClick={handleLeave} className="p-2 bg-red-500/10 rounded-xl text-red-500/60">
+                        <button onClick={handleLeave} className="p-2 bg-white/5 rounded-xl text-white/40">
                             <LogOut size={20} />
                         </button>
                     )}

@@ -85,7 +85,7 @@ export const MegaTournament: React.FC = () => {
                     <div className="relative z-10">
                         <div className="flex items-center gap-3 mb-2">
                             <span className="bg-yellow-400 text-black text-[10px] font-black px-3 py-1 rounded-full uppercase italic tracking-tighter shadow-lg shadow-yellow-400/20">Active Season</span>
-                            <div className="flex items-center gap-1.5 text-red-500 animate-pulse">
+                            <div className="flex items-center gap-1.5 text-primary animate-pulse">
                                 <Timer size={14} />
                                 <span className="text-[10px] font-black uppercase tracking-widest">
                                     Ends in {getTimeRemaining(season.end_time)}

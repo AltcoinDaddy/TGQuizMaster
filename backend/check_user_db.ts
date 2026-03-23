@@ -20,7 +20,7 @@ async function checkUserDb() {
     console.log('- Telegram ID:', data.telegram_id);
     console.log('- Username:', data.username);
     console.log('- Chiliz Wallet:', data.chiliz_wallet_address);
-    console.log('- TON Wallet:', data.wallet_address);
+    console.log('- Legacy Wallet:', data.wallet_address);
 }
 
 checkUserDb();

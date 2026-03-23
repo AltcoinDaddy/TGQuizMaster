@@ -3,13 +3,12 @@ import { useAppStore } from '../../store/useAppStore';
 import { MainLayout } from '../layout/MainLayout';
 import { ChevronLeft, Volume2, VolumeX, Smartphone, Shield, LogOut } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { useTonConnectUI } from '@tonconnect/ui-react';
 
 
 export const Settings: React.FC = () => {
     const navigate = useNavigate();
     const { user, updateSettings } = useAppStore();
-    const [tonConnectUI] = useTonConnectUI();
+
 
     const { soundEnabled, hapticsEnabled } = user.settings || { soundEnabled: true, hapticsEnabled: true };
 
@@ -25,8 +24,7 @@ export const Settings: React.FC = () => {
         }
     };
 
-    const handleDisconnect = () => {
-        tonConnectUI.disconnect();
+    const handleLogout = () => {
         navigate('/');
     };
 
@@ -89,7 +87,7 @@ export const Settings: React.FC = () => {
                         <div className="bg-white/5 border border-white/5 rounded-3xl overflow-hidden">
                             <button className="w-full p-5 flex items-center justify-between border-b border-white/5 active:bg-white/5 transition-all">
                                 <div className="flex items-center gap-4">
-                                    <div className="w-10 h-10 rounded-xl bg-blue-500/20 text-blue-400 flex items-center justify-center">
+                                    <div className="w-10 h-10 rounded-xl bg-primary/20 text-primary flex items-center justify-center">
                                         <Shield size={20} />
                                     </div>
                                     <div className="text-left">
@@ -100,14 +98,14 @@ export const Settings: React.FC = () => {
                                 <ChevronLeft size={16} className="rotate-180 opacity-20" />
                             </button>
 
-                            <button onClick={handleDisconnect} className="w-full p-5 flex items-center justify-between active:bg-red-500/10 transition-all group">
+                            <button onClick={handleLogout} className="w-full p-5 flex items-center justify-between active:bg-white/5 transition-all group">
                                 <div className="flex items-center gap-4">
-                                    <div className="w-10 h-10 rounded-xl bg-red-500/10 text-red-400 flex items-center justify-center group-hover:bg-red-500 group-hover:text-white transition-all">
+                                    <div className="w-10 h-10 rounded-xl bg-white/5 text-white/20 flex items-center justify-center group-hover:bg-white/10 group-hover:text-white transition-all">
                                         <LogOut size={20} />
                                     </div>
                                     <div className="text-left">
-                                        <p className="font-black text-sm uppercase italic tracking-tighter text-red-400 group-hover:text-red-300">Disconnect Wallet</p>
-                                        <p className="text-[9px] text-red-400/50 font-bold uppercase tracking-widest">Sign Out</p>
+                                        <p className="font-black text-sm uppercase italic tracking-tighter text-white/40 group-hover:text-white/60">Sign Out</p>
+                                        <p className="text-[9px] text-white/20 font-bold uppercase tracking-widest">Logout</p>
                                     </div>
                                 </div>
                             </button>

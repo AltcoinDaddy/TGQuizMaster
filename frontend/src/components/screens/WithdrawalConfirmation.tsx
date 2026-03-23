@@ -6,37 +6,84 @@ import { Button } from '../ui/Button';
 import { ChevronLeft, ShieldAlert, Wallet, CheckCircle2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../../store/useAppStore';
+import { useAppKit, useAppKitAccount } from '@reown/appkit/react';
+import { useBalance } from 'wagmi';
+import { formatUnits } from 'viem';
 
 export const WithdrawalConfirmation: React.FC = () => {
     const navigate = useNavigate();
     const { user, setUser } = useAppStore();
     const [loading, setLoading] = React.useState(false);
+    const [isManual, setIsManual] = React.useState(false);
+    const [manualAddress, setManualAddress] = React.useState('');
+    const [addressError, setAddressError] = React.useState('');
+    const [withdrawAmount, setWithdrawAmount] = React.useState('');
+    const [amountError, setAmountError] = React.useState('');
+
+    const { open } = useAppKit();
+    const { address, isConnected } = useAppKitAccount();
+    const { data: balanceData } = useBalance({
+        address: address as `0x${string}`,
+    });
+
+    // Use on-chain balance if connected, otherwise fallback to store balance
+    const chilizBalance = isConnected && balanceData 
+        ? parseFloat(formatUnits(balanceData.value, balanceData.decimals)) 
+        : (user.chilizBalance || 0);
 
     // Fee logic
-    const networkFee = 0.05;
-    const withdrawableAmount = Math.max(0, (user.tonBalance ?? 0) - networkFee);
+    const networkFee = 0.1; // 0.1 CHZ fee (realistically covers gas)
+
+    const numAmount = parseFloat(withdrawAmount) || 0;
+    const netAmount = Math.max(0, numAmount - networkFee);
+    const isAmountValid = numAmount >= networkFee && numAmount <= chilizBalance;
+
+    const validateAddress = (addr: string) => {
+        if (!addr) return 'Address is required';
+        if (!/^0x[a-fA-F0-9]{40}$/.test(addr)) return 'Invalid Chiliz address format';
+        return '';
+    };
+
+    const targetAddress = isManual ? manualAddress : address;
+    const isAddressValid = isManual ? !validateAddress(manualAddress) : !!address;
+
+    const handleMax = () => {
+        setWithdrawAmount(chilizBalance.toFixed(2));
+    };
 
     const handleWithdraw = async () => {
-        if (withdrawableAmount <= 0) {
-            alert("Insufficient balance to cover fees.");
+        if (isManual) {
+            const error = validateAddress(manualAddress);
+            if (error) {
+                setAddressError(error);
+                return;
+            }
+        } else if (!address || !isConnected) {
+            open();
             return;
         }
-        if (!user.walletAddress) {
-            alert("Please connect a wallet first.");
+
+        if (!isAmountValid) {
+            if (numAmount < networkFee) {
+                setAmountError(`Minimum withdrawal is ${networkFee} CHZ`);
+            } else {
+                setAmountError("Amount exceeds balance");
+            }
             return;
         }
 
         setLoading(true);
         try {
             const res = await authPost('/api/withdraw', {
-                amount: withdrawableAmount,
-                address: user.walletAddress
+                telegramId: user.telegramId,
+                amount: numAmount,
+                address: targetAddress
             });
 
             const data = await res.json();
             if (res.ok && data.success) {
                 // Update local state
-                setUser({ tonBalance: data.newBalance });
+                setUser({ chilizBalance: data.newBalance });
                 navigate('/withdrawal-success');
             } else {
                 alert(data.error || 'Withdrawal failed');
@@ -65,52 +112,114 @@ export const WithdrawalConfirmation: React.FC = () => {
 
                 {/* Amount Header */}
                 <div className="text-center mb-10">
-                    <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-blue-500/10 mb-4 border border-blue-500/20">
+                    <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-primary/10 mb-4 border border-primary/20">
                         <img
-                            src="https://ton.org/download/ton_symbol.svg"
-                            alt="TON"
-                            className="w-12 h-12"
+                            src="https://assets.coingecko.com/coins/images/8834/large/Chiliz.png"
+                            alt="CHZ"
+                            className="w-12 h-12 rounded-full"
                         />
                     </div>
                     <p className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em] mb-2">Total Balance</p>
                     <div className="flex items-center justify-center gap-3 mb-1">
-                        <span className="text-5xl font-black text-white italic">{(user.tonBalance ?? 0).toFixed(2)}</span>
-                        <span className="text-2xl font-black text-primary italic">TON</span>
+                        <span className="text-5xl font-black text-white italic">{chilizBalance.toFixed(2)}</span>
+                        <span className="text-2xl font-black text-primary italic">CHZ</span>
                     </div>
-                    <p className="text-sm font-bold text-white/30 uppercase tracking-widest">≈ ${((user.tonBalance ?? 0) * 5.15).toFixed(2)} USD</p>
+                    <p className="text-sm font-bold text-white/30 uppercase tracking-widest">≈ ${(chilizBalance * 0.035).toFixed(2)} USD</p>
                 </div>
 
                 {/* Details */}
-                <div className="space-y-4 mb-10">
+                <div className="space-y-6 mb-10">
+                    {/* Toggle */}
+                    <div className="flex bg-white/5 rounded-2xl p-1 border border-white/10">
+                        <button
+                            onClick={() => setIsManual(false)}
+                            className={`flex-1 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${!isManual ? 'bg-primary text-background-dark' : 'text-white/40'}`}
+                        >
+                            Connected Wallet
+                        </button>
+                        <button
+                            onClick={() => setIsManual(true)}
+                            className={`flex-1 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${isManual ? 'bg-primary text-background-dark' : 'text-white/40'}`}
+                        >
+                            External Wallet
+                        </button>
+                    </div>
+
                     <div className="space-y-2">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-white/30 ml-2">Destination Wallet</label>
-                        <GlassCard className="p-5 flex items-center justify-between border-white/5 bg-white/5">
-                            <div className="flex items-center gap-3">
-                                <Wallet size={18} className="text-white/40" />
-                                <span className="font-mono text-xs font-bold text-white/80">
-                                    {user.walletAddress
-                                        ? `${user.walletAddress.slice(0, 6)}...${user.walletAddress.slice(-6)}`
-                                        : 'No Wallet Linked'}
-                                </span>
+                        <label className="text-[10px] font-black uppercase tracking-widest text-white/30 ml-2">
+                            {isManual ? 'External Destination Address' : 'Connected Wallet Address'}
+                        </label>
+                        
+                        {isManual ? (
+                            <div className="space-y-2">
+                                <input
+                                    type="text"
+                                    value={manualAddress}
+                                    onChange={(e) => {
+                                        setManualAddress(e.target.value);
+                                        setAddressError('');
+                                    }}
+                                    placeholder="0x..."
+                                    className={`w-full bg-white/5 border ${addressError ? 'border-red-500/50' : 'border-white/10'} rounded-2xl p-5 text-sm font-mono text-white placeholder:text-white/20 focus:outline-none focus:border-primary/50 transition-all`}
+                                />
+                                {addressError && <p className="text-[8px] font-bold text-red-500 uppercase tracking-widest ml-2">{addressError}</p>}
                             </div>
-                            {user.walletAddress ? (
-                                <CheckCircle2 size={16} className="text-primary" />
-                            ) : (
-                                <ShieldAlert size={16} className="text-red-400" />
-                            )}
-                        </GlassCard>
+                        ) : (
+                            <GlassCard className="p-5 flex items-center justify-between border-white/5 bg-white/5">
+                                <div className="flex items-center gap-3">
+                                    <Wallet size={18} className="text-white/40" />
+                                    <span className="font-mono text-xs font-bold text-white/80">
+                                        {address
+                                            ? `${address.slice(0, 6)}...${address.slice(-6)}`
+                                            : 'No Wallet Linked'}
+                                    </span>
+                                </div>
+                                {address ? (
+                                    <CheckCircle2 size={16} className="text-primary" />
+                                ) : (
+                                    <ShieldAlert size={16} className="text-accent-gold" />
+                                )}
+                            </GlassCard>
+                        )}
+                    </div>
+
+                    <div className="space-y-4">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-white/30 ml-2">
+                            Amount to Withdraw
+                        </label>
+                        <div className="space-y-2">
+                            <div className="relative group">
+                                <input
+                                    type="number"
+                                    value={withdrawAmount}
+                                    onChange={(e) => {
+                                        setWithdrawAmount(e.target.value);
+                                        setAmountError('');
+                                    }}
+                                    placeholder="0.00"
+                                    className={`w-full bg-white/5 border ${amountError ? 'border-red-500/50' : 'border-white/10'} rounded-2xl p-5 pr-20 text-xl font-black italic text-white placeholder:text-white/10 focus:outline-none focus:border-primary/50 transition-all`}
+                                />
+                                <button
+                                    onClick={handleMax}
+                                    className="absolute right-4 top-1/2 -translate-y-1/2 bg-primary/20 hover:bg-primary/30 text-primary text-[10px] font-black uppercase tracking-widest px-3 py-2 rounded-xl border border-primary/30 transition-all"
+                                >
+                                    MAX
+                                </button>
+                            </div>
+                            {amountError && <p className="text-[8px] font-bold text-red-500 uppercase tracking-widest ml-2">{amountError}</p>}
+                        </div>
                     </div>
 
                     <div className="bg-white/5 border border-white/10 rounded-[2rem] p-6 space-y-4">
                         <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest">
                             <span className="text-white/30">Network Fee</span>
-                            <span className="text-white/80">{networkFee} TON</span>
+                            <span className="text-white/80">{networkFee} CHZ</span>
                         </div>
                         <div className="h-[1px] bg-white/5"></div>
                         <div className="flex justify-between items-center italic">
                             <span className="text-[10px] font-black uppercase tracking-widest text-white/30">Net Amount to Receive</span>
-                            <span className={`text-2xl font-black italic ${withdrawableAmount > 0 ? 'text-primary' : 'text-white/20'}`}>
-                                {withdrawableAmount.toFixed(2)} TON
+                            <span className={`text-2xl font-black italic ${isAmountValid ? 'text-primary' : 'text-white/20'}`}>
+                                {netAmount.toFixed(2)} CHZ
                             </span>
                         </div>
                     </div>
@@ -129,10 +238,10 @@ export const WithdrawalConfirmation: React.FC = () => {
                     <Button
                         fullWidth
                         onClick={handleWithdraw}
-                        disabled={loading || withdrawableAmount <= 0 || !user.walletAddress}
+                        disabled={loading || !isAmountValid || !isAddressValid}
                         className="py-5 text-xl gap-3 shadow-[0_10px_30px_rgba(13,242,89,0.3)] font-black italic tracking-widest disabled:opacity-50 disabled:shadow-none"
                     >
-                        {loading ? 'PROCESSING...' : (user.walletAddress ? 'CONFIRM & WITHDRAW' : 'CONNECT WALLET FIRST')}
+                        {loading ? 'PROCESSING...' : (isAddressValid && isAmountValid ? 'CONFIRM & WITHDRAW' : 'CHECK DETAILS')}
                     </Button>
                     <button
                         onClick={() => navigate(-1)}

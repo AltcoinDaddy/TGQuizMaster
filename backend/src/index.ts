@@ -14,7 +14,7 @@ import dns from 'dns';
 // }
 
 import { supabase } from './config/supabase';
-import { getTonBalance } from './utils/tonBalance';
+import { getChilizBalance } from './utils/chilizBalance';
 import { socketAuthMiddleware } from './middleware/auth';
 
 import { GameManager } from './utils/GameManager';
@@ -81,7 +81,7 @@ const verifySchema = async () => {
             // Test if wallet_address is actually in the columns
             if (data && data.length > 0) {
                 const cols = Object.keys(data[0]);
-                if (!cols.includes('wallet_address')) console.error('[DB] WARNING: wallet_address missing from keys!');
+                if (!cols.includes('chiliz_wallet_address')) console.error('[DB] WARNING: chiliz_wallet_address missing from keys!');
                 if (!cols.includes('referred_by')) console.error('[DB] WARNING: referred_by missing from keys!');
             }
         }
@@ -282,13 +282,13 @@ async function syncUser(socket: any, telegramId: string, username: string) {
             if (updatedUser) user = updatedUser;
         }
 
-        // 3. Fetch TON Balance
-        let tonBalance = 0;
-        if (user.wallet_address) {
+        // 3. Fetch Chiliz Balance
+        let chilizBalance = 0;
+        if (user.chiliz_wallet_address) {
             try {
-                tonBalance = await getTonBalance(user.wallet_address);
+                chilizBalance = await getChilizBalance(user.chiliz_wallet_address);
             } catch (e) {
-                console.error(`[SYNC-TON] Failed for ${userId}:`, e);
+                console.error(`[SYNC-CHZ] Failed for ${userId}:`, e);
             }
         }
 
@@ -304,13 +304,13 @@ async function syncUser(socket: any, telegramId: string, username: string) {
 
         socket.emit('profile_synced', {
             stars: user.balance_stars,
-            ton: tonBalance,
+            chiliz: chilizBalance,
             xp: user.stats_xp || 0,
             wins: user.stats_wins || 0,
             totalGames: user.stats_total_games || 0,
             balanceQP: user.balance_qp || 0,
-            walletConnected: !!user.wallet_address,
-            walletAddress: user.wallet_address,
+            walletConnected: !!user.chiliz_wallet_address,
+            walletAddress: user.chiliz_wallet_address,
             isAdmin: (process.env.ADMIN_IDS || '').split(',').map(id => id.trim()).includes(userId.toString()),
             referralCount: user.stats_referrals || 0,
             referralEarnings,
@@ -655,9 +655,9 @@ io.on('connection', (socket) => {
                     manager.recalculatePrizePool();
                     io.to(roomId).emit('game_start');
                     await manager.start();
-                } else if (manager.getPlayers().length === 1 && (info.type === 'stars' || info.type === 'ton') && !isPrivateJoin) {
+                } else if (manager.getPlayers().length === 1 && (info.type === 'stars' || info.type === 'chz') && !isPrivateJoin) {
                     console.log(`[NOTIFY-PLAN] Room ${roomId} is public. Scheduling broadcast...`);
-                    // NEW: Notify other users about the new room (ONLY for public Stars/TON rooms)
+                    // NEW: Notify other users about the new room (ONLY for public Stars/CHZ rooms)
                     // We only do this when the FIRST player creates/joins to avoid spam
                     setTimeout(async () => {
                         try {
@@ -809,7 +809,7 @@ io.on('connection', (socket) => {
 
             await supabase
                 .from('users')
-                .update({ wallet_address: walletAddress })
+                .update({ chiliz_wallet_address: walletAddress })
                 .eq('telegram_id', userId);
 
             await syncUser(socket, telegramId, '');
@@ -843,7 +843,7 @@ io.on('connection', (socket) => {
                 ...result.data,
                 newBalances: {
                     stars: user.balance_stars,
-                    ton: 0,
+                    balanceCHZ: user.balance_chz || 0,
                     xp: user.stats_xp || 0,
                     balanceQP: user.balance_qp || 0,
                     balanceShards: user.balance_shards || 0

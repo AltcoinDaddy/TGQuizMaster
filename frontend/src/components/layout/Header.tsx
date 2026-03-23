@@ -1,31 +1,26 @@
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Star, Gem, Zap } from 'lucide-react';
-import { useTonConnectUI, useTonAddress } from '@tonconnect/ui-react';
+import { useAppKit, useAppKitAccount } from '@reown/appkit/react';
 import { useAppStore } from '../../store/useAppStore';
 import { socket } from '../../utils/socket';
 
 export const Header: React.FC = () => {
     const location = useLocation();
     const navigate = useNavigate();
-    const [tonConnectUI] = useTonConnectUI();
-    const userFriendlyAddress = useTonAddress();
+    const { open } = useAppKit();
+    const { address, isConnected } = useAppKitAccount();
     const { user } = useAppStore();
 
-    const isConnected = !!userFriendlyAddress;
-    const shortAddress = userFriendlyAddress
-        ? `${userFriendlyAddress.slice(0, 4)}...${userFriendlyAddress.slice(-4)}`
+    const shortAddress = address
+        ? `${address.slice(0, 4)}...${address.slice(-4)}`
         : '';
 
     // Calculate level based on XP (every 1000 XP is 1 level)
     const currentLevel = Math.floor((user.xp || 0) / 1000) + 1;
 
     const handleWalletClick = () => {
-        if (isConnected) {
-            tonConnectUI.disconnect();
-        } else {
-            tonConnectUI.openModal();
-        }
+        open();
     };
 
     return (
@@ -91,8 +86,8 @@ export const Header: React.FC = () => {
                     onClick={() => navigate('/onboarding')}
                     className="bg-white/5 border border-white/10 p-3 rounded-2xl flex flex-col items-center active:scale-95 transition-all hover:bg-white/10 group"
                 >
-                    <Gem size={14} fill="currentColor" className="text-blue-400 mb-1" />
-                    <span className="text-[10px] font-black italic tracking-tighter">{(user.tonBalance ?? 0).toFixed(1)}</span>
+                    <Gem size={14} fill="currentColor" className="text-primary mb-1" />
+                    <span className="text-[10px] font-black italic tracking-tighter">{(user.chilizBalance ?? 0).toFixed(1)}</span>
                 </button>
             </div>
         </header>

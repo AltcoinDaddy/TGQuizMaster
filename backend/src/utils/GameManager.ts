@@ -51,7 +51,7 @@ export class GameManager {
     private currentIndex = 0;
     private timer = 15;
     private io: any;
-    private tournamentType: 'free' | 'stars' | 'ton' | 'practice' = 'free';
+    private tournamentType: 'free' | 'stars' | 'chz' | 'practice' = 'free';
     private prizePool = 0;
     private entryFee = 0;
     private questionCount = 10;
@@ -66,7 +66,7 @@ export class GameManager {
     private categoryId: number | null = null;
     public megaRoom: boolean = false;
     // Match & Stakes tracking
-    public currency: 'STARS' | 'TON' = 'STARS';
+    public currency: 'STARS' | 'CHZ' = 'STARS';
 
     private readonly CATEGORY_MAP: Record<string, number> = {
         'General': 9,
@@ -81,7 +81,7 @@ export class GameManager {
         'Gadgets': 30
     };
 
-    constructor(roomId: string, io: any, type: 'free' | 'stars' | 'ton' | 'practice' = 'free', prize = 0, fee = 0, maxPlayers = 5, category = 'General', isMega = false) {
+    constructor(roomId: string, io: any, type: 'free' | 'stars' | 'chz' | 'practice' = 'free', prize = 0, fee = 0, maxPlayers = 5, category = 'General', isMega = false) {
         this.roomId = roomId;
         this.players = [];
         this.io = io;
@@ -93,7 +93,7 @@ export class GameManager {
         this.categoryId = this.CATEGORY_MAP[category] || null;
         this.megaRoom = isMega;
         this.questionCount = type === 'practice' ? 5 : (this.megaRoom ? 50 : 10);
-        this.currency = type === 'ton' ? 'TON' : 'STARS';
+        this.currency = type === 'chz' ? 'CHZ' : 'STARS';
 
         // Auto-expire rooms after 5 minutes if not filled (skip for practice — instant start)
         if (type !== 'practice') {
@@ -166,7 +166,7 @@ export class GameManager {
             prizePool: this.prizePool,
             entryFee: this.entryFee,
             status: this.started ? 'live' : 'waiting',
-            currency: this.tournamentType === 'stars' ? 'Stars' : 'TON',
+            currency: this.tournamentType === 'stars' ? 'Stars' : 'CHZ',
             category: this.category,
             // Live state for mid-game joins
             currentQuestion: this.started && this.questions[this.currentIndex] ? {
@@ -241,7 +241,7 @@ export class GameManager {
         // Fallback: static crypto/tech questions if everything fails
         this.questions = [
             { id: 'f1', text: "Which consensus mechanism does Ethereum now use?", options: ["Proof of Work", "Proof of Stake", "Proof of History", "Proof of Authority"], correctAnswer: "Proof of Stake" },
-            { id: 'f2', text: "What is the primary token of the TON network?", options: ["ETH", "SOL", "TON", "DOT"], correctAnswer: "TON" },
+            { id: 'f2', text: "What is the primary token of the Chiliz network?", options: ["ETH", "SOL", "CHZ", "DOT"], correctAnswer: "CHZ" },
             { id: 'f3', text: "Who is the founder of Telegram?", options: ["Pavel Durov", "Mark Zuckerberg", "Jack Dorsey", "Vitalik Buterin"], correctAnswer: "Pavel Durov" },
             { id: 'f4', text: "What does 'HODL' originally stand for in crypto?", options: ["Hold On for Dear Life", "Highly Optimized Digital Ledger", "Home of Digital Liberty", "It was a typo for 'HOLD'"], correctAnswer: "It was a typo for 'HOLD'" },
             { id: 'f5', text: "In which year was Bitcoin created?", options: ["2008", "2009", "2010", "2011"], correctAnswer: "2009" }
@@ -325,7 +325,7 @@ export class GameManager {
             player.score += Math.round(points);
 
             // Add Season XP if this is a tournament/ranked game
-            if (this.tournamentType === 'stars' || this.tournamentType === 'ton') {
+            if (this.tournamentType === 'stars' || this.tournamentType === 'chz') {
                 const userId = parseInt(player.id);
                 if (!isNaN(userId)) {
                     RewardService.addSeasonXP(userId, Math.round(points)).catch(e =>
@@ -391,7 +391,7 @@ export class GameManager {
 
         // Calculate rake and net prize pool
         const grossPool = this.entryFee * this.players.length;
-        const rake = (this.tournamentType === 'stars' || this.tournamentType === 'ton')
+        const rake = (this.tournamentType === 'stars' || this.tournamentType === 'chz')
             ? Math.floor(grossPool * this.rakePercentage)
             : 0;
         const netPrize = grossPool - rake;
@@ -404,7 +404,7 @@ export class GameManager {
         };
 
         const prizes = [distribution.first, distribution.second, distribution.third];
-        const currency = this.tournamentType === 'stars' ? 'STARS' : 'TON';
+        const currency = this.tournamentType === 'stars' ? 'STARS' : 'CHZ';
 
         // Practice mode — give small rewards + update daily counters
         if (this.tournamentType === 'practice') {
@@ -502,14 +502,14 @@ export class GameManager {
 
 
                         const { data: freshUser } = await supabase.from('users')
-                            .select('balance_stars, stats_xp, balance_ton, balance_qp')
+                            .select('balance_stars, stats_xp, balance_chz, balance_qp')
                             .eq('telegram_id', userId)
                             .single();
                         if (freshUser) {
                             this.io.to(this.roomId).emit('balance_update', {
                                 stars: freshUser.balance_stars,
                                 xp: freshUser.stats_xp,
-                                ton: freshUser.balance_ton || 0,
+                                balanceCHZ: freshUser.balance_chz || 0,
                                 balanceQP: freshUser.balance_qp || 0
                             });
                         }
@@ -602,7 +602,7 @@ export class GameManager {
 
                     if (prize > 0) {
                         if (currency === 'STARS') updates.balance_stars = (user.balance_stars || 0) + prize;
-                        // TON prizes handled via smart contract (Phase 2)
+                        // CHZ prizes handled via smart contract (Phase 2)
 
                         await supabase.from('transactions').insert({
                             user_id: userId,
@@ -620,7 +620,7 @@ export class GameManager {
                     await supabase.from('users').update(updates).eq('telegram_id', userId);
 
                     // Add Season XP if a season is active
-                    if (this.tournamentType === 'stars' || this.tournamentType === 'ton') {
+                    if (this.tournamentType === 'stars' || this.tournamentType === 'chz') {
                         const multiplier = this.megaRoom ? 2 : 1;
                         const xpToAdd = player.score * multiplier;
                         if (xpToAdd > 0) {
@@ -677,7 +677,7 @@ export class GameManager {
             console.error('Failed to save game results to DB:', error);
         }
 
-        console.log(`Game Over in ${this.roomId}. 1st: ${winners[0]?.username} wins ${distribution.first} ${this.tournamentType === 'stars' ? 'Stars' : 'TON'}`);
+        console.log(`Game Over in ${this.roomId}. 1st: ${winners[0]?.username} wins ${distribution.first} ${this.tournamentType === 'stars' ? 'Stars' : 'CHZ'}`);
 
         // Emit balance update so frontend refreshes immediately
         for (const player of winners) {
@@ -686,13 +686,13 @@ export class GameManager {
             try {
 
                 const { data: freshUser } = await supabase.from('users')
-                    .select('balance_stars, balance_ton, stats_xp, balance_qp')
+                    .select('balance_stars, balance_chz, stats_xp, balance_qp')
                     .eq('telegram_id', userId)
                     .single();
                 if (freshUser) {
                     this.io.to(this.roomId).emit('balance_update', {
                         stars: freshUser.balance_stars,
-                        ton: freshUser.balance_ton || 0,
+                        balanceCHZ: freshUser.balance_chz || 0,
                         xp: freshUser.stats_xp,
                         balanceQP: freshUser.balance_qp || 0
                     });
@@ -705,7 +705,7 @@ export class GameManager {
         this.io.to(this.roomId).emit('game_over', {
             winners,
             prizes: distribution,
-            currency: this.tournamentType === 'stars' ? 'Stars' : 'TON',
+            currency: this.tournamentType === 'stars' ? 'Stars' : 'CHZ',
             roomId: this.roomId
         });
 

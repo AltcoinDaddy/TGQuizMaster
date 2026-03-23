@@ -9,7 +9,7 @@ dotenv.config({ path: path.join(__dirname, '../.env') });
 const SUPABASE_URL = process.env.SUPABASE_URL || '';
 const SUPABASE_KEY = process.env.SUPABASE_KEY || '';
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '';
-const APP_URL = process.env.VITE_APP_URL || 'https://tgquizmaster.online';
+const APP_URL = process.env.VITE_APP_URL || 'https://chiliquiz.online';
 
 if (!SUPABASE_URL || !SUPABASE_KEY || !BOT_TOKEN) {
     console.error('Missing environment variables!');
@@ -24,11 +24,11 @@ const MESSAGE = `
 
 The ultimate team competition has arrived! Form your community, climb the ranks, and dominate the Arena.
 
-🏆 *Weekly 100 TON Prize Pool*
-The Top 3 Squads every week share **100 TON**!
-🥇 1st: 50 TON
-🥈 2nd: 30 TON
-🥉 3rd: 20 TON
+🏆 *Weekly 1000 CHZ Prize Pool*
+The Top 3 Squads every week share **1000 CHZ**!
+🥇 1st: 500 CHZ
+🥈 2nd: 300 CHZ
+🥉 3rd: 200 CHZ
 
 🚀 *Squad Leader Bonus*
 Found or lead a squad to earn a **LIFETIME 5% XP BONUS** on all your game contributions!

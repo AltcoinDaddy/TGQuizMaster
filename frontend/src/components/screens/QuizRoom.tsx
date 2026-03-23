@@ -184,7 +184,6 @@ export const QuizRoom: React.FC = () => {
                 useAppStore.getState().setUser({
                     ...currentUser,
                     stars: balance.stars ?? currentUser.stars,
-                    tonBalance: balance.ton ?? currentUser.tonBalance,
                     xp: balance.xp ?? currentUser.xp,
                     balanceQP: balance.balanceQP ?? currentUser.balanceQP
                 });
@@ -585,7 +584,7 @@ export const QuizRoom: React.FC = () => {
                             buttonClass = 'bg-white/2 border-white/5 opacity-30 line-through pointer-events-none';
                         } else if (isSelected) {
                             if (isCorrect === true) buttonClass = 'bg-primary/20 border-primary shadow-[0_0_20px_rgba(13,242,89,0.3)]';
-                            else if (isCorrect === false) buttonClass = 'bg-red-500/20 border-red-500';
+                            else if (isCorrect === false) buttonClass = 'bg-accent-gold/20 border-accent-gold';
                             else buttonClass = 'bg-primary/20 border-primary shadow-[0_0_15px_rgba(13,242,89,0.2)]';
                         } else if (isRevealed) {
                             buttonClass = 'bg-primary/20 border-primary shadow-[0_0_20px_rgba(13,242,89,0.3)]';
@@ -604,7 +603,7 @@ export const QuizRoom: React.FC = () => {
                                 </div>
                                 <span className={`text-lg font-black italic tracking-tighter ${isEliminated ? 'line-through' : ''}`}>{option}</span>
                                 {((isSelected && isCorrect !== null) || (isRevealed && option === revealedAnswer)) && (
-                                    <i className={`material-icons ml-auto ${(option === revealedAnswer || isCorrect === true) ? 'text-primary drop-shadow-[0_0_8px_rgba(13,242,89,0.8)]' : 'text-red-500'}`}>
+                                    <i className={`material-icons ml-auto ${(option === revealedAnswer || isCorrect === true) ? 'text-primary drop-shadow-[0_0_8px_rgba(13,242,89,0.8)]' : 'text-accent-gold'}`}>
                                         {(option === revealedAnswer || isCorrect === true) ? 'check_circle' : 'cancel'}
                                     </i>
                                 )}

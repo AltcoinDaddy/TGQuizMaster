@@ -60,7 +60,7 @@ export const SquadCreate = () => {
                 </div>
                 <h1 className="text-4xl font-black italic text-white uppercase tracking-tighter leading-none">Create Your<br /><span className="text-primary italic">Squad</span></h1>
                 <p className="text-white/40 text-xs font-bold uppercase tracking-widest mt-4 leading-relaxed">
-                    Unite your community and compete for the weekly **100 TON** prize pool!
+                    Unite your community and compete for the weekly **1000 CHZ** prize pool!
                 </p>
             </div>
 
@@ -93,7 +93,7 @@ export const SquadCreate = () => {
                 </div>
 
                 {error && (
-                    <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-2xl text-red-500 text-xs font-bold text-center">
+                    <div className="p-4 bg-accent-gold/10 border border-accent-gold/20 rounded-2xl text-accent-gold text-xs font-bold text-center">
                         {error}
                     </div>
                 )}

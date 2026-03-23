@@ -57,7 +57,7 @@ export const Referral: React.FC = () => {
     const currentTierIndex = TIER_ORDER.indexOf(currentTier);
 
     const handleShare = () => {
-        const inviteText = `I'm challenging you to a real-time quiz battle on TGQuizMaster! Play & win TON. Join here: ${referralLink}`;
+        const inviteText = `I'm challenging you to a real-time quiz battle on TGQuizMaster! Play & win CHZ. Join here: ${referralLink}`;
         const url = `https://t.me/share/url?url=${encodeURIComponent(referralLink)}&text=${encodeURIComponent(inviteText)}`;
         (window as any).Telegram?.WebApp?.openTelegramLink(url);
     };
@@ -92,8 +92,8 @@ export const Referral: React.FC = () => {
                         <span className="text-2xl font-black italic">{referralCount}</span>
                         <span className="text-[9px] uppercase font-black opacity-40 tracking-widest">Referrals</span>
                     </GlassCard>
-                    <GlassCard className="flex flex-col items-center p-5 bg-gradient-to-b from-blue-400/10 to-transparent">
-                        <Star size={24} className="text-blue-400 mb-2" />
+                    <GlassCard className="flex flex-col items-center p-5 bg-gradient-to-b from-accent-gold/10 to-transparent">
+                        <Star size={24} className="text-accent-gold mb-2" />
                         <span className="text-2xl font-black italic">{Math.round(user.referralEarnings || 0)}</span>
                         <span className="text-[9px] uppercase font-black opacity-40 tracking-widest">Stars Earned</span>
                     </GlassCard>
@@ -266,7 +266,7 @@ export const Referral: React.FC = () => {
                                     key={index}
                                     name={ref.username || 'Unknown'}
                                     date={new Date(ref.date).toLocaleDateString()}
-                                    earned={ref.earned || '+0.00 TON'}
+                                    earned={ref.earned || '+0.00 CHZ'}
                                 />
                             ))
                         ) : (

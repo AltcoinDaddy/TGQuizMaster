@@ -5,7 +5,8 @@ create table public.users (
   first_name text,
   is_pro boolean default false,
   balance_stars int default 0,
-  balance_ton numeric default 0.0,
+  balance_chz numeric default 0.0,
+  chiliz_wallet_address text,
   stats_total_games int default 0,
   stats_wins int default 0,
   stats_streak int default 0,
@@ -21,7 +22,7 @@ create table public.tournaments (
   title text not null,
   status text check (status in ('upcoming', 'live', 'finished')) default 'upcoming',
   prize_pool int not null,
-  currency text check (currency in ('STARS', 'TON')) not null,
+  currency text check (currency in ('STARS', 'CHZ')) not null,
   entry_fee int default 0,
   start_time timestamp with time zone default timezone('utc'::text, now()),
   winners jsonb default '[]'::jsonb
@@ -33,7 +34,7 @@ create table public.transactions (
   user_id bigint references public.users(telegram_id),
   type text check (type in ('DEPOSIT', 'WITHDRAWAL', 'ENTRY_FEE', 'PRIZE', 'SHOP_PURCHASE')),
   amount numeric not null,
-  currency text check (currency in ('STARS', 'TON')),
+  currency text check (currency in ('STARS', 'CHZ')),
   metadata jsonb default '{}'::jsonb,
   status text default 'COMPLETED',
   created_at timestamp with time zone default timezone('utc'::text, now())

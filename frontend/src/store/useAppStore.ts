@@ -10,7 +10,7 @@ interface UserState {
     totalGames: number;
     isPro: boolean;
     stars: number;
-    tonBalance: number;
+    chilizBalance: number;
     balanceQP: number;
     balanceShards: number;
     inventory: string[];
@@ -41,7 +41,7 @@ interface AppStore {
     setUser: (user: Partial<UserState>) => void;
     setWalletConnected: (connected: boolean) => void;
     updateStars: (amount: number) => void;
-    updateTON: (amount: number) => void;
+    updateChiliz: (amount: number) => void;
     syncFromBackend: (data: any) => void;
     updateSettings: (settings: { soundEnabled: boolean; hapticsEnabled: boolean }) => void;
     setParamProcessed: (val: boolean) => void;
@@ -56,7 +56,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
         totalGames: 0,
         isPro: false,
         stars: 0,
-        tonBalance: 0,
+        chilizBalance: 0,
         balanceQP: 0,
         balanceShards: 0,
         inventory: [],
@@ -83,14 +83,14 @@ export const useAppStore = create<AppStore>((set, get) => ({
         set((state) => ({ user: { ...state.user, walletConnected: connected } })),
     updateStars: (amount) =>
         set((state) => ({ user: { ...state.user, stars: state.user.stars + amount } })),
-    updateTON: (amount) =>
-        set((state) => ({ user: { ...state.user, tonBalance: state.user.tonBalance + amount } })),
+    updateChiliz: (amount) =>
+        set((state) => ({ user: { ...state.user, chilizBalance: state.user.chilizBalance + amount } })),
     syncFromBackend: (data) =>
         set((state) => ({
             user: {
                 ...state.user,
                 stars: data.stars ?? state.user.stars,
-                tonBalance: data.ton ?? state.user.tonBalance,
+                chilizBalance: data.chiliz ?? data.tonBalance ?? state.user.chilizBalance,
                 xp: data.xp ?? state.user.xp,
                 isPro: data.isPro ?? state.user.isPro,
                 settings: data.settings ?? state.user.settings,

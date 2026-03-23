@@ -109,7 +109,7 @@ export const AdminDashboard: React.FC = () => {
                             <div className="flex items-center justify-between">
                                 <div>
                                     <p className="text-[10px] font-black uppercase tracking-widest text-yellow-500/60 mb-1 italic">Total Prize Pool</p>
-                                    <h2 className="text-3xl font-black italic text-white">{stats?.totalPrizePool} <span className="text-sm not-italic opacity-30">STARS/TON</span></h2>
+                                    <h2 className="text-3xl font-black italic text-white">{stats?.totalPrizePool} <span className="text-sm not-italic opacity-30">STARS/CHZ</span></h2>
                                 </div>
                                 <div className="p-4 bg-yellow-500/10 rounded-2xl text-yellow-500">
                                     <DollarSign size={28} />

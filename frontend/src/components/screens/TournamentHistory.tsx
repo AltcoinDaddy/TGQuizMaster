@@ -70,7 +70,7 @@ export const TournamentHistory: React.FC = () => {
                                 <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary">
                                     <Trophy size={18} />
                                 </div>
-                                <span className="text-3xl font-black text-white italic">{(stats.totalEarnings || 0).toFixed(2)} <span className="text-sm not-italic opacity-50 ml-1">TON</span></span>
+                                <span className="text-3xl font-black text-white italic">{(stats.totalEarnings || 0).toFixed(2)} <span className="text-sm not-italic opacity-50 ml-1">CHZ</span></span>
                             </div>
                         </div>
                         <div className="text-right">

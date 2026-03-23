@@ -15,8 +15,8 @@ if (!SUPABASE_URL || !SUPABASE_KEY) {
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-const PRIZE_POOL = 100; // 100 TON total
-const DISTRIBUTION = [50, 30, 20]; // 50%, 30%, 20% for Top 3
+const PRIZE_POOL = 1000; // 1000 CHZ total
+const DISTRIBUTION = [500, 300, 200]; // 500, 300, 200 for Top 3
 
 async function distributePrizes() {
     console.log('--- Starting Weekly Squad Prize Distribution ---');
@@ -43,17 +43,17 @@ async function distributePrizes() {
             const rank = index + 1;
             const amount = DISTRIBUTION[index] || 0;
 
-            console.log(`Rank ${rank}: ${squad.name} (${squad.weekly_xp} XP) -> ${amount} TON`);
+            console.log(`Rank ${rank}: ${squad.name} (${squad.weekly_xp} XP) -> ${amount} CHZ`);
 
             // Log the prize
             await supabase.from('squad_prizes').insert({
                 squad_id: squad.id,
                 rank,
                 amount,
-                currency: 'TON'
+                currency: 'CHZ'
             });
 
-            // Note: In a production environment, you'd trigger a TON wallet transfer here.
+            // Note: In a production environment, you'd trigger a Chiliz Chain transfer here.
             // For now, we log the winners and they can be processed manually or via a smart contract.
         }
     }

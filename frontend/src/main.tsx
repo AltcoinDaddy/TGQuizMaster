@@ -2,12 +2,12 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App.tsx'
 import './index.css'
-import { TONProvider } from './providers/TONProvider.tsx';
-
+import { ChilizProvider } from './providers/ChilizProvider.tsx';
+ 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <TONProvider>
+    <ChilizProvider>
       <App />
-    </TONProvider>
+    </ChilizProvider>
   </React.StrictMode>,
 )

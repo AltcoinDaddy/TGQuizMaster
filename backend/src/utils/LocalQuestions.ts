@@ -140,9 +140,9 @@ export const CRYPTO_QUESTIONS: CachedQuestion[] = [
     },
     {
         id: 'lc_crypto_23',
-        text: 'Which network uses the "TON" (The Open Network) blockchain?',
-        options: ['Telegram', 'WhatsApp', 'Facebook', 'Twitter'],
-        correctAnswer: 'Telegram'
+        text: 'Which sports-focused blockchain ecosystem uses the CHZ token?',
+        options: ['Chiliz', 'Solana', 'Ethereum', 'Polygon'],
+        correctAnswer: 'Chiliz'
     },
     {
         id: 'lc_crypto_24',

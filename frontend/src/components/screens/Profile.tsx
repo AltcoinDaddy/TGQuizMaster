@@ -1,10 +1,12 @@
 import React from 'react';
+import { formatUnits } from 'viem';
 import { MainLayout } from '../layout/MainLayout';
 import { GlassCard } from '../ui/GlassCard';
 import { Gem, Settings, ChevronRight, LogOut, Award, PlayCircle, Zap, HelpCircle, Users, Target, Timer, Sparkles } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../../store/useAppStore';
-import { useTonConnectUI } from '@tonconnect/ui-react';
+import { useAppKit, useAppKitAccount } from '@reown/appkit/react';
+import { useBalance } from 'wagmi';
 
 // Level System Constants (Mirroring Backend)
 const LEVEL_THRESHOLDS = [
@@ -47,15 +49,23 @@ export const Profile: React.FC = () => {
     const user = useAppStore(state => state.user);
     const { current, nextLevel, progress } = calculateLevelInfo(user.xp || 0);
 
-    const [tonConnectUI] = useTonConnectUI();
-    // ... (keep handling disconnect same as before)
+    const { open } = useAppKit();
+    const { address, isConnected } = useAppKitAccount();
+    const { data: balanceData } = useBalance({
+        address: address as `0x${string}`,
+    });
 
+    // Use on-chain balance if connected, otherwise fallback to store balance
+    const displayBalance = isConnected && balanceData 
+        ? parseFloat(formatUnits(balanceData.value, balanceData.decimals)) 
+        : (user.chilizBalance || 0);
+ 
     const handleDisconnect = async () => {
         try {
-            await tonConnectUI.disconnect();
-            console.log('Wallet disconnected via SDK');
+            // Disconnect if possible (AppKit handles this via modal usually, but we can call it)
+            console.log('Wallet disconnect requested');
         } catch (e) {
-            console.warn('Disconnect error (ignoring to force logout):', e);
+            console.warn('Disconnect error:', e);
         }
 
         // Visual feedback and navigation
@@ -141,20 +151,20 @@ export const Profile: React.FC = () => {
                         </div>
                         <div className="w-[1px] h-8 bg-white/10"></div>
                         <div className="flex flex-col items-center">
-                            <span className="text-lg font-black italic text-cyan-400">{user.balanceShards || 0}</span>
+                            <span className="text-lg font-black italic text-accent-purple">{user.balanceShards || 0}</span>
                             <span className="text-[8px] font-black uppercase tracking-widest opacity-40">Shards</span>
                         </div>
                     </div>
 
                     {/* Shard Progress */}
-                    <div className="w-full max-w-[240px] mt-8 p-4 bg-cyan-400/5 border border-cyan-400/20 rounded-2xl text-center">
+                    <div className="w-full max-w-[240px] mt-8 p-4 bg-accent-purple/5 border border-accent-purple/20 rounded-2xl text-center">
                         <div className="flex justify-between items-center mb-2">
-                            <span className="text-[9px] font-black uppercase tracking-widest text-cyan-400 italic">Cyber Shards</span>
+                            <span className="text-[9px] font-black uppercase tracking-widest text-accent-purple italic">Cyber Shards</span>
                             <span className="text-[10px] font-black text-white">{user.balanceShards || 0}/10</span>
                         </div>
                         <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
                             <div
-                                className="h-full bg-cyan-400 shadow-[0_0_10px_rgba(34,211,238,0.5)] transition-all duration-1000"
+                                className="h-full bg-accent-purple shadow-[0_0_10px_rgba(168,85,247,0.5)] transition-all duration-1000"
                                 style={{ width: `${Math.min((user.balanceShards || 0) * 10, 100)}%` }}
                             ></div>
                         </div>
@@ -168,36 +178,40 @@ export const Profile: React.FC = () => {
                     </div>
                 </div>
 
-                {/* TON Wallet Card */}
-                <GlassCard className="p-6 mb-8 bg-gradient-to-br from-blue-500/10 to-transparent border-blue-500/20">
+                {/* Chiliz Wallet Card */}
+                <GlassCard className="p-6 mb-8 bg-gradient-to-br from-primary/10 to-transparent border-primary/20">
                     <div className="flex items-center justify-between mb-8">
                         <div className="flex items-center gap-2">
-                            <Gem size={16} className="text-blue-400" />
-                            <h3 className="text-[10px] font-black text-white uppercase tracking-[0.2em] italic">TON Balance</h3>
+                            <Gem size={16} className="text-primary" />
+                            <h3 className="text-[10px] font-black text-white uppercase tracking-[0.2em] italic">CHZ Balance</h3>
                         </div>
                     </div>
-
+ 
                     <div className="space-y-1 mb-8">
                         <div className="flex items-baseline gap-2">
-                            <span className="text-4xl font-black text-white italic tracking-tighter">{user.tonBalance?.toFixed(2) || '0.00'}</span>
-                            <span className="text-lg font-black text-blue-400 italic">TON</span>
+                            <span className="text-4xl font-black text-white italic tracking-tighter">{displayBalance.toFixed(2)}</span>
+                            <span className="text-lg font-black text-primary italic">CHZ</span>
                         </div>
-                        <p className="text-xs font-bold text-white/40 uppercase tracking-widest italic animate-pulse">≈ ${((user.tonBalance ?? 0) * 5.15).toFixed(2)} USD</p>
+                        <p className="text-xs font-bold text-white/40 uppercase tracking-widest italic animate-pulse">≈ ${(displayBalance * 0.035).toFixed(2)} USD</p>
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
                         <button
                             onClick={() => {
+                                if (!isConnected) {
+                                    open();
+                                    return;
+                                }
                                 const tg = (window as any).Telegram?.WebApp;
                                 tg?.showPopup({
-                                    title: 'Deposit TON',
-                                    message: `Send TON to your wallet address:\n\n${user.walletAddress || 'Please connect wallet first'}`,
+                                    title: 'Deposit CHZ',
+                                    message: `Send CHZ to your Chiliz Chain wallet address:\n\n${address || 'Please connect wallet first'}`,
                                     buttons: [{ type: 'ok' }]
                                 });
                             }}
-                            className="bg-blue-500 text-white font-black py-4 rounded-2xl text-[10px] uppercase tracking-[0.2em] italic active:scale-95 transition-all shadow-lg shadow-blue-500/20"
+                            className="bg-primary text-background-dark font-black py-4 rounded-2xl text-[10px] uppercase tracking-[0.2em] italic active:scale-95 transition-all shadow-lg shadow-primary/20"
                         >
-                            DEPOSIT TON
+                            DEPOSIT CHZ
                         </button>
                         <button
                             onClick={() => navigate('/withdrawal')}
@@ -312,7 +326,7 @@ export const Profile: React.FC = () => {
                             </div>
                         </div>
                         <div className="flex items-center gap-2">
-                            {!user.squadId && <span className="text-[8px] font-black bg-amber-500 text-black px-1.5 py-0.5 rounded italic">100 TON</span>}
+                            {!user.squadId && <span className="text-[8px] font-black bg-amber-500 text-black px-1.5 py-0.5 rounded italic">1000 CHZ</span>}
                             <ChevronRight size={14} className={user.squadId ? 'text-amber-500/50' : 'text-white/20'} />
                         </div>
                     </button>
@@ -327,7 +341,7 @@ export const Profile: React.FC = () => {
 
                     <button
                         onClick={handleDisconnect}
-                        className="w-full flex items-center justify-center gap-3 p-5 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-400 active:scale-[0.98] transition-all"
+                        className="w-full flex items-center justify-center gap-3 p-5 rounded-2xl bg-white/5 border border-white/5 text-white/40 active:scale-[0.98] transition-all"
                     >
                         <LogOut size={16} />
                         <span className="text-[10px] font-black uppercase tracking-[0.2em] italic">Disconnect Wallet</span>

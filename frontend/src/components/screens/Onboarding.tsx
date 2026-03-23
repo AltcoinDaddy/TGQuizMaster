@@ -14,20 +14,20 @@ const onboardingSteps = [
     {
         icon: <Sparkles size={64} className="text-yellow-400" />,
         title: "Earn Real Rewards",
-        description: "Win TON crypto and Telegram Stars by placing top 3 in tournaments. Instant withdrawals to your wallet.",
+        description: "Win CHZ crypto and Telegram Stars by placing top 3 in tournaments. Instant withdrawals to your wallet.",
         color: "from-yellow-400"
     },
     {
-        icon: <Trophy size={64} className="text-blue-400" />,
+        icon: <Trophy size={64} className="text-primary" />,
         title: "Refer & Earn",
         description: "Invite your friends and earn a lifetime 5% commission on all their tournament winnings!",
-        color: "from-blue-400"
+        color: "from-primary"
     },
     {
-        icon: <Brain size={64} className="text-cyan-400" />,
+        icon: <Brain size={64} className="text-accent-purple" />,
         title: "Passive Yield",
         description: "Harvest $QUIZ Airdrop Points hourly based on your activity. High QP yields higher potential rewards!",
-        color: "from-cyan-400"
+        color: "from-accent-purple"
     }
 ];
 

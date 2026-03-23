@@ -73,7 +73,7 @@ export const StreakPopup: React.FC<StreakPopupProps> = ({ day, reward, rewardTyp
                                         </div>
                                         {chestItems.shards > 0 && (
                                             <div className="flex items-center gap-1 bg-white/5 px-2 py-1 rounded-lg">
-                                                <span className="text-xs font-black text-cyan-400">+{chestItems.shards}💎</span>
+                                                <span className="text-xs font-black text-accent-purple">+{chestItems.shards}💎</span>
                                             </div>
                                         )}
                                         {chestItems.powerup && (

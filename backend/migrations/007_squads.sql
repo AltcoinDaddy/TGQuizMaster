@@ -25,7 +25,7 @@ CREATE TABLE IF NOT EXISTS public.squad_prizes (
     squad_id UUID REFERENCES public.squads(id),
     rank INT,
     amount NUMERIC,
-    currency TEXT DEFAULT 'TON',
+    currency TEXT DEFAULT 'CHZ',
     distributed_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
 );
 

@@ -14,6 +14,8 @@ export interface Database {
                     stats_level: number;
                     stats_xp: number;
                     inventory: string[];
+                    balance_chz: number;
+                    chiliz_wallet_address: string | null;
                     created_at: string;
                 };
                 Insert: {
@@ -34,7 +36,7 @@ export interface Database {
                     title: string;
                     status: 'upcoming' | 'live' | 'finished';
                     prize_pool: number;
-                    currency: 'STARS' | 'TON';
+                    currency: 'STARS' | 'CHZ';
                     entry_fee: number;
                     start_time: string;
                     winners: any[]; // JSON
@@ -46,7 +48,7 @@ export interface Database {
                     user_id: number;
                     type: 'DEPOSIT' | 'WITHDRAWAL' | 'ENTRY_FEE' | 'PRIZE' | 'SHOP_PURCHASE';
                     amount: number;
-                    currency: 'STARS' | 'TON';
+                    currency: 'STARS' | 'CHZ';
                     metadata: any;
                     status: string;
                     created_at: string;
@@ -64,7 +66,7 @@ export interface User {
     isPro: boolean;
     balance: {
         stars: number;
-        ton: number;
+        chz: number;
     };
     stats: {
         totalGames: number;
