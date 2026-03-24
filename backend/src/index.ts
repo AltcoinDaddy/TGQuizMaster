@@ -431,6 +431,12 @@ io.on('connection', (socket) => {
                     else if (currency) feeCurrency = currency.toUpperCase();
                 }
 
+                // Enforce 500 Star minimum for hosted rooms
+                if (feeCurrency === 'STARS' && feeAmount < 500) {
+                    socket.emit('error', { message: 'Minimum hosting fee is 500 Stars' });
+                    return;
+                }
+
                 if (feeCurrency === 'STARS') {
                     if ((user.balance_stars || 0) < feeAmount) {
                         socket.emit('error', { message: 'Insufficient Stars balance' });

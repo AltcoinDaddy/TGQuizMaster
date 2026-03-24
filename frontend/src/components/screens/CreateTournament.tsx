@@ -2,18 +2,18 @@ import React, { useState } from 'react';
 import { MainLayout } from '../layout/MainLayout';
 import { GlassCard } from '../ui/GlassCard';
 import { Button } from '../ui/Button';
-import { ChevronLeft, Info, Brain, Coins, Film, Trophy, Gamepad2, Lock, Link as LinkIcon, Send, Minus, Plus, Smile, Star, Diamond, History, Globe, Music, Landmark, Smartphone } from 'lucide-react';
+import { ChevronLeft, Info, Brain, Coins, Film, Trophy, Gamepad2, Lock, Link as LinkIcon, Send, Minus, Plus, Star, Diamond, History, Globe, Music, Landmark, Smartphone } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-const STAR_PRESETS = [10, 25, 50, 100];
+const STAR_PRESETS = [500, 1000, 2500, 5000];
 const CHZ_PRESETS = [10, 50, 100, 250];
 
 export const CreateTournament: React.FC = () => {
     const navigate = useNavigate();
     const [category, setCategory] = useState('General');
     const [players, setPlayers] = useState(5);
-    const [feeType, setFeeType] = useState<'free' | 'stars' | 'custom'>('free');
-    const [starAmount, setStarAmount] = useState(10);
+    const [feeType, setFeeType] = useState<'stars' | 'custom'>('stars');
+    const [starAmount, setStarAmount] = useState(500);
     const [chzAmount, setChzAmount] = useState(50);
     const [isPrivate, setIsPrivate] = useState(false);
 
@@ -31,13 +31,11 @@ export const CreateTournament: React.FC = () => {
     ];
 
     const getEntryFeeStr = () => {
-        if (feeType === 'free') return 'Free';
         if (feeType === 'stars') return `${starAmount} Stars`;
         return `${chzAmount} CHZ`;
     };
 
     const getPrizePool = () => {
-        if (feeType === 'free') return '0';
         if (feeType === 'stars') return `${starAmount * players} Stars`;
         return `${(chzAmount * players).toFixed(0)} CHZ`;
     };
@@ -106,16 +104,7 @@ export const CreateTournament: React.FC = () => {
                     {/* Entry Fee Type */}
                     <section className="space-y-4">
                         <label className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40">Entry Fee</label>
-                        <div className="grid grid-cols-3 gap-3">
-                            <button
-                                onClick={() => setFeeType('free')}
-                                className={`py-4 rounded-2xl border-2 flex flex-col items-center gap-2 transition-all group ${feeType === 'free' ? 'bg-primary/10 border-primary' : 'bg-white/5 border-white/5'}`}
-                            >
-                                <div className={`p-2 rounded-xl transition-all ${feeType === 'free' ? 'bg-primary text-background-dark shadow-[0_0_15px_rgba(13,242,89,0.3)]' : 'bg-white/5 text-white/40 group-hover:bg-white/10'}`}>
-                                    <Smile size={20} />
-                                </div>
-                                <span className={`text-[10px] font-black uppercase tracking-wider ${feeType === 'free' ? 'text-primary' : 'text-white/40'}`}>Free</span>
-                            </button>
+                        <div className="grid grid-cols-2 gap-3">
                             <button
                                 onClick={() => setFeeType('stars')}
                                 className={`py-4 rounded-2xl border-2 flex flex-col items-center gap-2 transition-all group ${feeType === 'stars' ? 'bg-primary/10 border-primary shadow-lg shadow-primary/10' : 'bg-white/5 border-white/5'}`}
@@ -146,16 +135,16 @@ export const CreateTournament: React.FC = () => {
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <button
-                                            onClick={() => setStarAmount(Math.max(5, starAmount - 5))}
-                                            className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center text-white active:scale-90 transition-all"
+                                            onClick={() => setStarAmount(Math.max(500, starAmount - 500))}
+                                            className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center text-white active:scale-90 transition-all font-black text-[10px]"
                                         >
-                                            <Minus size={16} />
+                                            -500
                                         </button>
                                         <button
-                                            onClick={() => setStarAmount(Math.min(500, starAmount + 5))}
-                                            className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center text-primary active:scale-90 transition-all"
+                                            onClick={() => setStarAmount(Math.min(100000, starAmount + 500))}
+                                            className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center text-primary active:scale-90 transition-all font-black text-[10px]"
                                         >
-                                            <Plus size={16} />
+                                            +500
                                         </button>
                                     </div>
                                 </div>
@@ -220,20 +209,16 @@ export const CreateTournament: React.FC = () => {
                     </section>
 
                     {/* Prize Pool Preview */}
-                    {feeType !== 'free' && (
-                        <div className="p-4 rounded-2xl bg-gradient-to-r from-primary/10 to-accent-gold/10 border border-primary/20">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-[10px] font-black text-white/40 uppercase tracking-widest">Estimated Prize Pool</p>
-                                    <p className="text-xl font-black text-primary">{getPrizePool()}</p>
-                                </div>
-                                <div className="text-right">
-                                    <p className="text-[10px] font-black text-white/40 uppercase tracking-widest">Entry Fee</p>
-                                    <p className="text-sm font-black text-white">{getEntryFeeStr()}</p>
-                                </div>
-                            </div>
+                    <div className="p-4 rounded-2xl bg-gradient-to-r from-primary/10 to-accent-gold/10 border border-primary/20 flex items-center justify-between">
+                        <div>
+                            <p className="text-[10px] font-black text-white/40 uppercase tracking-widest">Estimated Prize Pool</p>
+                            <p className="text-xl font-black text-primary">{getPrizePool()}</p>
                         </div>
-                    )}
+                        <div className="text-right">
+                            <p className="text-[10px] font-black text-white/40 uppercase tracking-widest">Entry Fee</p>
+                            <p className="text-sm font-black text-white">{getEntryFeeStr()}</p>
+                        </div>
+                    </div>
 
                     {/* Privacy */}
                     <GlassCard className={`p-5 space-y-4 border-white/5 ${isPrivate ? 'border-primary/20 shadow-lg shadow-primary/5' : ''}`}>
@@ -251,7 +236,7 @@ export const CreateTournament: React.FC = () => {
                                 onClick={() => setIsPrivate(!isPrivate)}
                                 className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-300 ${isPrivate ? 'bg-primary' : 'bg-white/10'}`}
                             >
-                                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-300 ${isPrivate ? 'translate-x-6' : 'translate-x-1'}`}></span>
+                                <span className={`span-block h-4 w-4 transform rounded-full bg-white transition-transform duration-300 ${isPrivate ? 'translate-x-6' : 'translate-x-1'}`}></span>
                             </button>
                         </div>
                         {isPrivate && (
@@ -292,7 +277,7 @@ export const CreateTournament: React.FC = () => {
                         navigate('/quiz', {
                             state: {
                                 type: 'tournament',
-                                roomType: feeType === 'free' ? 'practice' : 'stars',
+                                roomType: 'stars',
                                 entryFee: getEntryFeeStr(),
                                 currency: feeType === 'stars' ? 'Stars' : 'none',
                                 category,
