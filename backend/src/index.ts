@@ -449,8 +449,8 @@ io.on('connection', (socket) => {
 
             if (data.roomType === 'practice') {
                 // ... (Keep practice logic mostly same but ensure set is early)
-                if ((user.daily_games_today || 0) >= 10) {
-                    socket.emit('error', { message: 'Daily limit reached! Come back tomorrow.' });
+                if ((user.daily_games_today || 0) >= 3) {
+                    socket.emit('error', { message: 'Energy depleted! Watch an ad to refill.' });
                     return;
                 }
 

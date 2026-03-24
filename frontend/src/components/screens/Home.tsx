@@ -8,6 +8,7 @@ import { StreakPopup } from '../ui/StreakPopup';
 import { useAppStore } from '../../store/useAppStore';
 import { adsService } from '../../utils/AdsService';
 import { getTimeRemaining } from '../../utils/time';
+import { EnergyModal } from '../ui/EnergyModal';
 
 export const Home: React.FC = () => {
     const navigate = useNavigate();
@@ -19,6 +20,7 @@ export const Home: React.FC = () => {
     const [leaderboardPreview, setLeaderboardPreview] = useState<any[]>([]);
     const [loadingAd, setLoadingAd] = useState(false);
     const [activeSeason, setActiveSeason] = useState<any>(null);
+    const [showEnergyModal, setShowEnergyModal] = useState(false);
     const { user } = useAppStore();
 
     useEffect(() => {
@@ -128,24 +130,28 @@ export const Home: React.FC = () => {
         if (gamesLeft > 0) {
             navigate('/quiz', { state: { type: 'practice', entryFee: 'Free' } });
         } else {
-            // Show Ad to refill
-            setLoadingAd(true);
-            try {
-                const success = await adsService.showRewardedVideo();
-                if (success) {
-                    const res = await authPost('/api/refill-energy', { telegramId: user.telegramId });
-                    const data = await res.json();
-                    if (data.success) {
-                        useAppStore.getState().setUser({ dailyGamesToday: data.dailyGamesToday });
-                        const tg = (window as any).Telegram?.WebApp;
-                        if (tg?.showAlert) tg.showAlert(`Energy refilled! +2 games added.`);
-                    }
+            setShowEnergyModal(true);
+        }
+    };
+
+    const handleRefillEnergy = async () => {
+        setShowEnergyModal(false);
+        setLoadingAd(true);
+        try {
+            const success = await adsService.showRewardedVideo();
+            if (success) {
+                const res = await authPost('/api/refill-energy', { telegramId: user.telegramId });
+                const data = await res.json();
+                if (data.success) {
+                    useAppStore.getState().setUser({ dailyGamesToday: data.dailyGamesToday });
+                    const tg = (window as any).Telegram?.WebApp;
+                    if (tg?.showAlert) tg.showAlert(`Energy refilled! +2 games added.`);
                 }
-            } catch (e) {
-                console.error('Failed to refill energy:', e);
-            } finally {
-                setLoadingAd(false);
             }
+        } catch (e) {
+            console.error('Failed to refill energy:', e);
+        } finally {
+            setLoadingAd(false);
         }
     };
 
@@ -401,6 +407,12 @@ export const Home: React.FC = () => {
                     onClose={() => setShowStreak(false)}
                 />
             )}
+            {/* Energy Refill Modal */}
+            <EnergyModal 
+                isOpen={showEnergyModal}
+                onWatchAd={handleRefillEnergy}
+                onClose={() => setShowEnergyModal(false)}
+            />
         </MainLayout>
     );
 };

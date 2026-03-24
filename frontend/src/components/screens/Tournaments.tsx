@@ -4,6 +4,10 @@ import { MainLayout } from '../layout/MainLayout';
 import { GlassCard } from '../ui/GlassCard';
 import { Timer, Star, Plus, ArrowRight, Zap, Trophy, Lock, Gamepad2, BarChart3, Dumbbell, Diamond } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useAppStore } from '../../store/useAppStore';
+import { authPost } from '../../utils/authFetch';
+import { adsService } from '../../utils/AdsService';
+import { EnergyModal } from '../ui/EnergyModal';
 
 interface Tournament {
     id: string;
@@ -28,6 +32,9 @@ export const Tournaments: React.FC = () => {
 
     const [tournaments, setTournaments] = useState<Tournament[]>([]);
     const [loading, setLoading] = useState(true);
+    const [loadingAd, setLoadingAd] = useState(false);
+    const [showEnergyModal, setShowEnergyModal] = useState(false);
+    const { user } = useAppStore();
 
     useEffect(() => {
         const fetchTournaments = async () => {
@@ -130,7 +137,15 @@ export const Tournaments: React.FC = () => {
                     <div className="space-y-6">
                         {/* Quick Practice Card */}
                         <GlassCard
-                            onClick={() => navigate('/quiz', { state: { type: 'practice', entryFee: 'Free' } })}
+                            onClick={async () => {
+                                if (loadingAd) return;
+                                const gamesLeft = Math.max(0, 3 - (user.dailyGamesToday || 0));
+                                if (gamesLeft > 0) {
+                                    navigate('/quiz', { state: { type: 'practice', entryFee: 'Free' } });
+                                } else {
+                                    setShowEnergyModal(true);
+                                }
+                            }}
                             className="group p-6 relative overflow-hidden active:scale-[0.98] transition-all cursor-pointer border-primary/20"
                         >
                             <div className="absolute top-0 right-0 bg-primary px-4 py-1.5 rounded-bl-2xl">
@@ -307,6 +322,32 @@ export const Tournaments: React.FC = () => {
                     </div>
                 )}
             </div>
+
+            {/* Energy Refill Modal */}
+            <EnergyModal 
+                isOpen={showEnergyModal}
+                onWatchAd={async () => {
+                    setShowEnergyModal(false);
+                    setLoadingAd(true);
+                    try {
+                        const success = await adsService.showRewardedVideo();
+                        if (success) {
+                            const res = await authPost('/api/refill-energy', { telegramId: user.telegramId });
+                            const data = await res.json();
+                            if (data.success) {
+                                useAppStore.getState().setUser({ dailyGamesToday: data.dailyGamesToday });
+                                const tg = (window as any).Telegram?.WebApp;
+                                if (tg?.showAlert) tg.showAlert(`Energy refilled! +2 games added.`);
+                            }
+                        }
+                    } catch (e) {
+                        console.error('Failed to refill energy:', e);
+                    } finally {
+                        setLoadingAd(false);
+                    }
+                }}
+                onClose={() => setShowEnergyModal(false)}
+            />
         </MainLayout>
     );
 };
