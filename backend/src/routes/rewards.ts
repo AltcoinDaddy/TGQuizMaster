@@ -472,10 +472,10 @@ router.post('/refill-energy', telegramAuthMiddleware, async (req: Request, res: 
 
         if (error || !user) return res.status(404).json({ error: 'User not found' });
 
-        // Decrease the counter by 5 (refilling 5 games)
+        // Decrease the counter by 2 (refilling 2 games)
         // Ensure it doesn't go below 0
         const currentGames = user.daily_games_today || 0;
-        const newCount = Math.max(0, currentGames - 5);
+        const newCount = Math.max(0, currentGames - 2);
 
         await supabase.from('users')
             .update({ daily_games_today: newCount })
@@ -517,7 +517,7 @@ router.get('/ads/callback', async (req: Request, res: Response) => {
         }
 
         const currentGames = user.daily_games_today || 0;
-        const newCount = Math.max(0, currentGames - 5);
+        const newCount = Math.max(0, currentGames - 2);
 
         await supabase.from('users')
             .update({ daily_games_today: newCount })

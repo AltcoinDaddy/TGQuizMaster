@@ -491,7 +491,7 @@ export class GameManager {
                     prizes: { first: 5, second: 0, third: 0 },
                     currency: 'Stars',
                     xpEarned: 10,
-                    dailyGamesLeft: Math.max(0, 10 - firstWinnerDailyGames),
+                    dailyGamesLeft: Math.max(0, 3 - firstWinnerDailyGames),
                 });
 
                 // Emit balance update so frontend refreshes immediately
