@@ -233,13 +233,34 @@ export class GameManager {
                     options: q.options,
                     correctAnswer: q.correct_answer
                 }));
-                console.log(`[GAME] Successfully fetched ${this.questions.length} questions from Supabase for ${dbCategory}`);
+                console.log(`[GAME] Successfully fetched ${this.questions.length} SportFi questions for ${dbCategory} via RPC.`);
                 return;
-            } else if (error) {
-                console.error('[GAME] Supabase RPC error:', error);
-            } else {
-                console.log(`[GAME] Supabase had insufficient questions (${data?.length || 0}/${this.questionCount}) for ${dbCategory}. Falling back to OpenTDB.`);
+            } 
+            
+            // SECOND FALLBACK: Direct table select if RPC fails or returns 0
+            // This is slightly less 'random' but ensures we stay in local SportFi database
+            console.log(`[GAME] RPC failed for ${dbCategory}. Trying direct table selection...`);
+            let directQuery = supabase.from('questions').select('*');
+            if (dbCategory !== 'all') {
+                directQuery = directQuery.eq('category', dbCategory);
             }
+            
+            const { data: directData, error: directError } = await directQuery.limit(this.questionCount * 3);
+            
+            if (!directError && directData && directData.length > 0) {
+                // Manually shuffle the result
+                const shuffled = directData.sort(() => Math.random() - 0.5).slice(0, this.questionCount);
+                this.questions = shuffled.map((q: any) => ({
+                    id: q.id,
+                    text: q.text,
+                    options: q.options,
+                    correctAnswer: q.correct_answer
+                }));
+                console.log(`[GAME] Successfully fetched ${this.questions.length} questions via DIRECT query.`);
+                return;
+            }
+
+            console.warn(`[GAME] Supabase completely dry for ${dbCategory}. Checking generic fallback...`);
         } catch (e) {
             console.error('[GAME] Supabase integration failed:', e);
         }
