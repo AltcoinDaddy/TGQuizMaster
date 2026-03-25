@@ -78,6 +78,7 @@ export class GameManager {
         'Movies & Series': 11,
         'Music': 12,
         'Pop Culture': 26,
+        'Sports': 21,
     };
 
     constructor(roomId: string, io: any, type: 'free' | 'stars' | 'chz' | 'practice' = 'free', prize = 0, fee = 0, maxPlayers = 5, category = 'General', isMega = false) {
@@ -199,8 +200,12 @@ export class GameManager {
     }
 
     private async fetchQuestions() {
-        // Normalize category for DB query (e.g., 'Movies & Series' -> 'movies_series')
-        const dbCategory = this.category.toLowerCase().replace(/ & /g, '_').replace(/ /g, '_');
+        // Normalize category for DB query (e.g., 'Movies & Series' -> 'movies')
+        let dbCategory = (this.category === 'General' || !this.category) ? 'all' : this.category.toLowerCase().replace(/ & /g, '_').replace(/ /g, '_');
+        
+        // Manual mapping overrides for local DB compatibility
+        if (dbCategory === 'movies_series') dbCategory = 'movies';
+        if (dbCategory === 'pop_culture') dbCategory = 'music';
 
         // 1. Try fetching from Supabase 'questions' table first via RPC
         try {
@@ -232,7 +237,7 @@ export class GameManager {
         }
 
         // 2. Fallback to OpenTDB
-        const finalId = this.categoryId || 9;
+        const finalId = this.categoryId || 21; // Default to Sports (21) instead of General Knowledge (9)
         try {
             const url = this.categoryId
                 ? `https://opentdb.com/api.php?amount=${this.questionCount}&category=${this.categoryId}&type=multiple`
