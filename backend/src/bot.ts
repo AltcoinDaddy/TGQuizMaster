@@ -4,6 +4,7 @@ import { supabase } from './config/supabase';
 import { StarsService } from './utils/StarsService';
 import { NotificationService } from './utils/NotificationService';
 import { roomRegistry } from './utils/RoomRegistry';
+import { RewardService } from './utils/RewardService';
 import crypto from 'crypto';
 
 dotenv.config();
@@ -142,7 +143,10 @@ if (!token) {
                             status: 'COMPLETED'
                         });
 
-                        console.log(`[REFERRAL] Referrer ${referrerId} earned 50 Stars`);
+                        // Award 100 CP (Chili Points) to the referrer
+                        await RewardService.awardCP(parseInt(referrerId), 100);
+
+                        console.log(`[REFERRAL] Referrer ${referrerId} earned 50 Stars and 100 CP`);
 
                         notificationService.notifyReferralReward(
                             parseInt(referrerId),

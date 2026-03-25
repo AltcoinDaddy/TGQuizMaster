@@ -185,7 +185,7 @@ export const QuizRoom: React.FC = () => {
                     ...currentUser,
                     stars: balance.stars ?? currentUser.stars,
                     xp: balance.xp ?? currentUser.xp,
-                    balanceQP: balance.balanceQP ?? currentUser.balanceQP
+                    balanceCP: balance.balanceCP ?? balance.balanceQP ?? currentUser.balanceCP
                 });
                 // Also update global store correctly
                 useAppStore.getState().syncFromBackend(balance);

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { MainLayout } from '../layout/MainLayout';
 import { GlassCard } from '../ui/GlassCard';
 import { Button } from '../ui/Button';
-import { Brain, Zap, Sparkles, TrendingUp, Info, Loader2, Trophy } from 'lucide-react';
+import { Flame, Sparkles, TrendingUp, Info, Loader2, Trophy } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
 import { API_URL } from '../../config/api';
 import { authPost } from '../../utils/authFetch';
@@ -16,16 +16,16 @@ export const KnowledgeYield: React.FC = () => {
 
     const fetchStatus = async () => {
         try {
-            const res = await fetch(`${API_URL}/api/qp-status?telegramId=${user.telegramId}`, {
+            const res = await fetch(`${API_URL}/api/cp-status?telegramId=${user.telegramId}`, {
                 headers: { 'Authorization': `Bearer ${localStorage.getItem('auth_token')}` }
             });
             const data = await res.json();
             setStatus(data);
             setDisplayAccumulated(data.accumulated || 0);
             // Sync to global store
-            useAppStore.getState().setUser({ balanceQP: Number(data.balance) });
+            useAppStore.getState().setUser({ balanceCP: Number(data.balance) });
         } catch (e) {
-            console.error('Failed to fetch QP status:', e);
+            console.error('Failed to fetch CP status:', e);
         } finally {
             setLoading(false);
         }
@@ -42,7 +42,7 @@ export const KnowledgeYield: React.FC = () => {
     useEffect(() => {
         if (!status || status.accumulated >= status.maxCapacity) return;
 
-        const tickRate = status.rate / 3600; // QP per second
+        const tickRate = status.rate / 3600; // CP per second
         const tickInterval = setInterval(() => {
             setDisplayAccumulated(prev => {
                 const next = prev + tickRate;
@@ -58,7 +58,7 @@ export const KnowledgeYield: React.FC = () => {
 
         setClaiming(true);
         try {
-            const res = await authPost('/api/claim-qp', { telegramId: user.telegramId });
+            const res = await authPost('/api/claim-cp', { telegramId: user.telegramId });
             const data = await res.json();
 
             if (data.success) {
@@ -66,7 +66,7 @@ export const KnowledgeYield: React.FC = () => {
                 if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
 
                 // Update global store
-                useAppStore.getState().setUser({ balanceQP: Number(data.newBalance) });
+                useAppStore.getState().setUser({ balanceCP: Number(data.newBalance) });
 
                 // Refresh local status
                 await fetchStatus();
@@ -100,12 +100,12 @@ export const KnowledgeYield: React.FC = () => {
     return (
         <MainLayout>
             <div className="text-center pb-4">
-                <h2 className="text-2xl font-black text-white italic tracking-tighter uppercase leading-none">Knowledge Yield</h2>
-                <p className="text-[10px] opacity-40 uppercase font-black tracking-[0.2em] mt-2">Earn $QUIZ Airdrop Points Passively</p>
+                <h2 className="text-2xl font-black text-white italic tracking-tighter uppercase leading-none">Chili Yield</h2>
+                <p className="text-[10px] opacity-40 uppercase font-black tracking-[0.2em] mt-2">Earn $CHILI Airdrop Points Passively</p>
             </div>
 
             {/* Main Gauge */}
-            <GlassCard className="p-6 relative overflow-hidden flex flex-col items-center justify-center aspect-square rounded-[3rem] border-primary/20 bg-gradient-to-b from-primary/5 to-transparent">
+            <GlassCard className="p-6 relative overflow-hidden flex flex-col items-center justify-center aspect-square rounded-[3rem] border-orange-500/20 bg-gradient-to-b from-orange-500/5 to-transparent">
                 {/* Unified SVG Ring */}
                 <div className="absolute inset-0 flex items-center justify-center p-6">
                     <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90 drop-shadow-[0_0_15px_rgba(34,211,238,0.2)]">
@@ -130,26 +130,26 @@ export const KnowledgeYield: React.FC = () => {
                             strokeDasharray={2 * Math.PI * 44}
                             strokeDashoffset={2 * Math.PI * 44 * (1 - progress / 100)}
                             strokeLinecap="round"
-                            className="text-primary transition-all duration-1000 ease-linear"
+                            className="text-orange-500 transition-all duration-1000 ease-linear"
                         />
                     </svg>
                 </div>
 
                 <div className="relative z-10 text-center">
-                    <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mb-4 mx-auto border border-primary/30">
-                        <Brain size={40} className={`text-primary ${progress > 90 ? 'animate-pulse' : ''}`} />
+                    <div className="w-20 h-20 bg-orange-500/10 rounded-full flex items-center justify-center mb-4 mx-auto border border-orange-500/30">
+                        <Flame size={40} className={`text-orange-500 ${progress > 90 ? 'animate-pulse' : ''}`} />
                     </div>
 
                     {/* Total Balance Mini Display */}
                     <div className="flex items-center justify-center gap-1.5 mb-2 opacity-40">
-                        <Sparkles size={10} className="text-primary" />
-                        <span className="text-[9px] font-black uppercase tracking-widest">Total: {(user.balanceQP || 0).toLocaleString()} QP</span>
+                        <Flame size={10} className="text-orange-500" />
+                        <span className="text-[9px] font-black uppercase tracking-widest">Total: {(user.balanceCP || 0).toLocaleString()} CP</span>
                     </div>
 
                     <div className="text-5xl font-black text-white tracking-tighter mb-1">
                         {Math.floor(displayAccumulated).toLocaleString()}
                     </div>
-                    <div className="text-[10px] font-black uppercase text-primary tracking-widest opacity-60 italic">QP ACCUMULATED</div>
+                    <div className="text-[10px] font-black uppercase text-orange-500 tracking-widest opacity-60 italic">CP ACCUMULATED</div>
                 </div>
 
                 {progress >= 100 && (
@@ -162,12 +162,12 @@ export const KnowledgeYield: React.FC = () => {
             {/* Stats Row */}
             <div className="grid grid-cols-2 gap-4">
                 <GlassCard className="p-4 flex flex-col items-center">
-                    <TrendingUp size={20} className="text-primary mb-2" />
-                    <span className="text-lg font-black">{status?.rate} QP/h</span>
+                    <TrendingUp size={20} className="text-orange-500 mb-2" />
+                    <span className="text-lg font-black">{status?.rate} CP/h</span>
                     <span className="text-[8px] uppercase font-bold opacity-40">Yield Speed</span>
                 </GlassCard>
-                <GlassCard className={`p-4 flex flex-col items-center transition-all ${isBoosted ? 'bg-primary/20 border-primary/40' : ''}`}>
-                    <Zap size={20} className={`${isBoosted ? 'text-primary' : 'text-white/20'} mb-2`} />
+                <GlassCard className={`p-4 flex flex-col items-center transition-all ${isBoosted ? 'bg-orange-500/20 border-orange-500/40' : ''}`}>
+                    <Trophy size={20} className={`${isBoosted ? 'text-orange-500' : 'text-white/20'} mb-2`} />
                     <span className="text-lg font-black">{isBoosted ? 'ACTIVE' : 'NONE'}</span>
                     <span className="text-[8px] uppercase font-bold opacity-40">Win Booster</span>
                 </GlassCard>
@@ -181,24 +181,25 @@ export const KnowledgeYield: React.FC = () => {
                     className="h-16 text-lg tracking-widest"
                     disabled={displayAccumulated < 1 || claiming}
                     onClick={handleClaim}
+                    variant="primary"
                 >
-                    {claiming ? <Loader2 className="animate-spin" /> : 'COLLECT KNOWLEDGE'}
+                    {claiming ? <Loader2 className="animate-spin" /> : 'COLLECT CHILI'}
                 </Button>
                 <p className="text-[10px] text-center opacity-40 font-bold uppercase tracking-widest">
-                    Your Capacity: {status?.maxCapacity} QP ({progress.toFixed(1)}%)
+                    Your Capacity: {status?.maxCapacity} CP ({progress.toFixed(1)}%)
                 </p>
             </div>
 
             {/* Info Section */}
             <GlassCard className="p-6">
                 <div className="flex items-start gap-4 mb-4">
-                    <div className="p-2 bg-primary/10 rounded-xl">
-                        <Info size={20} className="text-primary" />
+                    <div className="p-2 bg-orange-500/10 rounded-xl">
+                        <Info size={20} className="text-orange-500" />
                     </div>
                     <div>
-                        <h3 className="font-black text-sm uppercase italic tracking-tighter">What are Quiz Points?</h3>
+                        <h3 className="font-black text-sm uppercase italic tracking-tighter">What are Chili Points?</h3>
                         <p className="text-[10px] opacity-60 font-medium leading-relaxed mt-1">
-                            QP measures your cerebral contribution to the TGQuizMaster network. The higher your total QP balance, the larger your share of the upcoming <span className="text-primary font-black">$QUIZ Token Airdrop</span>.
+                            CP measures your participation and loyalty to the ChiliQuiz ecosystem. The higher your total CP balance, the larger your weight in the upcoming <span className="text-orange-500 font-black">$CHILI Token Airdrop</span>.
                         </p>
                     </div>
                 </div>

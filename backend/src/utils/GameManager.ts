@@ -316,6 +316,8 @@ export class GameManager {
         if (!player) return;
 
         const question = this.questions[this.currentIndex];
+        const userId = parseInt(player.id);
+
         if (answer === question.correctAnswer) {
             let points = Math.max(50, this.timer * 6.6); // Fast answers get ~150 points
             if (player.doublePoints) {
@@ -326,12 +328,18 @@ export class GameManager {
 
             // Add Season XP if this is a tournament/ranked game
             if (this.tournamentType === 'stars' || this.tournamentType === 'chz') {
-                const userId = parseInt(player.id);
                 if (!isNaN(userId)) {
                     RewardService.addSeasonXP(userId, Math.round(points)).catch(e =>
                         console.error(`[GAME] Failed to add Season XP for ${userId}:`, e)
                     );
                 }
+            }
+
+            // Award 1 CP for every correct answer
+            if (!isNaN(userId)) {
+                RewardService.awardCP(userId, 1).catch(e => 
+                    console.error(`[GAME] Failed to award CP for correct answer to ${userId}:`, e)
+                );
             }
         } else {
             // Wrong answer — clear double points if active
@@ -502,7 +510,7 @@ export class GameManager {
 
 
                         const { data: freshUser } = await supabase.from('users')
-                            .select('balance_stars, stats_xp, balance_chz, balance_qp')
+                            .select('balance_stars, stats_xp, balance_chz, balance_cp')
                             .eq('telegram_id', userId)
                             .single();
                         if (freshUser) {
@@ -510,7 +518,7 @@ export class GameManager {
                                 stars: freshUser.balance_stars,
                                 xp: freshUser.stats_xp,
                                 balanceCHZ: freshUser.balance_chz || 0,
-                                balanceQP: freshUser.balance_qp || 0
+                                balanceCP: freshUser.balance_cp || 0
                             });
                         }
                     } catch (e) {
@@ -594,10 +602,16 @@ export class GameManager {
                     if (index === 0) {
                         updates.stats_wins = (user.stats_wins || 0) + 1;
                         updates.daily_wins_today = (user.daily_wins_today || 0) + 1;
-                        // Grant 1-hour QP Booster for 1st place
+                        
+                        // Grant 1-hour CP Booster for 1st place
                         const boostUntil = new Date();
                         boostUntil.setHours(boostUntil.getHours() + 1);
-                        updates.qp_boost_until = boostUntil.toISOString();
+                        updates.cp_boost_until = boostUntil.toISOString();
+                        
+                        // Award 10 CP to match winner
+                        RewardService.awardCP(userId, 10).catch(e => 
+                            console.error(`[GAME] Failed to award winner CP to ${userId}:`, e)
+                        );
                     }
 
                     if (prize > 0) {
@@ -686,7 +700,7 @@ export class GameManager {
             try {
 
                 const { data: freshUser } = await supabase.from('users')
-                    .select('balance_stars, balance_chz, stats_xp, balance_qp')
+                    .select('balance_stars, balance_chz, stats_xp, balance_cp')
                     .eq('telegram_id', userId)
                     .single();
                 if (freshUser) {
@@ -694,7 +708,7 @@ export class GameManager {
                         stars: freshUser.balance_stars,
                         balanceCHZ: freshUser.balance_chz || 0,
                         xp: freshUser.stats_xp,
-                        balanceQP: freshUser.balance_qp || 0
+                        balanceCP: freshUser.balance_cp || 0
                     });
                 }
             } catch (e) {

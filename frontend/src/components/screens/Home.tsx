@@ -67,8 +67,9 @@ export const Home: React.FC = () => {
                 useAppStore.getState().setUser({
                     stars: data.newBalance,
                     balanceShards: data.newShards,
-                    inventoryPowerups: data.inventoryPowerups, // Assuming backend returns the full object
-                    unlockedAvatars: data.unlockedAvatars
+                    inventoryPowerups: data.inventoryPowerups,
+                    unlockedAvatars: data.unlockedAvatars,
+                    balanceCP: data.balanceCP || data.balanceQP // Support both during migration
                 });
 
                 if (data.rewardType === 'CHEST') {
@@ -302,8 +303,8 @@ export const Home: React.FC = () => {
                                 <h3 className="font-black text-xl uppercase italic tracking-tighter text-white">Lucky Spin</h3>
                                 <span className="bg-primary text-[#102216] text-[8px] font-black px-2 py-0.5 rounded-full animate-pulse uppercase">DAILY FREE</span>
                             </div>
-                            <p className="text-[10px] text-white/40 font-bold uppercase tracking-widest leading-none">
-                                Spin the wheel. Win Stars, QP, or Avatar Shards.
+                             <p className="text-[10px] text-white/40 font-bold uppercase tracking-widest leading-none">
+                                Spin the wheel. Win Stars, CP, or Avatar Shards.
                             </p>
                         </div>
                         <div className="flex flex-col items-center">

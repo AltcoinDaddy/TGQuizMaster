@@ -98,7 +98,7 @@ import adminRoutes from './routes/admin';
 import shopRoutes from './routes/shop';
 import rewardsRoutes from './routes/rewards';
 import gameRoutes from './routes/game';
-import qpRoutes from './routes/qp';
+import cpRoutes from './routes/cp';
 import squadRoutes from './routes/squads';
 import seasonRoutes from './routes/seasons';
 
@@ -106,7 +106,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api', shopRoutes);      // /api/shop, /api/buy-powerup, /api/buy-pro, /api/create-payment-link
 app.use('/api', rewardsRoutes);   // /api/daily-reward, /api/claim-daily, /api/quests, /api/claim-quest, /api/achievements
 app.use('/api', gameRoutes);      // /api/leaderboard, /api/history, /api/withdraw, /api/settings, /api/bug-report
-app.use('/api', qpRoutes);        // /api/qp-status, /api/claim-qp
+app.use('/api', cpRoutes);        // /api/cp-status, /api/claim-cp
 app.use('/api', squadRoutes);     // /api/squads, /api/squad/:id, /api/squad/my, /api/squad/join, /api/squad/leave
 app.use('/api/tournament-season', seasonRoutes);
 
@@ -308,7 +308,7 @@ async function syncUser(socket: any, telegramId: string, username: string) {
             xp: user.stats_xp || 0,
             wins: user.stats_wins || 0,
             totalGames: user.stats_total_games || 0,
-            balanceQP: user.balance_qp || 0,
+            balanceCP: user.balance_cp || 0,
             walletConnected: !!user.chiliz_wallet_address,
             walletAddress: user.chiliz_wallet_address,
             isAdmin: (process.env.ADMIN_IDS || '').split(',').map(id => id.trim()).includes(userId.toString()),

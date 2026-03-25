@@ -1,6 +1,6 @@
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Star, Gem, Zap } from 'lucide-react';
+import { ArrowLeft, Star, Gem, Flame } from 'lucide-react';
 import { useAppKit, useAppKitAccount } from '@reown/appkit/react';
 import { useAppStore } from '../../store/useAppStore';
 import { socket } from '../../utils/socket';
@@ -77,10 +77,10 @@ export const Header: React.FC = () => {
                 </button>
                 <button
                     onClick={() => navigate('/quests')}
-                    className="bg-white/5 border border-primary/20 p-3 rounded-2xl flex flex-col items-center active:scale-95 transition-all hover:bg-primary/10 group"
+                    className="bg-white/5 border border-orange-500/20 p-3 rounded-2xl flex flex-col items-center active:scale-95 transition-all hover:bg-orange-500/10 group"
                 >
-                    <Zap size={14} fill="currentColor" className="text-primary mb-1" />
-                    <span className="text-[10px] font-black italic tracking-tighter text-primary">{(user.balanceQP || 0).toLocaleString()}</span>
+                    <Flame size={14} fill="currentColor" className="text-orange-500 mb-1" />
+                    <span className="text-[10px] font-black italic tracking-tighter text-orange-500">{(user.balanceCP || 0).toLocaleString()}</span>
                 </button>
                 <button
                     onClick={() => navigate('/onboarding')}

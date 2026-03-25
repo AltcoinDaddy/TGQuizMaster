@@ -148,7 +148,7 @@ router.post('/claim-daily', telegramAuthMiddleware, async (req: Request, res: Re
         // Fetch current values to update them correctly
         const { data: userData } = await supabase
             .from('users')
-            .select('balance_stars, balance_shards, inventory_powerups, unlocked_avatars')
+            .select('balance_stars, balance_shards, inventory_powerups, unlocked_avatars, balance_cp')
             .eq('telegram_id', userId)
             .single();
 
@@ -297,6 +297,12 @@ router.get('/quests', async (req: Request, res: Response) => {
                 progress: 0, total: 1,
                 reward: '100 Stars', type: 'stars',
                 status: claimedIdsEver.includes('5') ? 'completed' : 'claimable'
+            },
+            {
+                id: '6', title: 'Claim Chili Yield',
+                progress: 0, total: 1,
+                reward: '50 CP', type: 'cp' as any,
+                status: claimedIdsToday.includes('6') ? 'completed' : 'in-progress'
             }
         ];
 
@@ -368,19 +374,21 @@ router.post('/claim-quest', telegramAuthMiddleware, async (req: Request, res: Re
             '2': dailyWins >= 1,
             '3': (referralCount || 0) >= 1,
             '4': true, // Social follow (click-to-verify)
-            '5': true  // Social follow (click-to-verify)
+            '5': true,  // Social follow (click-to-verify)
+            '6': true // Chili yield is claimed by clicking, no server-side verification needed here
         };
 
         if (!questVerification[questId]) {
             return res.status(400).json({ error: 'Quest not completed' });
         }
 
-        const questRewards: Record<string, { type: 'stars' | 'xp'; amount: number }> = {
+        const questRewards: Record<string, { type: 'stars' | 'xp' | 'cp'; amount: number }> = {
             '1': { type: 'stars', amount: 20 },
             '2': { type: 'xp', amount: 100 },
             '3': { type: 'stars', amount: 50 },
             '4': { type: 'stars', amount: 100 },
-            '5': { type: 'stars', amount: 100 }
+            '5': { type: 'stars', amount: 100 },
+            '6': { type: 'cp', amount: 50 },
         };
 
         const reward = questRewards[questId];
@@ -389,7 +397,7 @@ router.post('/claim-quest', telegramAuthMiddleware, async (req: Request, res: Re
         await supabase.from('transactions').insert({
             user_id: userId, type: 'PRIZE',
             amount: reward.amount,
-            currency: reward.type === 'stars' ? 'STARS' : 'XP',
+            currency: reward.type === 'stars' ? 'STARS' : (reward.type === 'xp' ? 'XP' : 'CP'),
             metadata: { questId, type: 'QUEST_REWARD' },
             status: 'COMPLETED'
         });
@@ -398,9 +406,14 @@ router.post('/claim-quest', telegramAuthMiddleware, async (req: Request, res: Re
             await supabase.from('users')
                 .update({ balance_stars: (user.balance_stars || 0) + reward.amount })
                 .eq('telegram_id', userId);
-        } else {
+        } else if (reward.type === 'xp') {
             await supabase.from('users')
                 .update({ stats_xp: (user.stats_xp || 0) + reward.amount })
+                .eq('telegram_id', userId);
+        } else if (reward.type === 'cp') {
+            const newCP = (BigInt(user.balance_cp || 0) + BigInt(reward.amount)).toString();
+            await supabase.from('users')
+                .update({ balance_cp: newCP })
                 .eq('telegram_id', userId);
         }
 

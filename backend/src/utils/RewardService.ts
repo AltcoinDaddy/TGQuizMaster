@@ -46,20 +46,20 @@ export class RewardService {
     }
 
     /**
-     * Awards QP (Quiz Points) to a user.
+     * Awards CP (Chili Points) to a user.
      */
-    static async awardQP(userId: number, amount: number): Promise<RewardResult> {
+    static async awardCP(userId: number, amount: number): Promise<RewardResult> {
         try {
-            const { data: user } = await supabase.from('users').select('balance_qp').eq('telegram_id', userId).single();
+            const { data: user } = await supabase.from('users').select('balance_cp').eq('telegram_id', userId).single();
             if (!user) throw new Error('User not found');
 
             await supabase.from('users').update({
-                balance_qp: (user.balance_qp || 0) + amount
+                balance_cp: (BigInt(user.balance_cp || 0) + BigInt(amount)).toString()
             }).eq('telegram_id', userId);
 
             return { success: true };
         } catch (error: any) {
-            console.error(`[RewardService] QP award failed for ${userId}:`, error.message);
+            console.error(`[RewardService] CP award failed for ${userId}:`, error.message);
             return { success: false, error: error.message };
         }
     }
@@ -245,7 +245,7 @@ export class RewardService {
         try {
             const { data: user, error: fetchError } = await supabase
                 .from('users')
-                .select('last_lucky_spin, balance_stars, balance_qp, balance_shards')
+                .select('last_lucky_spin, balance_stars, balance_cp, balance_shards')
                 .eq('telegram_id', userId)
                 .single();
 
@@ -265,7 +265,7 @@ export class RewardService {
 
             // 2. Roll the Reward
             const roll = Math.random();
-            let rewardType: 'STARS' | 'QP' | 'SHARD';
+            let rewardType: 'STARS' | 'CP' | 'SHARD';
             let amount = 0;
             let label = '';
 
@@ -275,10 +275,10 @@ export class RewardService {
                 label = `${amount} Stars`;
                 await this.awardStars(userId, amount, { type: 'LUCKY_SPIN' });
             } else if (roll < 0.9) {
-                rewardType = 'QP';
+                rewardType = 'CP';
                 amount = Math.floor(Math.random() * 91) + 10; // 10-100
-                label = `${amount} QP`;
-                await this.awardQP(userId, amount);
+                label = `${amount} CP`;
+                await this.awardCP(userId, amount);
             } else {
                 rewardType = 'SHARD';
                 amount = 1;

@@ -3,9 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAppStore } from '../../store/useAppStore';
 import { socket } from '../../utils/socket';
 import { 
-    Zap, 
+    Flame, 
     Star, 
-    Trophy, 
     User, 
     Loader2, 
     ArrowLeft,
@@ -16,10 +15,10 @@ import { useNavigate } from 'react-router-dom';
 
 const REWARDS = [
     { type: 'STARS', label: '50 Stars', color: '#ffcc00', icon: Star },
-    { type: 'QP', label: '10 QP', color: '#00ffcc', icon: Trophy },
+    { type: 'CP', label: '10 CP', color: '#f97316', icon: Flame },
     { type: 'SHARD', label: 'Avatar Shard', color: '#cc33ff', icon: User },
     { type: 'STARS', label: '500 Stars', color: '#ffcc00', icon: Star },
-    { type: 'QP', label: '100 QP', color: '#00ffcc', icon: Trophy },
+    { type: 'CP', label: '100 CP', color: '#f97316', icon: Flame },
     { type: 'SHARD', label: 'Avatar Shard', color: '#cc33ff', icon: User },
     { type: 'STARS', label: '200 Stars', color: '#ffcc00', icon: Star },
     { type: 'STARS', label: '100 Stars', color: '#ffcc00', icon: Star },
@@ -39,7 +38,7 @@ export const LuckySpin: React.FC = () => {
             const lastSpin = new Date(user.lastLuckySpin).getTime();
             const now = Date.now();
             const hoursSince = (now - lastSpin) / (1000 * 60 * 60);
-            
+
             if (hoursSince < 24) {
                 const remaining = 24 - hoursSince;
                 setCooldown(`${Math.ceil(remaining)}h`);
@@ -50,15 +49,15 @@ export const LuckySpin: React.FC = () => {
 
         const handleResult = (data: any) => {
             console.log('[LUCKY-SPIN] Result matched:', data);
-            
+
             // Calculate final rotation to land on the correct segment
             // 360 / 8 segments = 45 degrees per segment
             const rewardIndex = REWARDS.findIndex(r => r.type === data.type);
             const extraSpins = 5; // Spin 5 times before landing
             const finalAngle = (extraSpins * 360) + (rewardIndex * 45);
-            
+
             setRotation(finalAngle);
-            
+
             setTimeout(() => {
                 setIsSpinning(false);
                 setResult(data);
@@ -82,12 +81,12 @@ export const LuckySpin: React.FC = () => {
 
     const handleSpin = () => {
         if (isSpinning || cooldown) return;
-        
+
         setIsSpinning(true);
         setResult(null);
-        socket.emit('lucky_spin', { 
+        socket.emit('lucky_spin', {
             telegramId: user.telegramId,
-            username: user.username 
+            username: user.username
         });
     };
 
@@ -99,7 +98,7 @@ export const LuckySpin: React.FC = () => {
 
             {/* Header */}
             <div className="flex items-center justify-between mb-8 z-10">
-                <button 
+                <button
                     onClick={() => navigate(-1)}
                     className="p-2 bg-white/5 rounded-xl border border-white/10"
                 >
@@ -117,28 +116,28 @@ export const LuckySpin: React.FC = () => {
                 {/* Pointer */}
                 <div className="absolute top-[10%] left-1/2 -translate-x-1/2 z-20">
                     <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center shadow-[0_0_20px_rgba(0,255,136,0.5)]">
-                        <Zap size={16} className="text-[#102216] fill-current" />
+                        <Flame size={16} className="text-[#102216] fill-current" />
                     </div>
                     <div className="w-0 h-0 border-l-[10px] border-l-transparent border-r-[10px] border-r-transparent border-t-[15px] border-t-primary mx-auto" />
                 </div>
 
                 {/* Spinning Wheel */}
-                <motion.div 
+                <motion.div
                     className="w-72 h-72 rounded-full border-[8px] border-white/10 bg-[#0a160e] relative shadow-[0_0_50px_rgba(0,0,0,0.5)] overflow-hidden"
                     animate={{ rotate: rotation }}
                     transition={{ duration: 5, ease: "circOut" }}
                 >
                     {/* Segments */}
                     {REWARDS.map((reward, i) => (
-                        <div 
+                        <div
                             key={i}
                             className="absolute top-0 left-0 w-full h-full"
-                            style={{ 
+                            style={{
                                 transform: `rotate(${i * 45}deg)`,
                                 transformOrigin: 'center center'
                             }}
                         >
-                            <div 
+                            <div
                                 className="absolute top-0 left-1/2 -translate-x-1/2 w-[35%] h-[50%] flex flex-col items-center pt-4"
                                 style={{ transformOrigin: 'center bottom' }}
                             >
@@ -149,7 +148,7 @@ export const LuckySpin: React.FC = () => {
                             <div className="absolute top-0 left-1/2 w-[1px] h-[50%] bg-white/10 origin-bottom" style={{ transform: 'translateX(-50%)' }} />
                         </div>
                     ))}
-                    
+
                     {/* Inner Center Circle */}
                     <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-12 h-12 bg-[#102216] rounded-full border-4 border-white/10 z-10 flex items-center justify-center">
                         <Star size={16} className="text-primary fill-current" />
@@ -162,7 +161,7 @@ export const LuckySpin: React.FC = () => {
                         onClick={handleSpin}
                         disabled={isSpinning || !!cooldown}
                         className={`w-full py-5 rounded-2xl font-black italic text-lg tracking-tight shadow-xl flex items-center justify-center gap-3 transition-all active:scale-95 ${
-                            cooldown 
+                            cooldown
                             ? 'bg-white/10 text-white/30 border border-white/5 cursor-not-allowed'
                             : 'bg-primary text-[#102216] shadow-primary/20 animate-pulse'
                         }`}
@@ -182,7 +181,7 @@ export const LuckySpin: React.FC = () => {
                         )}
                     </button>
                     <p className="text-center text-xs text-white/40 mt-4 leading-relaxed tracking-wider italic font-bold">
-                        DAILY FREE LUCK • WIN STARS, QP, OR SHARDS
+                        DAILY FREE LUCK • WIN STARS, CP, OR SHARDS
                     </p>
                 </div>
             </div>
@@ -190,7 +189,7 @@ export const LuckySpin: React.FC = () => {
             {/* Result Modal */}
             <AnimatePresence>
                 {result && !isSpinning && (
-                    <motion.div 
+                    <motion.div
                         initial={{ opacity: 0, scale: 0.9, y: 20 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.9, y: 20 }}

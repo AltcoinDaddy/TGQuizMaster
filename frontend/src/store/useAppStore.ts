@@ -11,7 +11,7 @@ interface UserState {
     isPro: boolean;
     stars: number;
     chilizBalance: number;
-    balanceQP: number;
+    balanceCP: number;
     balanceShards: number;
     inventory: string[];
     inventoryPowerups: Record<string, number>;
@@ -57,7 +57,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
         isPro: false,
         stars: 0,
         chilizBalance: 0,
-        balanceQP: 0,
+        balanceCP: 0,
         balanceShards: 0,
         inventory: [],
         inventoryPowerups: {},
@@ -96,7 +96,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
                 settings: data.settings ?? state.user.settings,
                 wins: data.wins ?? state.user.wins,
                 totalGames: data.totalGames ?? state.user.totalGames,
-                balanceQP: data.balanceQP ?? data.qp ?? state.user.balanceQP,
+                balanceCP: data.balanceCP ?? data.cp ?? data.balanceQP ?? state.user.balanceCP,
                 balanceShards: data.balanceShards ?? data.shards ?? state.user.balanceShards,
                 inventoryPowerups: data.inventoryPowerups ?? state.user.inventoryPowerups,
                 unlockedAvatars: data.unlockedAvatars ?? state.user.unlockedAvatars,

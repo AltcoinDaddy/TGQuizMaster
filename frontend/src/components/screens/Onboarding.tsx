@@ -25,9 +25,9 @@ const onboardingSteps = [
     },
     {
         icon: <Brain size={64} className="text-accent-purple" />,
-        title: "Passive Yield",
-        description: "Harvest $QUIZ Airdrop Points hourly based on your activity. High QP yields higher potential rewards!",
-        color: "from-accent-purple"
+        title: "Chili Yield",
+        description: "Harvest ChiliPoints (CP) hourly based on your activity. High CP yields higher potential rewards!",
+        color: "from-orange-500"
     }
 ];
 
