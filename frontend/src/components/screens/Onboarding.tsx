@@ -7,8 +7,8 @@ import { useNavigate } from 'react-router-dom';
 const onboardingSteps = [
     {
         icon: <Zap size={64} className="text-primary" />,
-        title: "Real-Time Multiplayer",
-        description: "Compete with players worldwide in high-speed trivia battles. Speed counts just as much as knowledge!",
+        title: "Sport & Entertainment",
+        description: "The ultimate arena for fans. Compete in specialized categories like Football, Motorsports, and Pop Culture!",
         color: "from-primary"
     },
     {

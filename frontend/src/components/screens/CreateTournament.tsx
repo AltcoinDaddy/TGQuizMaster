@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { MainLayout } from '../layout/MainLayout';
 import { GlassCard } from '../ui/GlassCard';
 import { Button } from '../ui/Button';
-import { ChevronLeft, Info, Brain, Coins, Film, Trophy, Gamepad2, Lock, Link as LinkIcon, Send, Minus, Plus, Star, Diamond, History, Globe, Music, Landmark, Smartphone } from 'lucide-react';
+import { ChevronLeft, Info, Brain, Coins, Film, Trophy, Gamepad2, Lock, Link as LinkIcon, Send, Minus, Plus, Star, Diamond, History, Globe, Music, Landmark, Smartphone, Zap, Target } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const STAR_PRESETS = [500, 1000, 2500, 5000];
@@ -10,7 +10,7 @@ const CHZ_PRESETS = [10, 50, 100, 250];
 
 export const CreateTournament: React.FC = () => {
     const navigate = useNavigate();
-    const [category, setCategory] = useState('General');
+    const [category, setCategory] = useState('Football');
     const [players, setPlayers] = useState(5);
     const [feeType, setFeeType] = useState<'stars' | 'custom'>('stars');
     const [starAmount, setStarAmount] = useState(500);
@@ -18,16 +18,15 @@ export const CreateTournament: React.FC = () => {
     const [isPrivate, setIsPrivate] = useState(false);
 
     const categories = [
-        { name: 'General', icon: <Brain size={20} /> },
-        { name: 'Crypto', icon: <Coins size={20} /> },
-        { name: 'Movies', icon: <Film size={20} /> },
-        { name: 'Sports', icon: <Trophy size={20} /> },
-        { name: 'Gaming', icon: <Gamepad2 size={20} /> },
-        { name: 'History', icon: <History size={20} /> },
-        { name: 'Geography', icon: <Globe size={20} /> },
+        { name: 'Football', icon: <Trophy size={20} /> },
+        { name: 'Motorsports', icon: <History size={20} /> },
+        { name: 'Basketball', icon: <Target size={20} /> },
+        { name: 'Tennis', icon: <Globe size={20} /> },
+        { name: 'Combat Sports', icon: <Zap size={20} /> },
+        { name: 'Esports', icon: <Gamepad2 size={20} /> },
+        { name: 'Movies & Series', icon: <Film size={20} /> },
         { name: 'Music', icon: <Music size={20} /> },
-        { name: 'Politics', icon: <Landmark size={20} /> },
-        { name: 'Gadgets', icon: <Smartphone size={20} /> },
+        { name: 'Pop Culture', icon: <Star size={20} /> },
     ];
 
     const getEntryFeeStr = () => {

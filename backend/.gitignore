@@ -2,3 +2,7 @@ node_modules
 dist
 .env
 .DS_Store
+
+# Privacy: Do not commit the proprietary question database to GitHub
+data/*.json
+!data/example_questions.json

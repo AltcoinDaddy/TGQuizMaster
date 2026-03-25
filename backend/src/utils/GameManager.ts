@@ -69,16 +69,15 @@ export class GameManager {
     public currency: 'STARS' | 'CHZ' = 'STARS';
 
     private readonly CATEGORY_MAP: Record<string, number> = {
-        'General': 9,
-        'Crypto': 18, // Science: Computers
-        'Movies': 11,
-        'Sports': 21,
-        'Gaming': 15,
-        'History': 23,
-        'Geography': 22,
+        'Football': 21,
+        'Motorsports': 21,
+        'Basketball': 21,
+        'Tennis': 21,
+        'Combat Sports': 21,
+        'Esports': 15,
+        'Movies & Series': 11,
         'Music': 12,
-        'Politics': 24,
-        'Gadgets': 30
+        'Pop Culture': 26,
     };
 
     constructor(roomId: string, io: any, type: 'free' | 'stars' | 'chz' | 'practice' = 'free', prize = 0, fee = 0, maxPlayers = 5, category = 'General', isMega = false) {
@@ -200,28 +199,46 @@ export class GameManager {
     }
 
     private async fetchQuestions() {
-        // Fallback for ID if somehow missing from map
-        const finalId = this.categoryId || 9;
+        // Normalize category for DB query (e.g., 'Movies & Series' -> 'movies_series')
+        const dbCategory = this.category.toLowerCase().replace(/ & /g, '_').replace(/ /g, '_');
 
+        // 1. Try fetching from Supabase 'questions' table first via RPC
         try {
-            const { questionCache } = await import('./QuestionCache');
-            const cached = await questionCache.getQuestions(this.questionCount, finalId);
-            if (cached.length >= this.questionCount) {
-                this.questions = cached;
-                console.log(`[GAME] Loaded ${cached.length} questions for category ${this.category} (id: ${finalId}) from cache`);
+            console.log(`[GAME] Fetching from Supabase: Category=${dbCategory}, Count=${this.questionCount}`);
+            
+            // Use specialized RPC for high-performance random selection
+            const { data, error } = await supabase
+                .rpc('get_random_questions', {
+                    p_category: dbCategory,
+                    p_count: this.questionCount
+                });
+
+            if (!error && data && data.length >= this.questionCount) {
+                this.questions = data.map((q: any) => ({
+                    id: q.id,
+                    text: q.text,
+                    options: q.options,
+                    correctAnswer: q.correct_answer
+                }));
+                console.log(`[GAME] Successfully fetched ${this.questions.length} questions from Supabase for ${dbCategory}`);
                 return;
+            } else if (error) {
+                console.error('[GAME] Supabase RPC error:', error);
+            } else {
+                console.log(`[GAME] Supabase had insufficient questions (${data?.length || 0}/${this.questionCount}) for ${dbCategory}. Falling back to OpenTDB.`);
             }
         } catch (e) {
-            console.error('[GAME] Cache fetch failed:', e);
+            console.error('[GAME] Supabase integration failed:', e);
         }
 
-        // Fetch from API (either specific category or cache/fallback)
+        // 2. Fallback to OpenTDB
+        const finalId = this.categoryId || 9;
         try {
             const url = this.categoryId
                 ? `https://opentdb.com/api.php?amount=${this.questionCount}&category=${this.categoryId}&type=multiple`
                 : `https://opentdb.com/api.php?amount=${this.questionCount}&type=multiple`;
 
-            console.log(`[GAME] Fetching questions from: ${url}`);
+            console.log(`[GAME] Fetching fallback questions from: ${url}`);
             const resp = await axios.get(url);
 
             if (resp.data.results && resp.data.results.length > 0) {
@@ -231,22 +248,22 @@ export class GameManager {
                     options: [...q.incorrect_answers.map((a: any) => decode(a)), decode(q.correct_answer)].sort(() => Math.random() - 0.5),
                     correctAnswer: decode(q.correct_answer)
                 }));
-                console.log(`[GAME] Successfully fetched ${this.questions.length} questions for category ${this.category}`);
+                console.log(`[GAME] Successfully fetched ${this.questions.length} fallback questions for category ${this.category}`);
                 return;
             }
         } catch (e) {
-            console.error('Failed to fetch questions:', e);
+            console.error('Failed to fetch questions from OpenTDB:', e);
         }
 
-        // Fallback: static crypto/tech questions if everything fails
+        // 3. Last Resort Fallback (Static Sport/Ent questions)
         this.questions = [
-            { id: 'f1', text: "Which consensus mechanism does Ethereum now use?", options: ["Proof of Work", "Proof of Stake", "Proof of History", "Proof of Authority"], correctAnswer: "Proof of Stake" },
-            { id: 'f2', text: "What is the primary token of the Chiliz network?", options: ["ETH", "SOL", "CHZ", "DOT"], correctAnswer: "CHZ" },
-            { id: 'f3', text: "Who is the founder of Telegram?", options: ["Pavel Durov", "Mark Zuckerberg", "Jack Dorsey", "Vitalik Buterin"], correctAnswer: "Pavel Durov" },
-            { id: 'f4', text: "What does 'HODL' originally stand for in crypto?", options: ["Hold On for Dear Life", "Highly Optimized Digital Ledger", "Home of Digital Liberty", "It was a typo for 'HOLD'"], correctAnswer: "It was a typo for 'HOLD'" },
-            { id: 'f5', text: "In which year was Bitcoin created?", options: ["2008", "2009", "2010", "2011"], correctAnswer: "2009" }
+            { id: 'f1', text: "Which country won the FIFA World Cup in 2022?", options: ["France", "Argentina", "Brazil", "Germany"], correctAnswer: "Argentina" },
+            { id: 'f2', text: "How many championships has Michael Schumacher won in Formula 1?", options: ["5", "6", "7", "8"], correctAnswer: "7" },
+            { id: 'f3', text: "Who is known as the 'King of Clay' in tennis?", options: ["Roger Federer", "Novak Djokovic", "Rafael Nadal", "Andy Murray"], correctAnswer: "Rafael Nadal" },
+            { id: 'f4', text: "In which year did the first-ever modern Olympic Games take place?", options: ["1896", "1900", "1924", "1888"], correctAnswer: "1896" },
+            { id: 'f5', text: "Which artist released the hit album 'Thriller' in 1982?", options: ["Prince", "Michael Jackson", "Madonna", "David Bowie"], correctAnswer: "Michael Jackson" }
         ];
-        console.log(`[GAME] API failed, used ${this.questions.length} fallback questions`);
+        console.log(`[GAME] Every fetch method failed, used ${this.questions.length} hardcoded fallback questions`);
     }
 
     private sendQuestion() {
