@@ -164,23 +164,32 @@ export class RewardService {
             console.log(`[RewardService] Distributing prizes for Season: ${season.title} to ${winners.length} winners.`);
 
             const totalPrizePool = parseInt(season.prize_pool);
+            const cpPrizePool = season.metadata?.cp_prize_pool ? parseInt(season.metadata.cp_prize_pool) : 0;
 
             // Prize Tiers (Simplified for now, can be made dynamic)
             // 1st: 25%, 2-10: split 50%, 11-30: split 25%
             for (let i = 0; i < winners.length; i++) {
                 const winner = winners[i];
                 let prize = 0;
+                let cpPrize = 0;
 
                 if (i === 0) {
                     prize = Math.floor(totalPrizePool * 0.25);
+                    cpPrize = Math.floor(cpPrizePool * 0.25);
                 } else if (i < 10) {
                     prize = Math.floor((totalPrizePool * 0.50) / 9);
+                    cpPrize = Math.floor((cpPrizePool * 0.50) / 9);
                 } else {
                     prize = Math.floor((totalPrizePool * 0.25) / 20);
+                    cpPrize = Math.floor((cpPrizePool * 0.25) / 20);
                 }
 
                 if (prize > 0) {
                     await this.awardStars(winner.telegram_id, prize, { seasonId, rank: i + 1, type: 'SEASON_PRIZE' });
+                }
+                
+                if (cpPrize > 0) {
+                    await this.awardCP(winner.telegram_id, cpPrize);
                 }
 
                 // Award Chests

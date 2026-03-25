@@ -207,6 +207,14 @@ export class GameManager {
         if (dbCategory === 'movies_series') dbCategory = 'movies';
         if (dbCategory === 'pop_culture') dbCategory = 'music';
 
+        // PICK A RANDOM LOCAL CATEGORY IF 'ALL/GENERAL' IS REQUESTED
+        // This bypasses the need for an RPC update while still providing SportFi-related questions
+        if (dbCategory === 'all') {
+            const localCategories = ['football', 'motorsports', 'esports', 'tennis', 'basketball', 'combat_sports', 'movies', 'music'];
+            dbCategory = localCategories[Math.floor(Math.random() * localCategories.length)];
+            console.log(`[GAME] Randomized 'all' to specific category: ${dbCategory}`);
+        }
+
         // 1. Try fetching from Supabase 'questions' table first via RPC
         try {
             console.log(`[GAME] Fetching from Supabase: Category=${dbCategory}, Count=${this.questionCount}`);

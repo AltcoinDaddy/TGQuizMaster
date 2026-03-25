@@ -181,8 +181,14 @@ export const Home: React.FC = () => {
                                         </h2>
                                         <span className="bg-primary text-background-dark text-[8px] font-black px-2 py-0.5 rounded-full animate-pulse uppercase">LIVE</span>
                                     </div>
-                                    <p className="text-[10px] text-white/60 font-black uppercase tracking-[0.2em] leading-none mb-1">
-                                        PRIZE POOL: {parseInt(activeSeason.prize_pool).toLocaleString()} STARS
+                                    <p className="text-[10px] text-white/60 font-black uppercase tracking-[0.2em] leading-none mb-1 flex flex-wrap gap-x-2">
+                                        PRIZE POOL: <span className="text-yellow-400">{parseInt(activeSeason.prize_pool).toLocaleString()} STARS</span>
+                                        {(() => {
+                                            const meta = typeof activeSeason.metadata === 'string' ? JSON.parse(activeSeason.metadata) : activeSeason.metadata;
+                                            return meta?.cp_prize_pool && (
+                                                <span className="text-primary">+ {parseInt(meta.cp_prize_pool).toLocaleString()} CP</span>
+                                            );
+                                        })()}
                                     </p>
                                     <div className="flex items-center gap-2">
                                         <div className="h-1 flex-1 bg-white/10 rounded-full overflow-hidden">
