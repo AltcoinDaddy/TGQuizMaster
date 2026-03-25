@@ -17,6 +17,7 @@ export interface Question {
     text: string;
     options: string[];
     correctAnswer: string;
+    category?: string;
 }
 
 // Level System
@@ -207,110 +208,118 @@ export class GameManager {
         if (dbCategory === 'movies_series') dbCategory = 'movies';
         if (dbCategory === 'pop_culture') dbCategory = 'music';
 
-        // PICK A RANDOM LOCAL CATEGORY IF 'ALL/GENERAL' IS REQUESTED
-        // This bypasses the need for an RPC update while still providing SportFi-related questions
+        // TRUE MIXED CATEGORY HANDLING FOR 'GENERAL' GAMES
         if (dbCategory === 'all') {
-            const localCategories = ['football', 'motorsports', 'esports', 'tennis', 'basketball', 'combat_sports', 'movies', 'music'];
-            dbCategory = localCategories[Math.floor(Math.random() * localCategories.length)];
-            console.log(`[GAME] Randomized 'all' to specific category: ${dbCategory}`);
+            console.log(`[GAME] Fetching mixed categories for 'General' game...`);
+            const targetCats = ['football', 'motorsports', 'esports', 'tennis', 'basketball', 'combat_sports', 'movies', 'music'];
+            
+            try {
+                // Fetch a small batch from each category up-front
+                const fetchPromises = targetCats.map(cat => 
+                    supabase.from('questions').select('*').eq('category', cat).limit(3)
+                );
+                
+                const results = await Promise.all(fetchPromises);
+                const allFetched = results.flatMap(res => res.data || []);
+                
+                if (allFetched.length >= this.questionCount) {
+                    const shuffled = allFetched.sort(() => Math.random() - 0.5).slice(0, this.questionCount);
+                    this.questions = shuffled.map((q: any) => ({
+                        id: q.id,
+                        text: q.text,
+                        options: q.options,
+                        correctAnswer: q.correct_answer,
+                        category: q.category
+                    }));
+                    console.log(`[GAME] Mixed game initialized with ${this.questions.length} questions across multiple topics.`);
+                    return;
+                } else if (allFetched.length > 0) {
+                     // Still use what we have even if less than 10 (for small local DBs)
+                     this.questions = allFetched.sort(() => Math.random() - 0.5).slice(0, this.questionCount).map((q: any) => ({
+                        id: q.id, text: q.text, options: q.options, correctAnswer: q.correct_answer, category: q.category
+                    }));
+                    return;
+                }
+            } catch (e) {
+                console.error(`[GAME] Mixed fetch failed:`, e);
+            }
         }
 
         // 1. Try fetching from Supabase 'questions' table first via RPC
         try {
-            console.log(`[GAME] Fetching from Supabase: Category=${dbCategory}, Count=${this.questionCount}`);
+            console.log(`[GAME] Querying Supabase: Category=${dbCategory}, Count=${this.questionCount}`);
             
-            // Use specialized RPC for high-performance random selection
             const { data, error } = await supabase
                 .rpc('get_random_questions', {
                     p_category: dbCategory,
                     p_count: this.questionCount
                 });
-
+            
             if (!error && data && data.length >= this.questionCount) {
                 this.questions = data.map((q: any) => ({
                     id: q.id,
                     text: q.text,
                     options: q.options,
-                    correctAnswer: q.correct_answer
+                    correctAnswer: q.correct_answer,
+                    category: q.category
                 }));
-                console.log(`[GAME] Successfully fetched ${this.questions.length} SportFi questions for ${dbCategory} via RPC.`);
+                console.log(`[GAME] Successfully fetched ${this.questions.length} SportFi questions via RPC.`);
                 return;
             } 
             
-            // SECOND FALLBACK: Direct table select if RPC fails or returns 0
-            // This is slightly less 'random' but ensures we stay in local SportFi database
+            // SECOND FALLBACK: Direct table select
             console.log(`[GAME] RPC failed for ${dbCategory}. Trying direct table selection...`);
             let directQuery = supabase.from('questions').select('*');
             if (dbCategory !== 'all') {
                 directQuery = directQuery.eq('category', dbCategory);
             }
             
-            const { data: directData, error: directError } = await directQuery.limit(this.questionCount * 3);
+            const { data: directData, error: directError } = await directQuery.limit(this.questionCount * 10);
             
             if (!directError && directData && directData.length > 0) {
-                // Manually shuffle the result
                 const shuffled = directData.sort(() => Math.random() - 0.5).slice(0, this.questionCount);
                 this.questions = shuffled.map((q: any) => ({
                     id: q.id,
                     text: q.text,
                     options: q.options,
-                    correctAnswer: q.correct_answer
+                    correctAnswer: q.correct_answer,
+                    category: q.category
                 }));
                 console.log(`[GAME] Successfully fetched ${this.questions.length} questions via DIRECT query.`);
                 return;
             }
-
-            console.warn(`[GAME] Supabase completely dry for ${dbCategory}. Checking generic fallback...`);
         } catch (e) {
             console.error('[GAME] Supabase integration failed:', e);
         }
 
-        // 2. Fallback to OpenTDB
-        const finalId = this.categoryId || 21; // Default to Sports (21) instead of General Knowledge (9)
+        // 3. FINAL FALLBACK: OpenTDB
+        const finalId = this.categoryId || 21; 
         try {
-            const url = this.categoryId
-                ? `https://opentdb.com/api.php?amount=${this.questionCount}&category=${this.categoryId}&type=multiple`
-                : `https://opentdb.com/api.php?amount=${this.questionCount}&type=multiple`;
-
-            console.log(`[GAME] Fetching fallback questions from: ${url}`);
+            const url = `https://opentdb.com/api.php?amount=${this.questionCount}&category=${finalId}&type=multiple`;
             const resp = await axios.get(url);
-
+            
             if (resp.data.results && resp.data.results.length > 0) {
                 this.questions = resp.data.results.map((q: any, i: number) => ({
                     id: `q_${Date.now()}_${i}`,
                     text: decode(q.question),
                     options: [...q.incorrect_answers.map((a: any) => decode(a)), decode(q.correct_answer)].sort(() => Math.random() - 0.5),
-                    correctAnswer: decode(q.correct_answer)
+                    correctAnswer: decode(q.correct_answer),
+                    category: 'Sports'
                 }));
-                console.log(`[GAME] Successfully fetched ${this.questions.length} fallback questions for category ${this.category}`);
+                console.log(`[GAME] Loaded ${this.questions.length} fallback questions from OpenTDB.`);
                 return;
             }
         } catch (e) {
-            console.error('Failed to fetch questions from OpenTDB:', e);
+            console.error('[GAME] OpenTDB fallback failed:', e);
         }
-
-        // 3. Last Resort Fallback (Static Sport/Ent questions)
-        this.questions = [
-            { id: 'f1', text: "Which country won the FIFA World Cup in 2022?", options: ["France", "Argentina", "Brazil", "Germany"], correctAnswer: "Argentina" },
-            { id: 'f2', text: "How many championships has Michael Schumacher won in Formula 1?", options: ["5", "6", "7", "8"], correctAnswer: "7" },
-            { id: 'f3', text: "Who is known as the 'King of Clay' in tennis?", options: ["Roger Federer", "Novak Djokovic", "Rafael Nadal", "Andy Murray"], correctAnswer: "Rafael Nadal" },
-            { id: 'f4', text: "In which year did the first-ever modern Olympic Games take place?", options: ["1896", "1900", "1924", "1888"], correctAnswer: "1896" },
-            { id: 'f5', text: "Which artist released the hit album 'Thriller' in 1982?", options: ["Prince", "Michael Jackson", "Madonna", "David Bowie"], correctAnswer: "Michael Jackson" }
-        ];
-        console.log(`[GAME] Every fetch method failed, used ${this.questions.length} hardcoded fallback questions`);
     }
 
     private sendQuestion() {
         if (this.questions.length === 0) {
             console.warn(`[GAME] No questions loaded for room ${this.roomId}. Waiting...`);
-            // If we have no questions after 5 seconds of starting, then fail
             setTimeout(() => {
-                if (this.questions.length === 0) {
-                    console.error(`[GAME] Failed to load questions for room ${this.roomId}. Ending.`);
-                    this.endGame();
-                } else {
-                    this.sendQuestion();
-                }
+                if (this.questions.length === 0) this.endGame();
+                else this.sendQuestion();
             }, 2000);
             return;
         }
@@ -325,7 +334,8 @@ export class GameManager {
             question: {
                 id: question.id,
                 text: question.text,
-                options: question.options
+                options: question.options,
+                category: question.category
             },
             index: this.currentIndex,
             total: this.questions.length
@@ -346,8 +356,7 @@ export class GameManager {
             if (this.timer <= 0) {
                 clearInterval(this.timerInterval!);
                 this.timerInterval = null;
-                // In Survival Mode, timing out is Game Over
-                    this.revealAnswer();
+                this.revealAnswer();
             }
         }, 1000);
     }
@@ -408,10 +417,8 @@ export class GameManager {
             return { success: false, error: 'Game not in progress' };
         }
 
-        // Initialize tracking array
         if (!player.usedPowerUps) player.usedPowerUps = [];
 
-        // Check if already used this power-up
         if (player.usedPowerUps.includes(powerUpId)) {
             return { success: false, error: 'Already used this power-up' };
         }
@@ -422,7 +429,6 @@ export class GameManager {
             case 'pu_5050': {
                 const question = this.questions[this.currentIndex];
                 const wrongAnswers = question.options.filter(o => o !== question.correctAnswer);
-                // Pick 2 random wrong answers to eliminate
                 const toRemove = wrongAnswers.sort(() => Math.random() - 0.5).slice(0, 2);
                 return { success: true, data: { type: 'fifty_fifty', removed: toRemove } };
             }
@@ -448,14 +454,12 @@ export class GameManager {
 
         const winners = [...this.players].sort((a, b) => b.score - a.score);
 
-        // Calculate rake and net prize pool
         const grossPool = this.entryFee * this.players.length;
         const rake = (this.tournamentType === 'stars' || this.tournamentType === 'chz')
             ? Math.floor(grossPool * this.rakePercentage)
             : 0;
         const netPrize = grossPool - rake;
 
-        // Distribution Logic (from net pool after rake)
         const distribution = {
             first: Math.floor(netPrize * 0.6),
             second: Math.floor(netPrize * 0.3),
@@ -465,11 +469,8 @@ export class GameManager {
         const prizes = [distribution.first, distribution.second, distribution.third];
         const currency = this.tournamentType === 'stars' ? 'STARS' : 'CHZ';
 
-        // Practice mode — give small rewards + update daily counters
         if (this.tournamentType === 'practice') {
             try {
-
-
                 let firstWinnerDailyGames = 0;
 
                 for (const [index, player] of winners.entries()) {
@@ -503,12 +504,10 @@ export class GameManager {
 
                         await supabase.from('users').update(updates).eq('telegram_id', userId);
 
-                        // Update Squad XP if user is in a squad
                         if (user.squad_id) {
                             try {
                                 const { data: squad } = await supabase.from('squads').select('total_xp, weekly_xp, creator_id').eq('id', user.squad_id).single();
                                 if (squad) {
-                                    // 5% Bonus for Leaders
                                     let actualXp = xpReward;
                                     if (squad.creator_id && squad.creator_id.toString() === userId.toString()) {
                                         actualXp = Math.ceil(xpReward * 1.05);
@@ -519,7 +518,6 @@ export class GameManager {
                                         weekly_xp: (squad.weekly_xp || 0) + actualXp
                                     }).eq('id', user.squad_id);
 
-                                    // Apply bonus to user too if leader
                                     if (actualXp > xpReward) {
                                         await supabase.from('users').update({
                                             stats_xp: user.stats_xp + (actualXp - xpReward)
@@ -531,7 +529,6 @@ export class GameManager {
                             }
                         }
 
-                        // Emit level-up event if player leveled up
                         if (newLevel.level > oldLevel.level) {
                             this.io.to(this.roomId).emit('level_up', {
                                 playerId: player.id,
@@ -540,7 +537,6 @@ export class GameManager {
                                 nextXp: newLevel.nextXp,
                                 currentXp: newXp
                             });
-                            console.log(`[LEVEL UP] Player ${player.id} → Level ${newLevel.level} (${newLevel.title})`);
                         }
                     }
                 }
@@ -553,13 +549,10 @@ export class GameManager {
                     dailyGamesLeft: Math.max(0, 3 - firstWinnerDailyGames),
                 });
 
-                // Emit balance update so frontend refreshes immediately
                 for (const player of winners) {
                     if (!player.id) continue;
                     const userId = parseInt(player.id);
                     try {
-
-
                         const { data: freshUser } = await supabase.from('users')
                             .select('balance_stars, stats_xp, balance_chz, balance_cp')
                             .eq('telegram_id', userId)
@@ -577,8 +570,6 @@ export class GameManager {
                     }
                 }
 
-                console.log(`Practice game over in ${this.roomId}. Winner: ${winners[0]?.username} (+5 Stars, +10 XP)`);
-
                 if (this.onGameOver) this.onGameOver(this.roomId, []);
                 return;
             } catch (e) {
@@ -586,10 +577,7 @@ export class GameManager {
             }
         }
 
-
         try {
-
-
             const { data: tournamentRecord, error: tourError } = await supabase
                 .from('tournaments')
                 .insert({
@@ -609,29 +597,24 @@ export class GameManager {
                 .single();
 
             if (tourError) throw tourError;
-            console.log(`[DB] Tournament saved: ${tournamentRecord.id}`);
 
-            // 2. Log Platform Rake as transaction
             if (rake > 0) {
                 await supabase.from('transactions').insert({
-                    user_id: 0, // Platform account
+                    user_id: 0,
                     type: 'PLATFORM_RAKE',
                     amount: rake,
                     currency,
                     metadata: { tournamentId: tournamentRecord.id, grossPool, rakePercent: this.rakePercentage * 100 },
                     status: 'COMPLETED'
                 });
-                console.log(`[RAKE] Collected ${rake} ${currency} from tournament ${tournamentRecord.id}`);
             }
 
-            // 2. Update Users and Create Transactions
             for (const [index, player] of winners.entries()) {
                 const prize = prizes[index] || 0;
                 if (!player.id) continue;
 
-                const userId = parseInt(player.id); // Assuming ID is valid parsable int
+                const userId = parseInt(player.id);
 
-                // Fetch User to get current stats
                 const { data: user, error: userError } = await supabase
                     .from('users')
                     .select('*')
@@ -644,7 +627,6 @@ export class GameManager {
                     const oldLevel = calculateLevel(oldXp);
                     const newLevel = calculateLevel(newXp);
 
-                    // Prepare updates
                     const updates: any = {
                         stats_total_games: (user.stats_total_games || 0) + 1,
                         stats_xp: newXp,
@@ -653,22 +635,15 @@ export class GameManager {
                     if (index === 0) {
                         updates.stats_wins = (user.stats_wins || 0) + 1;
                         updates.daily_wins_today = (user.daily_wins_today || 0) + 1;
-                        
-                        // Grant 1-hour CP Booster for 1st place
                         const boostUntil = new Date();
                         boostUntil.setHours(boostUntil.getHours() + 1);
                         updates.cp_boost_until = boostUntil.toISOString();
                         
-                        // Award 10 CP to match winner
-                        RewardService.awardCP(userId, 10).catch(e => 
-                            console.error(`[GAME] Failed to award winner CP to ${userId}:`, e)
-                        );
+                        RewardService.awardCP(userId, 10).catch(e => console.error(`[GAME] CP award failed:`, e));
                     }
 
                     if (prize > 0) {
                         if (currency === 'STARS') updates.balance_stars = (user.balance_stars || 0) + prize;
-                        // CHZ prizes handled via smart contract (Phase 2)
-
                         await supabase.from('transactions').insert({
                             user_id: userId,
                             type: 'PRIZE',
@@ -679,52 +654,30 @@ export class GameManager {
                         });
                     }
 
-                    // 3. User Stats & XP
-                    // Note: User Stats & XP
-
                     await supabase.from('users').update(updates).eq('telegram_id', userId);
 
-                    // Add Season XP if a season is active
                     if (this.tournamentType === 'stars' || this.tournamentType === 'chz') {
                         const multiplier = this.megaRoom ? 2 : 1;
                         const xpToAdd = player.score * multiplier;
-                        if (xpToAdd > 0) {
-                            const pid = parseInt(player.id);
-                            console.log(`[SEASON] Adding ${xpToAdd} Season XP to player ${pid} (Mega: ${this.megaRoom})`);
-                            RewardService.addSeasonXP(pid, xpToAdd);
-                        }
+                        if (xpToAdd > 0) RewardService.addSeasonXP(parseInt(player.id), xpToAdd);
                     }
 
-                    // Update Squad XP if user is in a squad
                     if (user.squad_id) {
                         try {
                             const { data: squad } = await supabase.from('squads').select('total_xp, weekly_xp, creator_id').eq('id', user.squad_id).single();
                             if (squad) {
-                                // 5% Bonus for Leaders
                                 let actualXp = player.score;
-                                if (squad.creator_id && squad.creator_id.toString() === userId.toString()) {
-                                    actualXp = Math.ceil(player.score * 1.05);
-                                }
-
+                                if (squad.creator_id && squad.creator_id.toString() === userId.toString()) actualXp = Math.ceil(player.score * 1.05);
                                 await supabase.from('squads').update({
                                     total_xp: (squad.total_xp || 0) + actualXp,
                                     weekly_xp: (squad.weekly_xp || 0) + actualXp
                                 }).eq('id', user.squad_id);
-
-                                // Apply bonus to user too if leader
-                                if (actualXp > player.score) {
-                                    await supabase.from('users').update({
-                                        stats_xp: updates.stats_xp + (actualXp - player.score)
-                                    }).eq('telegram_id', userId);
-                                }
                             }
                         } catch (e) {
-                            console.error(`[SQUAD] Failed to update XP for squad ${user.squad_id}:`, e);
+                            console.error(`[SQUAD] XP update failed:`, e);
                         }
                     }
 
-
-                    // Emit level-up event if player leveled up
                     if (newLevel.level > oldLevel.level) {
                         this.io.to(this.roomId).emit('level_up', {
                             playerId: player.id,
@@ -733,23 +686,18 @@ export class GameManager {
                             nextXp: newLevel.nextXp,
                             currentXp: newXp
                         });
-                        console.log(`[LEVEL UP] Player ${player.id} → Level ${newLevel.level} (${newLevel.title})`);
                     }
                 }
             }
 
         } catch (error) {
-            console.error('Failed to save game results to DB:', error);
+            console.error('Failed to save game results:', error);
         }
 
-        console.log(`Game Over in ${this.roomId}. 1st: ${winners[0]?.username} wins ${distribution.first} ${this.tournamentType === 'stars' ? 'Stars' : 'CHZ'}`);
-
-        // Emit balance update so frontend refreshes immediately
         for (const player of winners) {
             if (!player.id) continue;
             const userId = parseInt(player.id);
             try {
-
                 const { data: freshUser } = await supabase.from('users')
                     .select('balance_stars, balance_chz, stats_xp, balance_cp')
                     .eq('telegram_id', userId)
@@ -763,7 +711,7 @@ export class GameManager {
                     });
                 }
             } catch (e) {
-                console.error(`Failed to emit balance_update for user ${userId}:`, e);
+                console.error(`Failed balance update:`, e);
             }
         }
 
@@ -773,9 +721,6 @@ export class GameManager {
             currency: this.tournamentType === 'stars' ? 'Stars' : 'CHZ',
             roomId: this.roomId
         });
-
-        // Notify index.ts to clean up this room
-        if (this.onGameOver) this.onGameOver(this.roomId, winners);
 
         if (this.onGameOver) this.onGameOver(this.roomId, winners);
     }
