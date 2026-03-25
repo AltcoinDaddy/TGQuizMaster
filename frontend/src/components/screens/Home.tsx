@@ -9,6 +9,7 @@ import { useAppStore } from '../../store/useAppStore';
 import { adsService } from '../../utils/AdsService';
 import { getTimeRemaining } from '../../utils/time';
 import { EnergyModal } from '../ui/EnergyModal';
+import { PlayerSlider } from '../ui/PlayerSlider';
 
 export const Home: React.FC = () => {
     const navigate = useNavigate();
@@ -198,6 +199,10 @@ export const Home: React.FC = () => {
                             </div>
                         </div>
                     )}
+
+                    <div className="mb-6">
+                        <PlayerSlider />
+                    </div>
 
                     <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-white/40 px-1">Play Now</h2>
 
