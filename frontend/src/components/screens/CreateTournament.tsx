@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { MainLayout } from '../layout/MainLayout';
 import { GlassCard } from '../ui/GlassCard';
 import { Button } from '../ui/Button';
-import { ChevronLeft, Info, Brain, Coins, Film, Trophy, Gamepad2, Lock, Link as LinkIcon, Send, Minus, Plus, Star, Diamond, History, Globe, Music, Landmark, Smartphone, Zap, Target } from 'lucide-react';
+import { ChevronLeft, Info, Film, Trophy, Gamepad2, Lock, Link as LinkIcon, Send, Minus, Plus, Star, Diamond, History, Globe, Music, Zap, Target } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const STAR_PRESETS = [500, 1000, 2500, 5000];
