@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { API_URL } from '../../config/api';
 import { authPost } from '../../utils/authFetch';
 import { MainLayout } from '../layout/MainLayout';
-import { ArrowRight, Users, Gamepad2, Star, Gem, Trophy, Zap, Gift } from 'lucide-react';
+import { ArrowRight, Users, Gamepad2, Target, Gem, Trophy, Zap, Gift } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { StreakPopup } from '../ui/StreakPopup';
 import { useAppStore } from '../../store/useAppStore';
@@ -229,19 +229,19 @@ export const Home: React.FC = () => {
                         <ArrowRight size={20} className="text-white/20 group-hover:text-primary group-hover:translate-x-1 transition-all" />
                     </div>
 
-                    {/* Star Battle */}
+                    {/* Host a Game */}
                     <div
                         onClick={() => navigate('/tournaments')}
                         className="bg-white/5 border border-white/10 rounded-[32px] p-4 flex items-center gap-4 active:scale-[0.98] transition-all cursor-pointer group hover:bg-white/[0.07]"
                     >
-                        <div className="w-16 h-16 rounded-2xl bg-yellow-500/10 flex items-center justify-center text-yellow-400 border border-yellow-500/20 group-hover:scale-110 transition-transform">
-                            <Star size={32} fill="currentColor" fillOpacity={0.1} className="drop-shadow-[0_0_10px_rgba(250,204,21,0.4)]" />
+                        <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center text-primary border border-primary/20 group-hover:scale-110 transition-transform">
+                            <Target size={32} fill="currentColor" fillOpacity={0.1} className="drop-shadow-[0_0_10px_rgba(13,242,89,0.4)]" />
                         </div>
                         <div className="flex-1">
-                            <h3 className="font-black text-lg uppercase italic tracking-tighter text-white mb-0.5">Star Battle</h3>
-                            <p className="text-[10px] text-white/40 font-bold uppercase tracking-widest leading-none">Join rooms • Win Stars</p>
+                            <h3 className="font-black text-lg uppercase italic tracking-tighter text-white mb-0.5">Host a Game</h3>
+                            <p className="text-[10px] text-white/40 font-bold uppercase tracking-widest leading-none">Create a room • Win Stars</p>
                         </div>
-                        <ArrowRight size={20} className="text-white/20 group-hover:text-yellow-400 group-hover:translate-x-1 transition-all" />
+                        <ArrowRight size={20} className="text-white/20 group-hover:text-primary group-hover:translate-x-1 transition-all" />
                     </div>
 
                     <div
