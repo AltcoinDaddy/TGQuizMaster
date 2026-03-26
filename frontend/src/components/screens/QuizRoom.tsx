@@ -30,6 +30,7 @@ export const QuizRoom: React.FC = () => {
     // Support encoded parameters in room ID: room_ID_m2_cMovies
     let extractedMax: number | null = null;
     let extractedCategory: string | null = null;
+    let extractedFee: number | null = null;
     let cleanRoomId = roomIdFromUrl;
     if (roomIdFromUrl && roomIdFromUrl.includes('_')) {
         const parts = roomIdFromUrl.split('_');
@@ -38,12 +39,14 @@ export const QuizRoom: React.FC = () => {
 
         const mPart = parts.find((p: string) => p.startsWith('m'));
         const cPart = parts.find((p: string) => p.startsWith('c'));
+        const ePart = parts.find((p: string) => p.startsWith('e'));
         const gPart = parts.find((p: string) => p.startsWith('g'));
 
         if (mPart) extractedMax = parseInt(mPart.substring(1));
         if (cPart) {
             extractedCategory = cPart.substring(1).replace(/_/g, ' ');
         }
+        if (ePart) extractedFee = parseInt(ePart.substring(1));
 
         console.log(`[JOIN] Extracted: id=${cleanRoomId}, max=${extractedMax}, category=${extractedCategory}, isGroup=${!!gPart}`);
     }
@@ -62,8 +65,9 @@ export const QuizRoom: React.FC = () => {
 
     const initialCategory = extractedCategory || stateCategory || categoryFromUrl || pendingConf?.category || 'General';
     const [roomCategory, setRoomCategory] = useState(initialCategory);
-
-    const initialEntryFee = entryFee || (roomIdFromUrl ? 10 : 0);
+    
+    // Use extractedFee if present (e.g. from deep link), otherwise check state/query
+    const initialEntryFee = extractedFee !== null ? extractedFee : (entryFee || (roomIdFromUrl ? 10 : 0));
     const initialCurrency = currency || 'Stars';
 
     // FIX: Initialize with current user to avoid "0/N" flash

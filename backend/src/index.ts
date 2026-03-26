@@ -431,8 +431,9 @@ io.on('connection', (socket) => {
                     else if (currency) feeCurrency = currency.toUpperCase();
                 }
 
-                // Enforce 500 Star minimum for hosted rooms
-                if (feeCurrency === 'STARS' && feeAmount < 500) {
+                // Enforce 500 Star minimum for USER-HOSTED rooms only
+                const isSystemMode = data.roomType === 'quickplay' || data.roomType === 'mega' || data.roomType === 'practice' || isGroup;
+                if (!isSystemMode && feeCurrency === 'STARS' && feeAmount < 500) {
                     socket.emit('error', { message: 'Minimum hosting fee is 500 Stars' });
                     return;
                 }

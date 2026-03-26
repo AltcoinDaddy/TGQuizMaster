@@ -66,7 +66,7 @@ if (!token) {
                 `👋 **Hello ${msg.chat.title}!** 🏆\n\n` +
                 `I'm **TGQuizMaster**, your real-time trivia host! Battle your friends and community members right here in this chat.\n\n` +
                 `🚀 **How to Start?**\n` +
-                `Type \`/play\` followed by a category (optional) to initiate a battle!\n\n` +
+                `Type \`/play\` followed by a category (optional) to initiate a **FREE** battle!\n\n` +
                 `*Examples:*\n` +
                 `• \`/play\` (General knowledge)\n` +
                 `• \`/play Crypto\`\n` +
@@ -304,12 +304,12 @@ if (!token) {
 
         try {
             const roomId = crypto.randomUUID();
-            const entryFee = 10;
+            const entryFee = 0; // Group games are FREE
             const maxPlayers = 10;
 
             const manager = roomRegistry.createRoom(
                 roomId,
-                'stars',
+                'stars', // Still uses stars system but 0 fee
                 0,
                 entryFee,
                 maxPlayers,
@@ -322,7 +322,7 @@ if (!token) {
                 `🔥 **Quiz Battle Initiated!** 🔥\n\n` +
                 `👤 **Host**: ${firstName}\n` +
                 `🏷 **Category**: \`${category}\`\n` +
-                `💰 **Entry**: ${entryFee} Stars\n` +
+                `💰 **Entry**: FREE\n` +
                 `👥 **Max Players**: ${maxPlayers}\n\n` +
                 `Tap below to join the battle! The game starts automatically when enough players join.`;
 
@@ -333,7 +333,7 @@ if (!token) {
                 parse_mode: 'Markdown',
                 reply_markup: {
                     inline_keyboard: [[
-                        { text: '🎮 Join & Play', url: `https://t.me/${botUsername}/${appShortName}?startapp=room_${roomId}_m${maxPlayers}_c${category}_g1` }
+                        { text: '🎮 Join & Play', url: `https://t.me/${botUsername}/${appShortName}?startapp=room_${roomId}_m${maxPlayers}_c${category}_e0_g1` }
                     ]]
                 }
             });
