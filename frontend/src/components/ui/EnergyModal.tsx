@@ -19,7 +19,7 @@ export const EnergyModal: React.FC<EnergyModalProps> = ({ isOpen, onWatchAd, onC
 
                 <h2 className="text-3xl font-black uppercase italic tracking-tighter mb-2 text-primary leading-none">Energy Depleted!</h2>
                 <p className="text-sm opacity-70 font-bold uppercase tracking-tight leading-relaxed mb-8">
-                    You've used all your free trials for today. Watch a short video to refill and get <span className="text-primary">+2 bonus games</span>!
+                    You've used all your free trials for today. Watch a short video to refill and get <span className="text-primary">+1 bonus game</span>!
                 </p>
 
                 <div className="w-full space-y-3">
@@ -27,7 +27,7 @@ export const EnergyModal: React.FC<EnergyModalProps> = ({ isOpen, onWatchAd, onC
                         onClick={onWatchAd}
                         className="primary-button w-full flex items-center justify-center gap-3 py-4 text-lg"
                     >
-                        <Play size={20} fill="currentColor" /> GET 2 FREE GAMES
+                        <Play size={20} fill="currentColor" /> GET 1 FREE GAME
                     </button>
 
                     <button

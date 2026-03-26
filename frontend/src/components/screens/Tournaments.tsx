@@ -139,7 +139,7 @@ export const Tournaments: React.FC = () => {
                         <GlassCard
                             onClick={async () => {
                                 if (loadingAd) return;
-                                const gamesLeft = Math.max(0, 3 - (user.dailyGamesToday || 0));
+                                const gamesLeft = Math.max(0, 2 - (user.dailyGamesToday || 0));
                                 if (gamesLeft > 0) {
                                     navigate('/quiz', { state: { type: 'practice', entryFee: 'Free' } });
                                 } else {
@@ -337,7 +337,7 @@ export const Tournaments: React.FC = () => {
                             if (data.success) {
                                 useAppStore.getState().setUser({ dailyGamesToday: data.dailyGamesToday });
                                 const tg = (window as any).Telegram?.WebApp;
-                                if (tg?.showAlert) tg.showAlert(`Energy refilled! +2 games added.`);
+                                if (tg?.showAlert) tg.showAlert(`Energy refilled! +1 game added.`);
                             }
                         }
                     } catch (e) {

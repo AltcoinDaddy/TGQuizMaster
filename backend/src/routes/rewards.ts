@@ -269,10 +269,10 @@ router.get('/quests', async (req: Request, res: Response) => {
 
         const quests = [
             {
-                id: '1', title: 'Play 3 Quizzes Today',
-                progress: Math.min(dailyGames, 3), total: 3,
+                id: '1', title: 'Play 2 Quizzes Today',
+                progress: Math.min(dailyGames, 2), total: 2,
                 reward: '20 Stars', type: 'stars',
-                status: claimedIdsToday.includes('1') ? 'completed' : (dailyGames >= 3 ? 'claimable' : 'in-progress')
+                status: claimedIdsToday.includes('1') ? 'completed' : (dailyGames >= 2 ? 'claimable' : 'in-progress')
             },
             {
                 id: '2', title: 'Win a Game Today',
@@ -370,7 +370,7 @@ router.post('/claim-quest', telegramAuthMiddleware, async (req: Request, res: Re
             .eq('referred_by', userId);
 
         const questVerification: Record<string, boolean> = {
-            '1': dailyGames >= 3,
+            '1': dailyGames >= 2,
             '2': dailyWins >= 1,
             '3': (referralCount || 0) >= 1,
             '4': true, // Social follow (click-to-verify)
@@ -485,10 +485,10 @@ router.post('/refill-energy', telegramAuthMiddleware, async (req: Request, res: 
 
         if (error || !user) return res.status(404).json({ error: 'User not found' });
 
-        // Decrease the counter by 2 (refilling 2 games)
+        // Decrease the counter by 1 (refilling 1 game)
         // Ensure it doesn't go below 0
         const currentGames = user.daily_games_today || 0;
-        const newCount = Math.max(0, currentGames - 2);
+        const newCount = Math.max(0, currentGames - 1);
 
         await supabase.from('users')
             .update({ daily_games_today: newCount })
@@ -530,7 +530,7 @@ router.get('/ads/callback', async (req: Request, res: Response) => {
         }
 
         const currentGames = user.daily_games_today || 0;
-        const newCount = Math.max(0, currentGames - 2);
+        const newCount = Math.max(0, currentGames - 1);
 
         await supabase.from('users')
             .update({ daily_games_today: newCount })

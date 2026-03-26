@@ -50,7 +50,7 @@ export class GameManager {
     private players: Player[];
     private questions: Question[] = [];
     private currentIndex = 0;
-    private timer = 15;
+    private timer = 8;
     private io: any;
     private tournamentType: 'free' | 'stars' | 'chz' | 'practice' = 'free';
     private prizePool = 0;
