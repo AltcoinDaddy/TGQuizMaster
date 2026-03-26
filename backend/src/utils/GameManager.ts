@@ -347,7 +347,7 @@ export class GameManager {
     private timerInterval: NodeJS.Timeout | null = null;
 
     private startTimer() {
-        this.timer = 15;
+        this.timer = 8;
 
         this.timerInterval = setInterval(() => {
             this.timer--;
@@ -379,7 +379,7 @@ export class GameManager {
         const userId = parseInt(player.id);
 
         if (answer === question.correctAnswer) {
-            let points = Math.max(50, this.timer * 6.6); // Fast answers get ~150 points
+            let points = Math.max(50, this.timer * 12.5); // Fast answers get ~150 points
             if (player.doublePoints) {
                 points *= 2;
                 player.doublePoints = false; // Consume the power-up

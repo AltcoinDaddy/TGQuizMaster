@@ -374,31 +374,28 @@ if (!token) {
         if (query.data === 'how_to_play') {
             bot.sendMessage(chatId, `📖 *How to Play TGQuizMaster*
 
-🆓 *Start Free*
-Tap Play → Free Practice to try a solo quiz round. No cost, earn Stars & XP for winning!
+🆓 *Daily Training*
+Tap Play → Free Practice. Each day you get **2 FREE games** to earn Stars & XP. No risk, all gain!
 
 ⚡ *Quick Play (10⭐)*
-Tap Play → Stars tab → Quick Play. You're auto-matched into a 5-player room. Answer trivia questions fast — top 3 scorers split the prize pool!
+Tap Play → Stars tab → Quick Play. Fast-paced 5-player rooms. Top 3 scorers split the prize pool!
 
 🏆 *Create a Room*
-Want custom stakes? Create your own Star room and set the entry fee (10-500⭐). Share with friends or wait for others to join.
+Want custom stakes? Create your own Star room (fee: 500⭐+). Share with friends or battle the community.
 
 💰 *How Scoring Works*
-• 10 questions per match, 15 seconds each
-• Faster correct answers = more points
-• 1st place gets 60%, 2nd gets 30%, 3rd gets 10%
+• 10 questions per match, **8 seconds each**
+• Faster correct answers = more points (~150 max)
+• 1st place: 60%, 2nd: 30%, 3rd: 10%
 
-⭐ *Earning Stars*
-• Win practice games: +5⭐
-• Win tournaments: share the prize pool
-• Daily rewards: claim every day for bigger bonuses
-• Invite friends: earn 50⭐ per referral
+⭐ *Ways to Earn*
+• Win training games: +5⭐
+• Win tournaments: Share the prize pool
+• Daily rewards: Claim every day to build a streak
+• Invite friends: Earn 50⭐ + 100 CP per referral
 
-🎁 *Daily Rewards*
-Open the app daily to claim free Stars. Keep your streak alive for bigger rewards!
-
-🧠 *Knowledge Yield*
-Earn $QUIZ Airdrop Points passively! Open the 'Yield' tab in the app to start harvesting. Higher total QP = bigger potential airdrop.`, {
+🌶️ *Chili Yield (CP)*
+Earn **Chili Points (CP)** passively! Open the 'Yield' tab in the app to harvest. Higher total CP = bigger share of the upcoming **$CHILI Airdrop**.`, {
                 parse_mode: 'Markdown',
                 reply_markup: {
                     inline_keyboard: [[
