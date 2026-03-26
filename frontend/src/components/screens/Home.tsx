@@ -128,7 +128,7 @@ export const Home: React.FC = () => {
     const handleStartPractice = async () => {
         if (loadingAd) return;
 
-        const gamesLeft = Math.max(0, 3 - (user.dailyGamesToday || 0));
+        const gamesLeft = Math.max(0, 2 - (user.dailyGamesToday || 0));
         if (gamesLeft > 0) {
             navigate('/quiz', { state: { type: 'practice', entryFee: 'Free' } });
         } else {
@@ -147,7 +147,7 @@ export const Home: React.FC = () => {
                 if (data.success) {
                     useAppStore.getState().setUser({ dailyGamesToday: data.dailyGamesToday });
                     const tg = (window as any).Telegram?.WebApp;
-                    if (tg?.showAlert) tg.showAlert(`Energy refilled! +2 games added.`);
+                    if (tg?.showAlert) tg.showAlert(`Energy refilled! +1 game added.`);
                 }
             }
         } catch (e) {
@@ -216,7 +216,7 @@ export const Home: React.FC = () => {
                         onClick={handleStartPractice}
                         className="bg-white/5 border border-white/10 rounded-[32px] p-4 flex items-center gap-4 active:scale-[0.98] transition-all cursor-pointer relative overflow-hidden group hover:bg-white/[0.07]"
                     >
-                        {Math.max(0, 3 - (user.dailyGamesToday || 0)) === 0 && (
+                        {Math.max(0, 2 - (user.dailyGamesToday || 0)) === 0 && (
                             <div className="absolute top-0 right-0 bg-primary text-black text-[8px] font-black px-3 py-1 rounded-bl-xl uppercase tracking-tighter z-10 shadow-lg shadow-primary/20">Refill Ready</div>
                         )}
 
@@ -231,10 +231,10 @@ export const Home: React.FC = () => {
                         <div className="flex-1">
                             <h3 className={`font-black text-lg uppercase italic tracking-tighter ${loadingAd ? 'text-white/20' : 'text-white'} flex items-center gap-2 mb-0.5`}>
                                 {loadingAd ? 'Loading Ad...' : 'Free Practice'}
-                                {Math.max(0, 3 - (user.dailyGamesToday || 0)) === 0 && !loadingAd && <span className="text-[10px] text-primary/60 font-black tracking-widest uppercase">(AD REFILL)</span>}
+                                {Math.max(0, 2 - (user.dailyGamesToday || 0)) === 0 && !loadingAd && <span className="text-[10px] text-primary/60 font-black tracking-widest uppercase">(AD REFILL)</span>}
                             </h3>
                             <p className="text-[10px] text-white/40 font-bold uppercase tracking-widest leading-none">
-                                {loadingAd ? 'Please wait...' : `${Math.max(0, 3 - (user.dailyGamesToday || 0))}/3 Energy • Win 5★ + XP`}
+                                {loadingAd ? 'Please wait...' : `${Math.max(0, 2 - (user.dailyGamesToday || 0))}/2 Energy • Win 5★ + XP`}
                             </p>
                         </div>
                         <ArrowRight size={20} className="text-white/20 group-hover:text-primary group-hover:translate-x-1 transition-all" />
@@ -337,7 +337,7 @@ export const Home: React.FC = () => {
                             ) : (
                                 <Gamepad2 size={24} fill="currentColor" fillOpacity={0.1} />
                             )}
-                            {Math.max(0, 3 - (user.dailyGamesToday || 0)) === 0 && !loadingAd && (
+                            {Math.max(0, 2 - (user.dailyGamesToday || 0)) === 0 && !loadingAd && (
                                 <div className="absolute -top-2 -right-2 bg-primary text-background-dark text-[8px] font-black px-2 py-0.5 rounded-full uppercase tracking-tighter shadow-lg shadow-primary/20 animate-pulse">Refill</div>
                             )}
                         </div>
@@ -347,7 +347,7 @@ export const Home: React.FC = () => {
                                     {loadingAd ? 'Refilling...' : 'Daily Training'}
                                 </h3>
                                 <span className={`text-[10px] font-black ${loadingAd ? 'text-white/20' : 'text-primary'}`}>
-                                    {Math.max(0, 3 - (user.dailyGamesToday || 0))}/3
+                                    {Math.max(0, 2 - (user.dailyGamesToday || 0))}/2
                                     <Zap size={10} fill="currentColor" className="inline ml-1 mb-0.5 text-primary" />
                                 </span>
                             </div>
@@ -358,7 +358,7 @@ export const Home: React.FC = () => {
                         <div className="mt-4 flex items-center text-primary text-[10px] font-black uppercase tracking-widest gap-2 italic group-hover:translate-x-1 transition-all">
                             {loadingAd ? (
                                 <span className="animate-pulse">Loading Ad...</span>
-                            ) : Math.max(0, 3 - (user.dailyGamesToday || 0)) > 0 ? (
+                            ) : Math.max(0, 2 - (user.dailyGamesToday || 0)) > 0 ? (
                                 <>Enter Arena <ArrowRight size={14} /></>
                             ) : (
                                 <>Watch & Refill <Gamepad2 size={14} /></>
