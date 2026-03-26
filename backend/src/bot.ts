@@ -64,7 +64,7 @@ if (!token) {
             console.log(`[BOT] Added to group: ${msg.chat.title} (${chatId})`);
             const welcomeMsg =
                 `👋 **Hello ${msg.chat.title}!** 🏆\n\n` +
-                `I'm **ChiliQuiz**, your real-time trivia host! Battle your friends and community members right here in this chat.\n\n` +
+                `I'm **TGQuizMaster**, your real-time trivia host! Battle your friends and community members right here in this chat.\n\n` +
                 `🚀 **How to Start?**\n` +
                 `Type \`/play\` followed by a category (optional) to initiate a battle!\n\n` +
                 `*Examples:*\n` +
@@ -143,7 +143,7 @@ if (!token) {
                             status: 'COMPLETED'
                         });
 
-                        // Award 100 CP (Chili Points) to the referrer
+                        // Award 100 CP (TG Points) to the referrer
                         await RewardService.awardCP(parseInt(referrerId), 100);
 
                         console.log(`[REFERRAL] Referrer ${referrerId} earned 50 Stars and 100 CP`);
@@ -238,15 +238,15 @@ if (!token) {
             console.error('[BOT] User registration failed:', e);
         }
 
-        bot.sendMessage(chatId, `Welcome to ChiliQuiz, ${firstName}! 🏆\n\nBattle other players in real-time, master trivia, and win real CHZ rewards.\n\nReady to play?`, {
+        bot.sendMessage(chatId, `Welcome to TGQuizMaster, ${firstName}! 🏆\n\nBattle other players in real-time, master trivia, and win real CHZ rewards.\n\nReady to play?`, {
             reply_markup: {
                 inline_keyboard: [
                     [
                         { text: '🎮 Play Now', web_app: { url: webAppUrl } }
                     ],
                     [
-                        { text: '📣 Join Telegram', url: 'https://t.me/ChiliQuiz' },
-                        { text: '🐦 Follow X (Twitter)', url: 'https://x.com/ChiliQuiz' }
+                        { text: '📣 Join Telegram', url: 'https://t.me/TGQuizMaster' },
+                        { text: '🐦 Follow X (Twitter)', url: 'https://x.com/TGQuizMaster' }
                     ],
                     [
                         { text: '❓ How to Play', callback_data: 'how_to_play' },
@@ -327,11 +327,13 @@ if (!token) {
                 `Tap below to join the battle! The game starts automatically when enough players join.`;
 
             const botUsername = (await bot.getMe()).username;
+            const appShortName = process.env.TELEGRAM_BOT_APP_NAME || 'tgquizmaster';
+            
             await bot.sendMessage(chatId, inviteMessage, {
                 parse_mode: 'Markdown',
                 reply_markup: {
                     inline_keyboard: [[
-                        { text: '🎮 Join & Play', url: `https://t.me/${botUsername}/chiliquiz?startapp=room_${roomId}_m${maxPlayers}_c${category}_g1` }
+                        { text: '🎮 Join & Play', url: `https://t.me/${botUsername}/${appShortName}?startapp=room_${roomId}_m${maxPlayers}_c${category}_g1` }
                     ]]
                 }
             });
@@ -370,7 +372,7 @@ if (!token) {
         if (!chatId) return;
 
         if (query.data === 'how_to_play') {
-            bot.sendMessage(chatId, `📖 *How to Play ChiliQuiz*
+            bot.sendMessage(chatId, `📖 *How to Play TGQuizMaster*
 
 🆓 *Start Free*
 Tap Play → Free Practice to try a solo quiz round. No cost, earn Stars & XP for winning!

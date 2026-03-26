@@ -33,7 +33,8 @@ export const QuizRoom: React.FC = () => {
     let cleanRoomId = roomIdFromUrl;
     if (roomIdFromUrl && roomIdFromUrl.includes('_')) {
         const parts = roomIdFromUrl.split('_');
-        cleanRoomId = parts[0];
+        // If it starts with 'room_', the UUID is the second part (parts[1])
+        cleanRoomId = parts[0] === 'room' ? parts[1] : parts[0];
 
         const mPart = parts.find((p: string) => p.startsWith('m'));
         const cPart = parts.find((p: string) => p.startsWith('c'));
@@ -44,8 +45,7 @@ export const QuizRoom: React.FC = () => {
             extractedCategory = cPart.substring(1).replace(/_/g, ' ');
         }
 
-        console.log(`[JOIN] Extracted from ID: max=${extractedMax}, category=${extractedCategory}, isGroup=${!!gPart}`);
-        if (gPart) (location.state as any) = { ...location.state, isGroup: true };
+        console.log(`[JOIN] Extracted: id=${cleanRoomId}, max=${extractedMax}, category=${extractedCategory}, isGroup=${!!gPart}`);
     }
 
     const { tournamentId, entryFee, currency, type: stateType, category: stateCategory } = location.state || {};

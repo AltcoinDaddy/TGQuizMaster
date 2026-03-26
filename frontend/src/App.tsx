@@ -1,7 +1,7 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import ErrorBoundary from './components/ErrorBoundary';
 import { socket } from './utils/socket';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Home } from './components/screens/Home';
 import { QuizRoom } from './components/screens/QuizRoom';
 import { useAppStore } from './store/useAppStore';
@@ -33,6 +33,28 @@ import { MegaTournament } from './components/screens/MegaTournament';
 import { LuckySpin } from './components/screens/LuckySpin';
 
 
+
+function DeepLinkHandler() {
+  const navigate = useNavigate();
+  const { user } = useAppStore();
+  const hasHandled = useRef(false);
+
+  useEffect(() => {
+    if (hasHandled.current) return;
+    const tg = (window as any).Telegram?.WebApp;
+    if (!tg || !user.telegramId) return;
+
+    const startParam = tg.initDataUnsafe?.start_param;
+    if (startParam && startParam.startsWith('room_')) {
+      console.log('[DEEP LINK] Navigating to room:', startParam);
+      // Navigate to the quiz with the full param; QuizRoom logic handles parsing correctly
+      navigate(`/quiz?roomId=${startParam}&type=tournament`, { replace: true });
+      hasHandled.current = true;
+    }
+  }, [user.telegramId, navigate]);
+
+  return null;
+}
 
 function App() {
   const [showOnboarding, setShowOnboarding] = useState<boolean | null>(null);
@@ -143,6 +165,7 @@ function App() {
     <ErrorBoundary>
       <Router>
         <NavigationController />
+        <DeepLinkHandler />
         <Routes>
           <Route path="/onboarding" element={<Onboarding onComplete={() => setShowOnboarding(false)} />} />
           <Route path="/" element={showOnboarding ? <Navigate to="/onboarding" /> : <Home />} />

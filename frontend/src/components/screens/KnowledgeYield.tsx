@@ -101,7 +101,7 @@ export const KnowledgeYield: React.FC = () => {
         <MainLayout>
             <div className="text-center pb-4">
                 <h2 className="text-2xl font-black text-white italic tracking-tighter uppercase leading-none">Chili Yield</h2>
-                <p className="text-[10px] opacity-40 uppercase font-black tracking-[0.2em] mt-2">Earn $CHILI Airdrop Points Passively</p>
+                <p className="text-[10px] opacity-40 uppercase font-black tracking-[0.2em] mt-2">Earn $CP Points Passively</p>
             </div>
 
             {/* Main Gauge */}

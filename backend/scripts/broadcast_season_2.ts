@@ -9,7 +9,10 @@ dotenv.config({ path: path.join(__dirname, '../.env') });
 const SUPABASE_URL = process.env.SUPABASE_URL || '';
 const SUPABASE_KEY = process.env.SUPABASE_KEY || '';
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '';
-const APP_URL = process.env.VITE_APP_URL || 'https://tgquizmaster.online';
+let APP_URL = process.env.VITE_APP_URL || 'https://tgquizmaster.online';
+if (APP_URL.startsWith('http://192') || APP_URL.startsWith('http://localhost')) {
+    APP_URL = 'https://tgquizmaster.online'; // Force HTTPS production URL for broadcast
+}
 
 if (!SUPABASE_URL || !SUPABASE_KEY || !BOT_TOKEN) {
     console.error('Missing environment variables!');
@@ -20,35 +23,36 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 const bot = new TelegramBot(BOT_TOKEN);
 
 const MESSAGE = `
-🛡️ *NEW FEATURE: Squads & Group Battles!* 🛡️
+🚀 *GRAND PRIX: SEASON 2 IS LIVE!* 🏆⚡
 
-The ultimate team competition has arrived! Form your community, climb the ranks, and dominate the Arena.
+The ultimate SportFi marathon has begun! Compete for the biggest prize pool in our history and dominate the new specialized categories.
 
-🏆 *Weekly 1000 CHZ Prize Pool*
-The Top 3 Squads every week share **1000 CHZ**!
-🥇 1st: 500 CHZ
-🥈 2nd: 300 CHZ
-🥉 3rd: 200 CHZ
+💰 *HUGE PRIZE POOL*:
+🌟 *30,000,000 STARS*
+💎 *5,000,000 CP* (TG Points)
+*Top 30 players on the leaderboard split the mega pot!*
 
-🚀 *Squad Leader Bonus*
-Found or lead a squad to earn a **LIFETIME 5% XP BONUS** on all your game contributions!
+🏟️ *NEW SPECIALIZED TOPICS*:
+⚽ Football | 🏎️ Motorsports | 🎮 eSports 
+🎾 Tennis | 🏀 Basketball | 🥊 Combat Sports
+🎬 Movies | 🎵 Music
 
-🤝 *How to play?*
-1. Open the App and tap the **Squads** card on the Home screen.
-2. Join a squad from your favorite community or **Create your own**.
-3. Every XP you earn helps your squad reach the top!
+🧠 *MIXED PRACTICE MODE*:
+Every practice game now features a random mix of ALL categories! Test your knowledge across the entire SportFi universe.
 
-Recruit your friends and start your journey to 1st place! 🧠🔥
+The season ends in *14 days*. Don't wait—every correct answer in the Arena earns you more XP and CP as we prepare for the official launch!
+
+*Ready to climb the ranks?* 🏁🎯
 `.trim();
 
 const KEYBOARD = {
     inline_keyboard: [[
-        { text: '🛡️ Join a Squad Now', web_app: { url: APP_URL } }
+        { text: '🏟️ Enter the Arena', web_app: { url: APP_URL } }
     ]]
 };
 
 async function broadcast() {
-    console.log('--- Starting Squads Feature Broadcast ---');
+    console.log('--- Starting Season 2 Broadcast ---');
 
     // 1. Fetch all users
     const { data: users, error } = await supabase
@@ -74,7 +78,7 @@ async function broadcast() {
                 reply_markup: KEYBOARD
             });
             sent++;
-            console.log(`[${sent}/${users.length}] Sent to ${user.username || user.telegram_id}`);
+            if (sent % 10 === 0) console.log(`[${sent}/${users.length}] Progressing...`);
         } catch (e: any) {
             if (e.message?.includes('bot was blocked') || e.message?.includes('user is deactivated')) {
                 blocked++;
@@ -83,7 +87,7 @@ async function broadcast() {
                 console.error(`Failed for ${user.telegram_id}:`, e.message);
             }
         }
-        // Rate limit: ~10 msgs/sec to be safe
+        // Rate limit: ~10 msgs/sec
         await new Promise(r => setTimeout(r, 100));
     }
 
@@ -91,6 +95,7 @@ async function broadcast() {
     console.log(`Sent: ${sent}`);
     console.log(`Blocked: ${blocked}`);
     console.log(`Failed: ${failed}`);
+    process.exit(0);
 }
 
 broadcast().catch(console.error);
