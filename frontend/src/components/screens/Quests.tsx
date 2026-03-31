@@ -194,9 +194,27 @@ export const Quests: React.FC = () => {
                                     </button>
                                 ) : (
                                     <button
-                                        onClick={() => {
-                                            if (quest.id === '4') window.open('https://t.me/TGQuizMaster', '_blank');
-                                            else if (quest.id === '5') window.open('https://x.com/TGQuizMaster', '_blank');
+                                        onClick={async () => {
+                                            if (quest.id === '4' || quest.id === '5') {
+                                                // Open the link first
+                                                const url = quest.id === '4'
+                                                    ? 'https://t.me/TGQuizMaster'
+                                                    : 'https://x.com/TGQuizMaster';
+                                                window.open(url, '_blank');
+                                                // Track the click server-side so CLAIM becomes available
+                                                try {
+                                                    await authPost('/api/track-quest-click', {
+                                                        telegramId: user.telegramId,
+                                                        questId: quest.id
+                                                    });
+                                                    // Immediately update local state to claimable
+                                                    setQuests(prev => prev.map(q =>
+                                                        q.id === quest.id ? { ...q, status: 'claimable', progress: 1 } : q
+                                                    ));
+                                                } catch (e) {
+                                                    console.error('Failed to track quest click:', e);
+                                                }
+                                            }
                                         }}
                                         disabled={quest.status === 'locked' || quest.status === 'completed'}
                                         className={`py-2 px-4 rounded-full text-[10px] font-black uppercase transition-all ${quest.status === 'locked' ? 'bg-white/5 text-white/20' : (quest.status === 'completed' ? 'bg-white/5 text-primary opacity-50' : 'bg-white/10 hover:bg-white/20 text-white')}`}

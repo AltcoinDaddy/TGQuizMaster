@@ -431,9 +431,11 @@ io.on('connection', (socket) => {
                     else if (currency) feeCurrency = currency.toUpperCase();
                 }
 
-                // Enforce 500 Star minimum for USER-HOSTED rooms only
+                // Enforce 500 Star minimum ONLY for users creating (hosting) a new custom room.
+                // Players joining an existing room via tournamentId are exempt — they pay whatever fee the host set.
                 const isSystemMode = data.roomType === 'quickplay' || data.roomType === 'mega' || data.roomType === 'practice' || isGroup;
-                if (!isSystemMode && feeCurrency === 'STARS' && feeAmount < 500) {
+                const isJoiningExistingRoom = !!tournamentId; // Joining via link/ID = not hosting
+                if (!isSystemMode && !isJoiningExistingRoom && feeCurrency === 'STARS' && feeAmount < 500) {
                     socket.emit('error', { message: 'Minimum hosting fee is 500 Stars' });
                     return;
                 }

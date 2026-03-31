@@ -250,22 +250,29 @@ router.get('/quests', async (req: Request, res: Response) => {
             .eq('referred_by', userId);
 
         // Fetch all quest claims to distinguish between daily and one-time
+        // Use explicit column matching instead of JSONB filter for reliability
         const { data: allClaims } = await supabase
             .from('transactions')
             .select('metadata, created_at')
             .eq('user_id', userId)
-            .eq('type', 'PRIZE')
-            .filter('metadata->>type', 'eq', 'QUEST_REWARD');
+            .eq('type', 'PRIZE');
 
-        const claimedIdsToday = (allClaims || [])
+        const questClaims = (allClaims || []).filter(
+            tx => tx.metadata?.type === 'QUEST_REWARD'
+        );
+
+        const claimedIdsToday = questClaims
             .filter(tx => tx.created_at.startsWith(today))
-            .map(tx => tx.metadata.questId);
+            .map(tx => String(tx.metadata.questId));
 
-        const claimedIdsEver = (allClaims || [])
-            .map(tx => tx.metadata.questId);
+        const claimedIdsEver = questClaims
+            .map(tx => String(tx.metadata.questId));
 
         const dailyGames = user.daily_games_today || 0;
         const dailyWins = user.daily_wins_today || 0;
+
+        // Track whether user has clicked GO for social quests (stored in user metadata)
+        const socialClicked: Record<string, boolean> = user.social_quests_clicked || {};
 
         const quests = [
             {
@@ -288,15 +295,17 @@ router.get('/quests', async (req: Request, res: Response) => {
             },
             {
                 id: '4', title: 'Join TG Community',
-                progress: 0, total: 1,
+                progress: socialClicked['4'] ? 1 : 0, total: 1,
                 reward: '100 Stars', type: 'stars',
-                status: claimedIdsEver.includes('4') ? 'completed' : 'claimable' // Simple click-to-claim
+                // Only claimable AFTER user has clicked GO (visited the link)
+                status: claimedIdsEver.includes('4') ? 'completed' : (socialClicked['4'] ? 'claimable' : 'in-progress')
             },
             {
                 id: '5', title: 'Follow on X (Twitter)',
-                progress: 0, total: 1,
+                progress: socialClicked['5'] ? 1 : 0, total: 1,
                 reward: '100 Stars', type: 'stars',
-                status: claimedIdsEver.includes('5') ? 'completed' : 'claimable'
+                // Only claimable AFTER user has clicked GO (visited the link)
+                status: claimedIdsEver.includes('5') ? 'completed' : (socialClicked['5'] ? 'claimable' : 'in-progress')
             },
             {
                 id: '6', title: 'Claim Chili Yield',
@@ -327,6 +336,35 @@ router.get('/quests', async (req: Request, res: Response) => {
     }
 });
 
+// POST /api/track-quest-click — Mark that a user opened a social quest link
+router.post('/track-quest-click', telegramAuthMiddleware, async (req: Request, res: Response) => {
+    try {
+        const userId = req.telegramUser!.id;
+        const { questId } = req.body;
+
+        if (!['4', '5'].includes(questId)) {
+            return res.status(400).json({ error: 'Only social quests require click tracking' });
+        }
+
+        const { data: user } = await supabase
+            .from('users')
+            .select('social_quests_clicked')
+            .eq('telegram_id', userId)
+            .single();
+
+        if (!user) return res.status(404).json({ error: 'User not found' });
+
+        const updated = { ...(user.social_quests_clicked || {}), [questId]: true };
+        await supabase.from('users').update({ social_quests_clicked: updated }).eq('telegram_id', userId);
+
+        console.log(`[QUEST-CLICK] User ${userId} clicked GO for quest ${questId}`);
+        res.json({ success: true });
+    } catch (error: any) {
+        console.error('Track quest click error:', error.message);
+        res.status(500).json({ error: 'Failed to track quest click' });
+    }
+});
+
 // POST /api/claim-quest — Claim a quest reward (with server-side verification)
 router.post('/claim-quest', telegramAuthMiddleware, async (req: Request, res: Response) => {
     try {
@@ -341,23 +379,24 @@ router.post('/claim-quest', telegramAuthMiddleware, async (req: Request, res: Re
         // One-time quest check
         const isOneTime = ['4', '5'].includes(questId);
 
-        // Double-claim prevention
-        const query = supabase
+        // FIXED: Supabase builder is immutable — must reassign after chaining.
+        // Fetch all transactions and filter in code to avoid JSONB filter reliability issues.
+        const today = getTodayDate();
+        const { data: allClaims } = await supabase
             .from('transactions')
-            .select('id')
+            .select('metadata, created_at')
             .eq('user_id', userId)
-            .eq('type', 'PRIZE')
-            .filter('metadata->>questId', 'eq', questId);
+            .eq('type', 'PRIZE');
 
-        if (!isOneTime) {
-            const todayStart = new Date();
-            todayStart.setHours(0, 0, 0, 0);
-            query.gte('created_at', todayStart.toISOString());
-        }
+        const questClaims = (allClaims || []).filter(
+            tx => tx.metadata?.type === 'QUEST_REWARD' && String(tx.metadata?.questId) === String(questId)
+        );
 
-        const { data: existingClaim } = await query.limit(1);
+        const alreadyClaimed = isOneTime
+            ? questClaims.length > 0
+            : questClaims.some(tx => tx.created_at.startsWith(today));
 
-        if (existingClaim && existingClaim.length > 0) {
+        if (alreadyClaimed) {
             return res.status(400).json({ error: isOneTime ? 'Quest already claimed' : 'Quest already claimed today' });
         }
 
@@ -369,17 +408,25 @@ router.post('/claim-quest', telegramAuthMiddleware, async (req: Request, res: Re
             .select('*', { count: 'exact', head: true })
             .eq('referred_by', userId);
 
+        // For social quests (4 & 5), user must have clicked GO first
+        const socialClicked: Record<string, boolean> = user.social_quests_clicked || {};
+
         const questVerification: Record<string, boolean> = {
             '1': dailyGames >= 2,
             '2': dailyWins >= 1,
             '3': (referralCount || 0) >= 1,
-            '4': true, // Social follow (click-to-verify)
-            '5': true,  // Social follow (click-to-verify)
-            '6': true // Chili yield is claimed by clicking, no server-side verification needed here
+            '4': !!socialClicked['4'], // Must have clicked GO to open Telegram link
+            '5': !!socialClicked['5'], // Must have clicked GO to open X link
+            '6': true
         };
 
         if (!questVerification[questId]) {
-            return res.status(400).json({ error: 'Quest not completed' });
+            const socialNotClicked = (questId === '4' || questId === '5') && !socialClicked[questId];
+            return res.status(400).json({
+                error: socialNotClicked
+                    ? 'Please click GO to visit the link first'
+                    : 'Quest not completed'
+            });
         }
 
         const questRewards: Record<string, { type: 'stars' | 'xp' | 'cp'; amount: number }> = {
