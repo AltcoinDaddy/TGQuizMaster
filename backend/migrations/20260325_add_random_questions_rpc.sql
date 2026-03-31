@@ -8,4 +8,4 @@ BEGIN
   ORDER BY RANDOM()
   LIMIT p_count;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql SET search_path = '';
