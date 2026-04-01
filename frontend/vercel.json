@@ -1,7 +1,7 @@
 {
     "rewrites": [
         {
-            "source": "/((?!assets/|tonconnect-manifest.json|vite.svg|favicon.ico).*)",
+            "source": "/((?!assets/|tonconnect-manifest.json|logo.png|vite.svg|favicon.ico).*)",
             "destination": "/index.html"
         }
     ]

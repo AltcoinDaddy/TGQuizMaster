@@ -53,9 +53,10 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
 
     return (
         <MainLayout showHeader={false} showNav={false}>
-            <div className="flex flex-col items-center justify-center min-h-[80dvh] text-center px-4">
-                <div className={`w-32 h-32 rounded-full bg-gradient-to-br ${step.color}/20 flex items-center justify-center mb-8 relative`}>
-                    <div className={`absolute inset-0 rounded-full bg-gradient-to-br ${step.color}/10 blur-xl animate-pulse`} />
+        <div className="flex flex-col items-center justify-center min-h-[80dvh] text-center px-4">
+            <img src="/logo.png" alt="TGQuizMaster" className="w-24 h-24 mb-10 animate-in fade-in zoom-in duration-1000" />
+            <div className={`w-32 h-32 rounded-full bg-gradient-to-br ${step.color}/20 flex items-center justify-center mb-8 relative`}>
+                <div className={`absolute inset-0 rounded-full bg-gradient-to-br ${step.color}/10 blur-xl animate-pulse`} />
                     {step.icon}
                 </div>
 

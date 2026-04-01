@@ -48,10 +48,13 @@ export const Header: React.FC = () => {
                             <span className="text-[8px] text-background-dark font-bold">LV{currentLevel}</span>
                         </div>
                     </div>
-                    <div>
-                        <h1 className="text-sm font-bold opacity-70 italic text-white/90">Hello, {user.username}</h1>
-                        <div className="flex items-center gap-2">
-                            <span className="text-[10px] font-black bg-primary/20 text-primary px-3 py-1 rounded-full border border-primary/20 uppercase italic tracking-tighter">{user.isPro ? 'Pro Player' : 'Player'}</span>
+                    <div className="flex items-center gap-3 ml-2 border-l border-white/10 pl-3">
+                        <img src="/logo.png" className="w-8 h-8 object-contain" alt="Logo" />
+                        <div>
+                            <h1 className="text-sm font-bold opacity-70 italic text-white/90 leading-none mb-1">Hello, {user.username}</h1>
+                            <div className="flex items-center gap-2">
+                                <span className="text-[10px] font-black bg-primary/20 text-primary px-3 py-1 rounded-full border border-primary/20 uppercase italic tracking-tighter">{user.isPro ? 'Pro Player' : 'Player'}</span>
+                            </div>
                         </div>
                     </div>
                 </div>
