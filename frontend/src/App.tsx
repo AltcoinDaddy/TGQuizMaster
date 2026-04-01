@@ -155,8 +155,9 @@ function App() {
 
   if (showOnboarding === null) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-[#102216]">
-        <div className="animate-pulse text-primary font-black italic">LOADING...</div>
+      <div className="flex flex-col items-center justify-center min-h-screen bg-[#102216]">
+        <img src="/logo.png" className="w-24 h-24 mb-6 animate-pulse" alt="TQ Logo" />
+        <div className="animate-pulse text-primary font-black italic tracking-widest text-xs">SYNCING SYSTEM...</div>
       </div>
     );
   }
