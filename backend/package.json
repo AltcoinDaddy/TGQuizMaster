@@ -9,7 +9,8 @@
     "start": "node dist/index.js",
     "dev": "ts-node src/index.ts",
     "generate-questions": "ts-node scripts/generate_questions_ai.ts",
-    "import-questions": "ts-node scripts/import_questions.ts"
+    "import-questions": "ts-node scripts/import_questions.ts",
+    "season:close": "ts-node scripts/close_season.ts"
   },
   "keywords": [],
   "author": "",

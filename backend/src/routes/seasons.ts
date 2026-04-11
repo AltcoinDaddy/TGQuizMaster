@@ -10,6 +10,7 @@ router.get('/active', async (req: Request, res: Response) => {
             .from('tournament_seasons')
             .select('*')
             .eq('status', 'active')
+            .gt('end_time', new Date().toISOString())
             .order('end_time', { ascending: true })
             .limit(1)
             .single();

@@ -220,6 +220,7 @@ export class RewardService {
                 .from('tournament_seasons')
                 .select('id')
                 .eq('status', 'active')
+                .gt('end_time', new Date().toISOString())
                 .single();
 
             if (!activeSeason) return { success: false, error: 'No active season' };
