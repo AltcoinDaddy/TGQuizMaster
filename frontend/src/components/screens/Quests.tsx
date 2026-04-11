@@ -195,6 +195,11 @@ export const Quests: React.FC = () => {
                                 ) : (
                                     <button
                                         onClick={async () => {
+                                            if (quest.id === '6') {
+                                                navigate('/yield');
+                                                return;
+                                            }
+
                                             if (quest.id === '4' || quest.id === '5') {
                                                 // Open the link first
                                                 const url = quest.id === '4'

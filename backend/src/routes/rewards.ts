@@ -260,6 +260,9 @@ router.get('/quests', async (req: Request, res: Response) => {
         const questClaims = (allClaims || []).filter(
             tx => tx.metadata?.type === 'QUEST_REWARD'
         );
+        const cpYieldClaimedToday = (allClaims || []).some(
+            tx => tx.metadata?.type === 'CP_YIELD_CLAIM' && tx.created_at.startsWith(today)
+        );
 
         const claimedIdsToday = questClaims
             .filter(tx => tx.created_at.startsWith(today))
@@ -309,9 +312,9 @@ router.get('/quests', async (req: Request, res: Response) => {
             },
             {
                 id: '6', title: 'Claim Chili Yield',
-                progress: 0, total: 1,
+                progress: cpYieldClaimedToday ? 1 : 0, total: 1,
                 reward: '50 CP', type: 'cp' as any,
-                status: claimedIdsToday.includes('6') ? 'completed' : 'in-progress'
+                status: claimedIdsToday.includes('6') ? 'completed' : (cpYieldClaimedToday ? 'claimable' : 'in-progress')
             }
         ];
 
@@ -391,6 +394,9 @@ router.post('/claim-quest', telegramAuthMiddleware, async (req: Request, res: Re
         const questClaims = (allClaims || []).filter(
             tx => tx.metadata?.type === 'QUEST_REWARD' && String(tx.metadata?.questId) === String(questId)
         );
+        const cpYieldClaimedToday = (allClaims || []).some(
+            tx => tx.metadata?.type === 'CP_YIELD_CLAIM' && tx.created_at.startsWith(today)
+        );
 
         const alreadyClaimed = isOneTime
             ? questClaims.length > 0
@@ -417,7 +423,7 @@ router.post('/claim-quest', telegramAuthMiddleware, async (req: Request, res: Re
             '3': (referralCount || 0) >= 1,
             '4': !!socialClicked['4'], // Must have clicked GO to open Telegram link
             '5': !!socialClicked['5'], // Must have clicked GO to open X link
-            '6': true
+            '6': cpYieldClaimedToday
         };
 
         if (!questVerification[questId]) {

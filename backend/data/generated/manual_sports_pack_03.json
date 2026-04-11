@@ -1,0 +1,482 @@
+[
+  {
+    "category": "football",
+    "text": "What is a nutmeg in football?",
+    "options": ["Playing the ball through an opponent's legs", "Scoring from a corner kick", "A goalkeeper punching the ball", "A pass made with the heel only"],
+    "correct_answer": "Playing the ball through an opponent's legs",
+    "difficulty": "medium",
+    "source": "manual"
+  },
+  {
+    "category": "football",
+    "text": "What is a bicycle kick in football?",
+    "options": ["An acrobatic overhead kick", "A pass made while cycling possession", "A kick taken from the center circle", "A goalkeeper clearance from hand"],
+    "correct_answer": "An acrobatic overhead kick",
+    "difficulty": "easy",
+    "source": "manual"
+  },
+  {
+    "category": "football",
+    "text": "What is a back four in football tactics?",
+    "options": ["A defensive line of four players", "Four forwards behind the striker", "Four goalkeepers on the bench", "Four passes before every shot"],
+    "correct_answer": "A defensive line of four players",
+    "difficulty": "medium",
+    "source": "manual"
+  },
+  {
+    "category": "football",
+    "text": "What is man-marking in football?",
+    "options": ["Assigning a defender to track a specific opponent", "Marking the halfway line with paint", "A goalkeeper choosing a penalty side", "A referee writing down goals"],
+    "correct_answer": "Assigning a defender to track a specific opponent",
+    "difficulty": "medium",
+    "source": "manual"
+  },
+  {
+    "category": "football",
+    "text": "What is zonal marking in football?",
+    "options": ["Defending assigned spaces rather than specific players", "Marking players only by shirt number", "A rule used only for penalty kicks", "A way to decide substitutions"],
+    "correct_answer": "Defending assigned spaces rather than specific players",
+    "difficulty": "medium",
+    "source": "manual"
+  },
+  {
+    "category": "football",
+    "text": "What is a counterattack in football?",
+    "options": ["A quick attack launched after winning possession", "A pass back to restart the match", "A defender counting opponents", "A shot after the final whistle"],
+    "correct_answer": "A quick attack launched after winning possession",
+    "difficulty": "medium",
+    "source": "manual"
+  },
+  {
+    "category": "football",
+    "text": "What is an indirect free kick in football?",
+    "options": ["A free kick that must touch another player before a goal can count", "A free kick taken only by the goalkeeper", "A kick awarded after every offside goal", "A kick that must go backward"],
+    "correct_answer": "A free kick that must touch another player before a goal can count",
+    "difficulty": "hard",
+    "source": "manual"
+  },
+  {
+    "category": "football",
+    "text": "What does it mean for the ball to be out of play in football?",
+    "options": ["The whole ball fully crosses a boundary line or play is stopped", "Any part of the ball touches a line", "A player lets the ball bounce", "The goalkeeper catches the ball"],
+    "correct_answer": "The whole ball fully crosses a boundary line or play is stopped",
+    "difficulty": "medium",
+    "source": "manual"
+  },
+  {
+    "category": "football",
+    "text": "What is a set piece in football?",
+    "options": ["A planned restart such as a corner or free kick", "A fixed player salary", "A shirt number reserved for captains", "A training cone only"],
+    "correct_answer": "A planned restart such as a corner or free kick",
+    "difficulty": "medium",
+    "source": "manual"
+  },
+  {
+    "category": "football",
+    "text": "What is the technical area in football?",
+    "options": ["The marked area where coaches and substitutes stay near the bench", "The penalty spot", "The center circle only", "The goalkeeper's six-yard box"],
+    "correct_answer": "The marked area where coaches and substitutes stay near the bench",
+    "difficulty": "medium",
+    "source": "manual"
+  },
+  {
+    "category": "basketball",
+    "text": "What is an alley-oop in basketball?",
+    "options": ["A pass caught near the basket and scored in one motion", "A bounce pass from the referee", "A free throw after halftime", "A turnover at center court"],
+    "correct_answer": "A pass caught near the basket and scored in one motion",
+    "difficulty": "medium",
+    "source": "manual"
+  },
+  {
+    "category": "basketball",
+    "text": "What is a crossover dribble?",
+    "options": ["A dribble switching the ball quickly from one hand to the other", "A pass thrown across the crowd", "A shot crossing the backboard", "A referee crossing arms to stop play"],
+    "correct_answer": "A dribble switching the ball quickly from one hand to the other",
+    "difficulty": "medium",
+    "source": "manual"
+  },
+  {
+    "category": "basketball",
+    "text": "What is a full-court press?",
+    "options": ["Defensive pressure applied across most or all of the court", "A shot from one baseline to the other", "A halftime media interview", "A team photo before the game"],
+    "correct_answer": "Defensive pressure applied across most or all of the court",
+    "difficulty": "medium",
+    "source": "manual"
+  },
+  {
+    "category": "basketball",
+    "text": "What is a turnover in basketball?",
+    "options": ["Losing possession to the other team", "Changing jerseys at halftime", "Making two layups in a row", "Winning the opening tip"],
+    "correct_answer": "Losing possession to the other team",
+    "difficulty": "easy",
+    "source": "manual"
+  },
+  {
+    "category": "basketball",
+    "text": "What is a double-dribble violation?",
+    "options": ["Dribbling again after stopping a dribble", "Dribbling with both teams at once", "Scoring two baskets in one shot", "Taking two free throws"],
+    "correct_answer": "Dribbling again after stopping a dribble",
+    "difficulty": "medium",
+    "source": "manual"
+  },
+  {
+    "category": "basketball",
+    "text": "What is a post-up in basketball?",
+    "options": ["An offensive move using position near the basket with back to defender", "A shot from behind half court", "A timeout after a rebound", "A defensive signal by the scorer"],
+    "correct_answer": "An offensive move using position near the basket with back to defender",
+    "difficulty": "medium",
+    "source": "manual"
+  },
+  {
+    "category": "basketball",
+    "text": "What is transition offense?",
+    "options": ["Offense moving quickly after a change of possession", "Offense used only after a timeout", "Shooting only free throws", "Playing with four defenders"],
+    "correct_answer": "Offense moving quickly after a change of possession",
+    "difficulty": "medium",
+    "source": "manual"
+  },
+  {
+    "category": "basketball",
+    "text": "What is the key in basketball?",
+    "options": ["The painted lane area near the basket", "The locker room entrance", "The referee's whistle cord", "The final possession only"],
+    "correct_answer": "The painted lane area near the basket",
+    "difficulty": "easy",
+    "source": "manual"
+  },
+  {
+    "category": "basketball",
+    "text": "What does it mean to foul out in basketball?",
+    "options": ["A player is disqualified after reaching the foul limit", "A player misses all free throws", "A coach leaves the bench", "A team loses the jump ball"],
+    "correct_answer": "A player is disqualified after reaching the foul limit",
+    "difficulty": "medium",
+    "source": "manual"
+  },
+  {
+    "category": "basketball",
+    "text": "What is an inbound pass?",
+    "options": ["A pass from out of bounds to restart play", "A pass into the locker room", "A pass only after a dunk", "A pass from the crowd to a player"],
+    "correct_answer": "A pass from out of bounds to restart play",
+    "difficulty": "easy",
+    "source": "manual"
+  },
+  {
+    "category": "tennis",
+    "text": "What is a rally in tennis?",
+    "options": ["A sequence of shots after the serve before the point ends", "A player speech before the match", "A ball change ceremony", "A coin toss only"],
+    "correct_answer": "A sequence of shots after the serve before the point ends",
+    "difficulty": "easy",
+    "source": "manual"
+  },
+  {
+    "category": "tennis",
+    "text": "What is a passing shot in tennis?",
+    "options": ["A shot hit past an opponent at the net", "A serve that touches the umpire chair", "A shot hit after the match ends", "A ball handed to a ball kid"],
+    "correct_answer": "A shot hit past an opponent at the net",
+    "difficulty": "medium",
+    "source": "manual"
+  },
+  {
+    "category": "tennis",
+    "text": "What is an unforced error in tennis?",
+    "options": ["A mistake not caused by strong pressure from the opponent", "A referee's scoring error", "A serve that is always replayed", "A shot that wins the point instantly"],
+    "correct_answer": "A mistake not caused by strong pressure from the opponent",
+    "difficulty": "medium",
+    "source": "manual"
+  },
+  {
+    "category": "tennis",
+    "text": "What is a winner in tennis?",
+    "options": ["A shot the opponent cannot reach or return legally", "A player who wins the toss only", "A serve that clips the net and lands in", "A practice shot before warm-up"],
+    "correct_answer": "A shot the opponent cannot reach or return legally",
+    "difficulty": "easy",
+    "source": "manual"
+  },
+  {
+    "category": "tennis",
+    "text": "What is a service game in tennis?",
+    "options": ["A game in which a player is serving", "A game played without rackets", "A game after the match is over", "A game where only volleys count"],
+    "correct_answer": "A game in which a player is serving",
+    "difficulty": "easy",
+    "source": "manual"
+  },
+  {
+    "category": "tennis",
+    "text": "What is a set point in tennis?",
+    "options": ["A point that can win the set", "The first point of a match", "A point after a ball change only", "A replayed point after every let"],
+    "correct_answer": "A point that can win the set",
+    "difficulty": "easy",
+    "source": "manual"
+  },
+  {
+    "category": "tennis",
+    "text": "What is a match point in tennis?",
+    "options": ["A point that can win the match", "A point that starts a tiebreak", "The point after love", "A practice serve before play begins"],
+    "correct_answer": "A point that can win the match",
+    "difficulty": "easy",
+    "source": "manual"
+  },
+  {
+    "category": "tennis",
+    "text": "What is topspin in tennis?",
+    "options": ["Forward spin that makes the ball dip and bounce higher", "A shot with no rotation", "A serve hit below the net", "A racket string pattern only"],
+    "correct_answer": "Forward spin that makes the ball dip and bounce higher",
+    "difficulty": "medium",
+    "source": "manual"
+  },
+  {
+    "category": "tennis",
+    "text": "What is the net player usually trying to do in doubles tennis?",
+    "options": ["Cut off volleys and pressure opponents", "Stand behind the back fence", "Serve every point", "Avoid touching the ball"],
+    "correct_answer": "Cut off volleys and pressure opponents",
+    "difficulty": "medium",
+    "source": "manual"
+  },
+  {
+    "category": "tennis",
+    "text": "What is a hold of serve in tennis?",
+    "options": ["The server wins their service game", "The receiver wins the game", "A player grips the racket too long", "A ball kid delays play"],
+    "correct_answer": "The server wins their service game",
+    "difficulty": "medium",
+    "source": "manual"
+  },
+  {
+    "category": "motorsports",
+    "text": "What is a cockpit in motorsport?",
+    "options": ["The driver's seating and control area", "The tire storage room", "The podium stage", "The timing tower"],
+    "correct_answer": "The driver's seating and control area",
+    "difficulty": "easy",
+    "source": "manual"
+  },
+  {
+    "category": "motorsports",
+    "text": "What is a marshal in motorsport?",
+    "options": ["A track official who helps with safety and signaling", "A driver who starts last", "A sponsor representative only", "A tire compound"],
+    "correct_answer": "A track official who helps with safety and signaling",
+    "difficulty": "easy",
+    "source": "manual"
+  },
+  {
+    "category": "motorsports",
+    "text": "What is a red flag in racing?",
+    "options": ["A signal that the session is stopped", "A signal to speed up", "A signal for final lap only", "A signal for fastest lap award"],
+    "correct_answer": "A signal that the session is stopped",
+    "difficulty": "easy",
+    "source": "manual"
+  },
+  {
+    "category": "motorsports",
+    "text": "What is the pit wall in motorsport?",
+    "options": ["The area where team strategists and engineers monitor the race", "The wall behind a trophy cabinet", "A tire barrier in every corner", "A driver's hotel area"],
+    "correct_answer": "The area where team strategists and engineers monitor the race",
+    "difficulty": "medium",
+    "source": "manual"
+  },
+  {
+    "category": "motorsports",
+    "text": "What is a flying lap?",
+    "options": ["A timed lap begun at speed rather than from a standing start", "A lap completed in an aircraft", "A lap behind a tow truck", "A lap after the race has ended"],
+    "correct_answer": "A timed lap begun at speed rather than from a standing start",
+    "difficulty": "medium",
+    "source": "manual"
+  },
+  {
+    "category": "motorsports",
+    "text": "What is a standing start?",
+    "options": ["A race start from stationary grid positions", "A start while drivers stand outside cars", "A restart from pit lane only", "A start with engines switched off"],
+    "correct_answer": "A race start from stationary grid positions",
+    "difficulty": "easy",
+    "source": "manual"
+  },
+  {
+    "category": "motorsports",
+    "text": "What is a rolling start?",
+    "options": ["A start where cars are moving before racing begins", "A start with cars on trailers", "A start after tire removal", "A start from the garage only"],
+    "correct_answer": "A start where cars are moving before racing begins",
+    "difficulty": "medium",
+    "source": "manual"
+  },
+  {
+    "category": "motorsports",
+    "text": "What is telemetry in motorsport?",
+    "options": ["Data sent from the vehicle to engineers", "A driver's autograph session", "A type of racing fuel only", "A tire storage shelf"],
+    "correct_answer": "Data sent from the vehicle to engineers",
+    "difficulty": "medium",
+    "source": "manual"
+  },
+  {
+    "category": "motorsports",
+    "text": "What is a sector on a racing circuit?",
+    "options": ["A timed section of the lap", "A team garage number only", "A driver's salary bracket", "A type of racing helmet"],
+    "correct_answer": "A timed section of the lap",
+    "difficulty": "medium",
+    "source": "manual"
+  },
+  {
+    "category": "motorsports",
+    "text": "What is a lap record?",
+    "options": ["The fastest officially recorded lap for a track or session type", "The number of laps left on fuel", "A driver's music playlist", "The final starting grid"],
+    "correct_answer": "The fastest officially recorded lap for a track or session type",
+    "difficulty": "easy",
+    "source": "manual"
+  },
+  {
+    "category": "combat_sports",
+    "text": "What is a cutman in combat sports?",
+    "options": ["A cornerman who treats cuts and swelling between rounds", "A judge who cuts scores in half", "A fighter who only throws elbows", "A referee who stops all grappling"],
+    "correct_answer": "A cornerman who treats cuts and swelling between rounds",
+    "difficulty": "medium",
+    "source": "manual"
+  },
+  {
+    "category": "combat_sports",
+    "text": "What is a corner in boxing or MMA?",
+    "options": ["A fighter's team area and support staff", "A judge's private room", "A banned strike", "The center of the ring"],
+    "correct_answer": "A fighter's team area and support staff",
+    "difficulty": "easy",
+    "source": "manual"
+  },
+  {
+    "category": "combat_sports",
+    "text": "What is a feint in combat sports?",
+    "options": ["A deceptive movement to draw a reaction", "A confirmed knockout", "A post-fight interview", "A type of hand wrap"],
+    "correct_answer": "A deceptive movement to draw a reaction",
+    "difficulty": "medium",
+    "source": "manual"
+  },
+  {
+    "category": "combat_sports",
+    "text": "What is a jab in boxing?",
+    "options": ["A quick straight punch with the lead hand", "A spinning kick", "A choke from the back", "A wrestling throw"],
+    "correct_answer": "A quick straight punch with the lead hand",
+    "difficulty": "easy",
+    "source": "manual"
+  },
+  {
+    "category": "combat_sports",
+    "text": "What is a cross in boxing?",
+    "options": ["A straight punch usually thrown with the rear hand", "A kick to the leg", "A referee's warning gesture", "A grappling pin"],
+    "correct_answer": "A straight punch usually thrown with the rear hand",
+    "difficulty": "easy",
+    "source": "manual"
+  },
+  {
+    "category": "combat_sports",
+    "text": "What is a hook in boxing?",
+    "options": ["A punch thrown in a curved motion from the side", "A high jump kick", "A towel thrown after a win", "A wrestling escape only"],
+    "correct_answer": "A punch thrown in a curved motion from the side",
+    "difficulty": "easy",
+    "source": "manual"
+  },
+  {
+    "category": "combat_sports",
+    "text": "What is an uppercut in boxing?",
+    "options": ["An upward punch aimed from below", "A kick to the shoulder", "A takedown at the legs", "A judge's highest score"],
+    "correct_answer": "An upward punch aimed from below",
+    "difficulty": "easy",
+    "source": "manual"
+  },
+  {
+    "category": "combat_sports",
+    "text": "What is a leg kick in combat sports?",
+    "options": ["A kick aimed at an opponent's leg", "A referee's walking signal", "A boxing-only punch", "A wrestling pin escape"],
+    "correct_answer": "A kick aimed at an opponent's leg",
+    "difficulty": "easy",
+    "source": "manual"
+  },
+  {
+    "category": "combat_sports",
+    "text": "What is an armbar?",
+    "options": ["A joint lock attacking the elbow", "A scoring table", "A boxing ring rope", "A fighter's entrance song"],
+    "correct_answer": "A joint lock attacking the elbow",
+    "difficulty": "medium",
+    "source": "manual"
+  },
+  {
+    "category": "combat_sports",
+    "text": "What does TKO stand for in combat sports?",
+    "options": ["Technical Knockout", "Timed Kick Off", "Total Knock Over", "Tournament Kick Order"],
+    "correct_answer": "Technical Knockout",
+    "difficulty": "easy",
+    "source": "manual"
+  },
+  {
+    "category": "esports",
+    "text": "What is a headshot in many shooter games?",
+    "options": ["A hit to an opponent's head area", "A player's profile photo", "A tournament poster", "A camera view of a coach"],
+    "correct_answer": "A hit to an opponent's head area",
+    "difficulty": "easy",
+    "source": "manual"
+  },
+  {
+    "category": "esports",
+    "text": "What is recoil in shooter games?",
+    "options": ["Weapon kickback after firing", "A player leaving a team", "A map loading screen", "A prize ceremony"],
+    "correct_answer": "Weapon kickback after firing",
+    "difficulty": "easy",
+    "source": "manual"
+  },
+  {
+    "category": "esports",
+    "text": "What is aim training?",
+    "options": ["Practice focused on improving targeting accuracy", "A coach picking team uniforms", "A spectator voting system", "A network setup guide"],
+    "correct_answer": "Practice focused on improving targeting accuracy",
+    "difficulty": "easy",
+    "source": "manual"
+  },
+  {
+    "category": "esports",
+    "text": "What is map control in competitive games?",
+    "options": ["Holding important areas to gain strategic advantage", "Changing the game's graphics only", "Choosing random spawn points", "Deleting the map file"],
+    "correct_answer": "Holding important areas to gain strategic advantage",
+    "difficulty": "medium",
+    "source": "manual"
+  },
+  {
+    "category": "esports",
+    "text": "What is a rotation in team-based esports?",
+    "options": ["Moving players between map areas or objectives", "Turning the monitor sideways", "Changing the team logo weekly", "Replacing every game rule"],
+    "correct_answer": "Moving players between map areas or objectives",
+    "difficulty": "medium",
+    "source": "manual"
+  },
+  {
+    "category": "esports",
+    "text": "What is a reset in competitive games?",
+    "options": ["Returning to a neutral state or starting a new round/attempt", "Deleting a player's account only", "Turning off all sound", "A trophy ceremony"],
+    "correct_answer": "Returning to a neutral state or starting a new round/attempt",
+    "difficulty": "medium",
+    "source": "manual"
+  },
+  {
+    "category": "esports",
+    "text": "What does AFK mean in gaming?",
+    "options": ["Away From Keyboard", "Attack First Kill", "Arena Final Knockout", "Aim Fast Keybind"],
+    "correct_answer": "Away From Keyboard",
+    "difficulty": "easy",
+    "source": "manual"
+  },
+  {
+    "category": "esports",
+    "text": "What is a ban phase in many competitive games?",
+    "options": ["A stage where teams remove certain characters, maps, or options", "A period where all players are suspended", "A break for hardware cleaning", "A stage where prize money is counted"],
+    "correct_answer": "A stage where teams remove certain characters, maps, or options",
+    "difficulty": "medium",
+    "source": "manual"
+  },
+  {
+    "category": "esports",
+    "text": "What is a pick phase in many competitive games?",
+    "options": ["A stage where teams choose characters, maps, or options", "A stage where referees choose fans", "A stage where every player disconnects", "A stage only for changing keyboards"],
+    "correct_answer": "A stage where teams choose characters, maps, or options",
+    "difficulty": "medium",
+    "source": "manual"
+  },
+  {
+    "category": "esports",
+    "text": "What is a spectator mode?",
+    "options": ["A mode for watching a match without playing", "A mode that removes all viewers", "A mode only for changing usernames", "A mode that disables the scoreboard"],
+    "correct_answer": "A mode for watching a match without playing",
+    "difficulty": "easy",
+    "source": "manual"
+  }
+]

@@ -25,6 +25,17 @@ if (!token) {
     // WebApp URL for the Menu Button (uses env or hardcoded fallback)
     const webAppUrl = process.env.VITE_APP_URL || 'https://tgquizmaster.online';
     const adminIds = process.env.ADMIN_IDS || '';
+    const sendMessageSafe = async (
+        chatId: TelegramBot.ChatId,
+        text: string,
+        options?: TelegramBot.SendMessageOptions
+    ) => {
+        try {
+            await bot.sendMessage(chatId, text, options);
+        } catch (error: any) {
+            console.error('[BOT] Failed to send message:', error?.message || error);
+        }
+    };
 
     console.log(`Telegram Bot initializing...`);
     console.log(`[BOT] Admin IDs configured: ${adminIds}`);
@@ -66,11 +77,11 @@ if (!token) {
                 `👋 **Hello ${msg.chat.title}!** 🏆\n\n` +
                 `I'm **TGQuizMaster**, your real-time trivia host! Battle your friends and community members right here in this chat.\n\n` +
                 `🚀 **How to Start?**\n` +
-                `Type \`/play\` followed by a category (optional) to initiate a **FREE** battle!\n\n` +
+                `Type \`/play\` followed by a sports category (optional) to initiate a **FREE** battle!\n\n` +
                 `*Examples:*\n` +
-                `• \`/play\` (General knowledge)\n` +
-                `• \`/play Crypto\`\n` +
-                `• \`/play Sports\`\n\n` +
+                `• \`/play\` (Sports Mix)\n` +
+                `• \`/play Football\`\n` +
+                `• \`/play Basketball\`\n\n` +
                 `Ready to test your knowledge? Let's go! ⚡`;
 
             bot.sendMessage(chatId, welcomeMsg, { parse_mode: 'Markdown' });
@@ -238,7 +249,7 @@ if (!token) {
             console.error('[BOT] User registration failed:', e);
         }
 
-        bot.sendMessage(chatId, `Welcome to TGQuizMaster, ${firstName}! 🏆\n\nBattle other players in real-time, master trivia, and win real CHZ rewards.\n\nReady to play?`, {
+        await sendMessageSafe(chatId, `Welcome to TGQuizMaster, ${firstName}! 🏆\n\nBattle other players in real-time, master trivia, and win real CHZ rewards.\n\nReady to play?`, {
             reply_markup: {
                 inline_keyboard: [
                     [
@@ -270,7 +281,7 @@ if (!token) {
             `3️⃣ Challenge your friends to see who's the smartest!\n\n` +
             `🏆 **Why play in groups?**\n` +
             `• Automatic real-time leaderboards.\n` +
-            `• Custom categories supported (\`/play Crypto\`).\n` +
+            `• Sports categories supported (\`/play Football\`, \`/play Basketball\`).\n` +
             `• Competitive fun with your community!`;
 
         bot.sendMessage(chatId, groupsMsg, {
@@ -289,10 +300,10 @@ if (!token) {
         const chatType = msg.chat.type;
         const userId = msg.from?.id;
         const firstName = msg.from?.first_name || 'Champion';
-        const category = match ? match[1] : 'General';
+        const category = match ? match[1] : 'Sports Mix';
 
         if (chatType === 'private') {
-            bot.sendMessage(chatId, `Ready for a challenge, ${firstName}? 🏆`, {
+            await sendMessageSafe(chatId, `Ready for a challenge, ${firstName}? 🏆`, {
                 reply_markup: {
                     inline_keyboard: [[
                         { text: '🎮 Start Playing', web_app: { url: webAppUrl } }
@@ -416,7 +427,7 @@ Earn **Chili Points (CP)** passively! Open the 'Yield' tab in the app to harvest
                     `3️⃣ Challenge your friends to see who's the smartest!\n\n` +
                     `🏆 **Why play in groups?**\n` +
                     `• Automatic real-time leaderboards.\n` +
-                    `• Custom categories supported (\`/play Crypto\`).\n` +
+                    `• Sports categories supported (\`/play Football\`, \`/play Basketball\`).\n` +
                     `• Competitive fun with your community!`;
 
                 bot.sendMessage(chatId, groupsMsg, {

@@ -50,7 +50,7 @@ class RoomRegistry {
         prize = 0,
         fee = 10,
         maxPlayers = 5,
-        category = 'General'
+        category = 'Sports Mix'
     ): GameManager {
         if (!this.io) throw new Error('RoomRegistry: IO not initialized');
 

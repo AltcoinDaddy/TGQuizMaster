@@ -63,7 +63,7 @@ export const QuizRoom: React.FC = () => {
     const initialMax = extractedMax || location.state?.maxPlayers || pendingConf?.maxPlayers || queryParams.get('maxPlayers') || 5;
     const [maxPlayersCount, setMaxPlayersCount] = useState(parseInt(String(initialMax)) || 5);
 
-    const initialCategory = extractedCategory || stateCategory || categoryFromUrl || pendingConf?.category || 'General';
+    const initialCategory = extractedCategory || stateCategory || categoryFromUrl || pendingConf?.category || 'Sports Mix';
     const [roomCategory, setRoomCategory] = useState(initialCategory);
     
     // Use extractedFee if present (e.g. from deep link), otherwise check state/query
@@ -98,6 +98,19 @@ export const QuizRoom: React.FC = () => {
     const finalRoomId = cleanRoomId || tournamentId;
     const finalType = stateType || typeFromUrl || 'tournament';
     const isSurvival = finalType === 'survival';
+    const fallbackAvatar = '/logo.png';
+    const showSafeAlert = (message: string) => {
+        const tg = (window as any).Telegram?.WebApp;
+        try {
+            if (tg?.showAlert && (!tg.isVersionAtLeast || tg.isVersionAtLeast('6.2'))) {
+                tg.showAlert(message);
+                return;
+            }
+        } catch (error) {
+            console.warn('Telegram alert unavailable, falling back to browser alert:', error);
+        }
+        alert(message);
+    };
 
     useEffect(() => {
         // 1. Setup Listeners
@@ -241,10 +254,7 @@ export const QuizRoom: React.FC = () => {
         const onRoomExpired = (data: any) => {
             clearTimeout(joinTimeout);
             setGameStatus('ended');
-            const tg = (window as any).Telegram?.WebApp;
-            if (tg?.showAlert) {
-                tg.showAlert(data.message || 'Room closed — not enough players. Entry fee refunded.');
-            }
+            showSafeAlert(data.message || 'Room closed — not enough players. Entry fee refunded.');
             navigate('/');
         };
 
@@ -254,12 +264,7 @@ export const QuizRoom: React.FC = () => {
             if (data.message === 'Insufficient Stars balance') {
                 alert('You do not have enough stars to join this room.');
             } else {
-                const tg = (window as any).Telegram?.WebApp;
-                if (tg?.showAlert) {
-                    tg.showAlert(data.message || 'An error occurred. Returning to lobby.');
-                } else {
-                    alert(data.message || 'An error occurred. Returning to lobby.');
-                }
+                showSafeAlert(data.message || 'An error occurred. Returning to lobby.');
             }
             navigate('/');
         };
@@ -389,7 +394,7 @@ export const QuizRoom: React.FC = () => {
             // Check legacy inventory array
             const invArr = useAppStore.getState().user.inventory || [];
             if (!invArr.includes(powerUpId)) {
-                (window as any).Telegram?.WebApp?.showAlert?.('You don\'t have this power-up! Buy it from the Shop.');
+                showSafeAlert('You don\'t have this power-up! Buy it from the Shop.');
                 return;
             }
         }
@@ -412,7 +417,7 @@ export const QuizRoom: React.FC = () => {
 
     if (gameStatus === 'waiting') {
         return (
-            <MainLayout showNav={false}>
+            <MainLayout showHeader={false} showNav={false}>
                 <div className="flex flex-col items-center justify-center min-h-[60dvh] space-y-8 animate-in fade-in zoom-in duration-500">
                     <div className="w-24 h-24 bg-primary/20 rounded-full flex items-center justify-center animate-pulse border border-primary/20 shadow-[0_0_30px_rgba(13,242,89,0.2)]">
                         <i className="material-icons text-primary text-5xl">groups</i>
@@ -443,7 +448,7 @@ export const QuizRoom: React.FC = () => {
 
     if (gameStatus === 'ended') {
         return (
-            <MainLayout showNav={false}>
+            <MainLayout showHeader={false} showNav={false}>
                 <div className="flex flex-col items-center justify-center min-h-[80dvh] space-y-8">
                     <div className="text-center">
                         <h2 className={`text-4xl font-black uppercase italic tracking-tighter drop-shadow-[0_0_15px_rgba(13,242,89,0.4)] text-primary`}>
@@ -520,7 +525,7 @@ export const QuizRoom: React.FC = () => {
     }
 
     return (
-        <MainLayout showNav={false}>
+        <MainLayout showHeader={false} showNav={false}>
             {/* V2 Header with Progress */}
             <header className="pt-8 pb-4">
                 <div className="flex items-center justify-between mb-6">
@@ -567,8 +572,8 @@ export const QuizRoom: React.FC = () => {
                     </div>
                 </div>
 
-                <div className="w-full text-center px-2">
-                    <h2 className="text-2xl font-black leading-tight italic tracking-tighter">
+                <div className="w-full max-w-full text-center px-2 overflow-hidden">
+                    <h2 className="text-xl sm:text-2xl font-black leading-tight italic tracking-tight break-words">
                         {currentQuestion?.text || "Next challenge is loading..."}
                     </h2>
                 </div>
@@ -672,7 +677,7 @@ export const QuizRoom: React.FC = () => {
                     {/* Rank 2 */}
                     <div className="flex flex-col items-center">
                         <div className="relative mb-2">
-                            <img className="w-12 h-12 rounded-full border-2 border-slate-500 object-cover opacity-80" src={players[1]?.avatar || ""} alt="player" />
+                            <img className="w-12 h-12 rounded-full border-2 border-slate-500 object-cover opacity-80" src={players[1]?.avatar || fallbackAvatar} alt="player" />
                             <div className="absolute -bottom-1 -right-1 bg-slate-500 text-[8px] font-black text-white px-2 py-0.5 rounded-full border-2 border-background-dark">2nd</div>
                         </div>
                         <span className="text-[8px] font-black opacity-40 uppercase tracking-tighter truncate w-16 text-center">{players[1]?.username || "Finding..."}</span>
@@ -683,7 +688,7 @@ export const QuizRoom: React.FC = () => {
                     <div className="flex flex-col items-center scale-110 relative -top-2">
                         <div className="relative mb-2">
                             <div className="absolute inset-0 bg-primary/30 blur-md rounded-full"></div>
-                            <img className="relative w-16 h-16 rounded-full border-4 border-primary object-cover" src={players[0]?.avatar || ""} alt="player" />
+                            <img className="relative w-16 h-16 rounded-full border-4 border-primary object-cover" src={players[0]?.avatar || fallbackAvatar} alt="player" />
                             <div className="absolute -bottom-1 -right-1 bg-primary text-[8px] font-black text-background-dark px-2 py-0.5 rounded-full border-2 border-background-dark">1st</div>
                         </div>
                         <span className="text-[8px] font-black text-primary uppercase tracking-tighter truncate w-20 text-center">{players[0]?.username === user.username ? "YOU" : (players[0]?.username || "Top Player")}</span>
@@ -693,7 +698,7 @@ export const QuizRoom: React.FC = () => {
                     {/* Rank 3 */}
                     <div className="flex flex-col items-center">
                         <div className="relative mb-2">
-                            <img className="w-12 h-12 rounded-full border-2 border-slate-500 object-cover opacity-60" src={players[2]?.avatar || ""} alt="player" />
+                            <img className="w-12 h-12 rounded-full border-2 border-slate-500 object-cover opacity-60" src={players[2]?.avatar || fallbackAvatar} alt="player" />
                             <div className="absolute -bottom-1 -right-1 bg-slate-500 text-[8px] font-black text-white px-2 py-0.5 rounded-full border-2 border-background-dark">3rd</div>
                         </div>
                         <span className="text-[8px] font-black opacity-40 uppercase tracking-tighter truncate w-16 text-center">{players[2]?.username || "Finding..."}</span>

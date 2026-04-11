@@ -59,6 +59,13 @@ function DeepLinkHandler() {
 function App() {
   const [showOnboarding, setShowOnboarding] = useState<boolean | null>(null);
 
+  const connectDevUser = () => {
+    const testId = import.meta.env.VITE_DEV_TELEGRAM_ID || "1215058702";
+    const username = import.meta.env.VITE_DEV_USERNAME || "Altcoindaddy";
+    useAppStore.getState().setUser({ telegramId: testId, username });
+    socket.connect();
+    socket.emit('sync_profile', { telegramId: testId, username });
+  };
 
   useEffect(() => {
     // Ensure socket is available globally for legacy components
@@ -100,10 +107,7 @@ function App() {
           // No Telegram user object found
           if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
             console.warn('[DEV] No Telegram user — using test fallback');
-            const testId = "1215058702";
-            useAppStore.getState().setUser({ telegramId: testId, username: "@Dev_Test" });
-            socket.connect();
-            socket.emit('sync_profile', { telegramId: testId, username: "@Dev_Test" });
+            connectDevUser();
           } else {
             console.error('No Telegram user data available in production');
             return; // Don't connect — user must open via Telegram
@@ -112,10 +116,7 @@ function App() {
       } else {
         if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
           console.warn('[DEV] No Telegram WebApp script — using test fallback');
-          const testId = "1215058702";
-          useAppStore.getState().setUser({ telegramId: testId, username: "Altcoindaddy" });
-          socket.connect();
-          socket.emit('sync_profile', { telegramId: testId, username: "Altcoindaddy" });
+          connectDevUser();
         } else {
           console.error('Telegram WebApp not available in production');
           return;

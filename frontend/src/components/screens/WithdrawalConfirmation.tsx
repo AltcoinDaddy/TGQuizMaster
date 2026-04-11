@@ -6,8 +6,8 @@ import { Button } from '../ui/Button';
 import { ChevronLeft, ShieldAlert, Wallet, CheckCircle2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../../store/useAppStore';
-import { useAppKit, useAppKitAccount } from '@reown/appkit/react';
-import { useBalance } from 'wagmi';
+import { useAppKit } from '@reown/appkit/react';
+import { useAccount, useBalance } from 'wagmi';
 import { formatUnits } from 'viem';
 
 export const WithdrawalConfirmation: React.FC = () => {
@@ -21,9 +21,9 @@ export const WithdrawalConfirmation: React.FC = () => {
     const [amountError, setAmountError] = React.useState('');
 
     const { open } = useAppKit();
-    const { address, isConnected } = useAppKitAccount();
+    const { address, isConnected } = useAccount();
     const { data: balanceData } = useBalance({
-        address: address as `0x${string}`,
+        address,
     });
 
     // Use on-chain balance if connected, otherwise fallback to store balance

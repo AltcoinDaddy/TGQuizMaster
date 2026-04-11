@@ -36,22 +36,40 @@ const ALLOWED_ORIGINS = [
     "http://localhost:5174",
     "http://192.168.12.13:5173",
     "https://tg-quiz-master.vercel.app",
-    "https://tgquizmaster.online"
+    "https://tgquizmaster.online",
+    ...(process.env.CORS_ALLOWED_ORIGINS || '')
+        .split(',')
+        .map(origin => origin.trim())
+        .filter(Boolean)
 ];
+
+const isAllowedOrigin = (origin?: string) => {
+    if (!origin) return true;
+    if (ALLOWED_ORIGINS.includes(origin)) return true;
+    if (!IS_PROD && /^https:\/\/[a-z0-9-]+\.ngrok(?:-free)?\.app$/i.test(origin)) return true;
+    if (!IS_PROD && /^https:\/\/[a-z0-9-]+\.loca\.lt$/i.test(origin)) return true;
+    if (!IS_PROD && /^https:\/\/[a-z0-9-]+\.localtunnel\.me$/i.test(origin)) return true;
+    return false;
+};
 
 const io = new Server(server, {
     cors: {
-        origin: ALLOWED_ORIGINS,
+        origin: (origin, callback) => callback(null, isAllowedOrigin(origin)),
         methods: ["GET", "POST"],
         credentials: true
     }
 });
 
+const normalizeRoomCategory = (category?: string) => {
+    if (!category || category === 'General') return 'Sports Mix';
+    return category;
+};
+
 // Initialize RoomRegistry with Socket.IO instance
 roomRegistry.setIO(io);
 
 app.use(cors({
-    origin: ALLOWED_ORIGINS,
+    origin: (origin, callback) => callback(null, isAllowedOrigin(origin)),
     methods: ["GET", "POST", "OPTIONS"],
     credentials: true
 }));
@@ -363,7 +381,7 @@ io.on('connection', (socket) => {
                 console.log(`[NOTIFY] Room ${finishedRoomId} finished. Posting stats to group ${(mgr as any).groupId}`);
                 notificationService.notifyGroupResults(
                     (mgr as any).groupId,
-                    (mgr as any).category || 'General',
+                    normalizeRoomCategory((mgr as any).category),
                     results
                 );
             }
@@ -469,7 +487,7 @@ io.on('connection', (socket) => {
                 }
 
                 roomId = crypto.randomUUID();
-                const mgr = new GameManager(roomId, io, 'practice', 0, 0, 5, category || 'General');
+                const mgr = new GameManager(roomId, io, 'practice', 0, 0, 5, normalizeRoomCategory(category));
 
                 attachRoomHandlers(mgr);
                 roomRegistry.setRoom(roomId, mgr); // Set immediately
@@ -544,7 +562,7 @@ io.on('connection', (socket) => {
 
                 const matchesFee = Math.abs(info.entryFee - effectiveFee) < 0.01;
                 const matchesCurrency = info.currency === effectiveCurrency;
-                const matchesCategory = info.category === (category || 'General');
+                const matchesCategory = normalizeRoomCategory(info.category) === normalizeRoomCategory(category);
                 const hasSpace = info.players < info.maxPlayers;
                 const isWaiting = info.status === 'waiting';
                 const matchesType = (mgr as any).megaRoom === (data.roomType === 'mega');
@@ -566,7 +584,7 @@ io.on('connection', (socket) => {
                 roomId = newRoomId;
                 const isMega = data.roomType === 'mega';
                 const playersLimit = isMega ? 100 : (data.roomType === 'quickplay' ? 5 : Math.min(Math.max(requestedMax, 2), 20));
-                const newManager = new GameManager(newRoomId, io, effectiveCurrency.toLowerCase() as any, 0, effectiveFee, playersLimit, category || 'General', isMega);
+                const newManager = new GameManager(newRoomId, io, effectiveCurrency.toLowerCase() as any, 0, effectiveFee, playersLimit, normalizeRoomCategory(category), isMega);
 
                 // If joining from a group deep link or specific link, mark as private to prevent global notifications
                 if (isGroup || (tournamentId && tournamentId.startsWith('room_'))) {

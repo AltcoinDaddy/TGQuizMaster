@@ -46,6 +46,7 @@ function calculateLevel(xp: number): { level: number; title: string; nextXp: num
 }
 
 export class GameManager {
+    private readonly SPORTS_MIX_CATEGORIES = ['football', 'motorsports', 'basketball', 'tennis', 'combat_sports', 'esports'];
     private roomId: string;
     private players: Player[];
     private questions: Question[] = [];
@@ -70,19 +71,17 @@ export class GameManager {
     public currency: 'STARS' | 'CHZ' = 'STARS';
 
     private readonly CATEGORY_MAP: Record<string, number> = {
+        'Sports Mix': 21,
         'Football': 21,
         'Motorsports': 21,
         'Basketball': 21,
         'Tennis': 21,
         'Combat Sports': 21,
         'Esports': 15,
-        'Movies & Series': 11,
-        'Music': 12,
-        'Pop Culture': 26,
         'Sports': 21,
     };
 
-    constructor(roomId: string, io: any, type: 'free' | 'stars' | 'chz' | 'practice' = 'free', prize = 0, fee = 0, maxPlayers = 5, category = 'General', isMega = false) {
+    constructor(roomId: string, io: any, type: 'free' | 'stars' | 'chz' | 'practice' = 'free', prize = 0, fee = 0, maxPlayers = 5, category = 'Sports Mix', isMega = false) {
         this.roomId = roomId;
         this.players = [];
         this.io = io;
@@ -189,6 +188,57 @@ export class GameManager {
         console.log(`[RAKE] Room ${this.roomId}: Gross=${grossPool}, Rake=${rake} (${this.rakePercentage * 100}%), Net Prize=${this.prizePool}`);
     }
 
+    private getQuestionCategories() {
+        const normalized = (this.category === 'General' || this.category === 'Sports Mix' || !this.category)
+            ? 'sports_mix'
+            : this.category.toLowerCase().replace(/ & /g, '_').replace(/ /g, '_');
+
+        if (normalized === 'sports_mix' || normalized === 'sports') {
+            return { primary: 'sports_mix', aliases: this.SPORTS_MIX_CATEGORIES };
+        }
+
+        if (this.SPORTS_MIX_CATEGORIES.includes(normalized)) {
+            return { primary: normalized, aliases: [normalized] };
+        }
+
+        return { primary: 'sports_mix', aliases: this.SPORTS_MIX_CATEGORIES };
+    }
+
+    private mapDbQuestion(q: any): Question {
+        return {
+            id: q.id,
+            text: q.text,
+            options: q.options,
+            correctAnswer: q.correct_answer,
+            category: q.category
+        };
+    }
+
+    private async fetchOpenTDBQuestions(count: number): Promise<Question[]> {
+        const finalId = this.categoryId || 21;
+
+        try {
+            const url = `https://opentdb.com/api.php?amount=${count}&category=${finalId}&type=multiple`;
+            const resp = await axios.get(url);
+
+            if (resp.data.results && resp.data.results.length > 0) {
+                const questions = resp.data.results.map((q: any, i: number) => ({
+                    id: `opentdb_${Date.now()}_${i}`,
+                    text: decode(q.question),
+                    options: [...q.incorrect_answers.map((a: any) => decode(a)), decode(q.correct_answer)].sort(() => Math.random() - 0.5),
+                    correctAnswer: decode(q.correct_answer),
+                    category: 'Sports'
+                }));
+                console.log(`[GAME] Loaded ${questions.length} fallback questions from OpenTDB.`);
+                return questions;
+            }
+        } catch (e) {
+            console.error('[GAME] OpenTDB fallback failed:', e);
+        }
+
+        return [];
+    }
+
     async start() {
         if (this.started) return;
         this.started = true;
@@ -201,117 +251,74 @@ export class GameManager {
     }
 
     private async fetchQuestions() {
-        // Normalize category for DB query (e.g., 'Movies & Series' -> 'movies')
-        let dbCategory = (this.category === 'General' || !this.category) ? 'all' : this.category.toLowerCase().replace(/ & /g, '_').replace(/ /g, '_');
-        
-        // Manual mapping overrides for local DB compatibility
-        if (dbCategory === 'movies_series') dbCategory = 'movies';
-        if (dbCategory === 'pop_culture') dbCategory = 'music';
+        const { primary: dbCategory, aliases: categoryAliases } = this.getQuestionCategories();
+        const selectedQuestions = new Map<string, Question>();
 
-        // TRUE MIXED CATEGORY HANDLING FOR 'GENERAL' GAMES
-        if (dbCategory === 'all') {
-            console.log(`[GAME] Fetching mixed categories for 'General' game...`);
-            const targetCats = ['football', 'motorsports', 'esports', 'tennis', 'basketball', 'combat_sports', 'movies', 'music'];
-            
-            try {
-                // Fetch a small batch from each category up-front
-                const fetchPromises = targetCats.map(cat => 
-                    supabase.from('questions').select('*').eq('category', cat).limit(3)
-                );
-                
-                const results = await Promise.all(fetchPromises);
-                const allFetched = results.flatMap(res => res.data || []);
-                
-                if (allFetched.length >= this.questionCount) {
-                    const shuffled = allFetched.sort(() => Math.random() - 0.5).slice(0, this.questionCount);
-                    this.questions = shuffled.map((q: any) => ({
-                        id: q.id,
-                        text: q.text,
-                        options: q.options,
-                        correctAnswer: q.correct_answer,
-                        category: q.category
-                    }));
-                    console.log(`[GAME] Mixed game initialized with ${this.questions.length} questions across multiple topics.`);
-                    return;
-                } else if (allFetched.length > 0) {
-                     // Still use what we have even if less than 10 (for small local DBs)
-                     this.questions = allFetched.sort(() => Math.random() - 0.5).slice(0, this.questionCount).map((q: any) => ({
-                        id: q.id, text: q.text, options: q.options, correctAnswer: q.correct_answer, category: q.category
-                    }));
-                    return;
+        const addQuestions = (questions: Question[]) => {
+            for (const question of questions) {
+                const key = question.text.toLowerCase().replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim();
+                if (!selectedQuestions.has(key)) {
+                    selectedQuestions.set(key, question);
                 }
-            } catch (e) {
-                console.error(`[GAME] Mixed fetch failed:`, e);
+                if (selectedQuestions.size >= this.questionCount) break;
             }
-        }
+        };
 
         // 1. Try fetching from Supabase 'questions' table first via RPC
         try {
             console.log(`[GAME] Querying Supabase: Category=${dbCategory}, Count=${this.questionCount}`);
             
-            const { data, error } = await supabase
-                .rpc('get_random_questions', {
+            const canUseRpc = categoryAliases.length === 1;
+            const { data, error } = canUseRpc
+                ? await supabase.rpc('get_random_questions', {
                     p_category: dbCategory,
                     p_count: this.questionCount
-                });
+                })
+                : { data: null, error: null };
             
-            if (!error && data && data.length >= this.questionCount) {
-                this.questions = data.map((q: any) => ({
-                    id: q.id,
-                    text: q.text,
-                    options: q.options,
-                    correctAnswer: q.correct_answer,
-                    category: q.category
-                }));
-                console.log(`[GAME] Successfully fetched ${this.questions.length} SportFi questions via RPC.`);
-                return;
-            } 
-            
-            // SECOND FALLBACK: Direct table select
-            console.log(`[GAME] RPC failed for ${dbCategory}. Trying direct table selection...`);
-            let directQuery = supabase.from('questions').select('*');
-            if (dbCategory !== 'all') {
-                directQuery = directQuery.eq('category', dbCategory);
+            if (!error && data && data.length > 0) {
+                addQuestions(data.map((q: any) => this.mapDbQuestion(q)));
+                console.log(`[GAME] Fetched ${selectedQuestions.size}/${this.questionCount} SportFi questions via RPC.`);
             }
             
-            const { data: directData, error: directError } = await directQuery.limit(this.questionCount * 10);
-            
-            if (!directError && directData && directData.length > 0) {
-                const shuffled = directData.sort(() => Math.random() - 0.5).slice(0, this.questionCount);
-                this.questions = shuffled.map((q: any) => ({
-                    id: q.id,
-                    text: q.text,
-                    options: q.options,
-                    correctAnswer: q.correct_answer,
-                    category: q.category
-                }));
-                console.log(`[GAME] Successfully fetched ${this.questions.length} questions via DIRECT query.`);
+            // SECOND FALLBACK: Direct table select
+            if (selectedQuestions.size < this.questionCount) {
+                console.log(`[GAME] Need ${this.questionCount - selectedQuestions.size} more questions for ${dbCategory}. Trying direct table selection...`);
+                let directQuery = supabase.from('questions').select('*');
+                if (dbCategory !== 'sports_mix') {
+                    directQuery = categoryAliases.length > 1
+                        ? directQuery.in('category', categoryAliases)
+                        : directQuery.eq('category', dbCategory);
+                } else {
+                    directQuery = directQuery.in('category', categoryAliases);
+                }
+
+                const { data: directData, error: directError } = await directQuery.limit(Math.max(this.questionCount * 12, 60));
+
+                if (!directError && directData && directData.length > 0) {
+                    const shuffled = directData.sort(() => Math.random() - 0.5);
+                    addQuestions(shuffled.map((q: any) => this.mapDbQuestion(q)));
+                    console.log(`[GAME] Fetched ${selectedQuestions.size}/${this.questionCount} SportFi questions after DIRECT query.`);
+                }
+            }
+
+            if (selectedQuestions.size >= this.questionCount) {
+                this.questions = Array.from(selectedQuestions.values()).slice(0, this.questionCount);
                 return;
             }
         } catch (e) {
             console.error('[GAME] Supabase integration failed:', e);
         }
 
-        // 3. FINAL FALLBACK: OpenTDB
-        const finalId = this.categoryId || 21; 
-        try {
-            const url = `https://opentdb.com/api.php?amount=${this.questionCount}&category=${finalId}&type=multiple`;
-            const resp = await axios.get(url);
-            
-            if (resp.data.results && resp.data.results.length > 0) {
-                this.questions = resp.data.results.map((q: any, i: number) => ({
-                    id: `q_${Date.now()}_${i}`,
-                    text: decode(q.question),
-                    options: [...q.incorrect_answers.map((a: any) => decode(a)), decode(q.correct_answer)].sort(() => Math.random() - 0.5),
-                    correctAnswer: decode(q.correct_answer),
-                    category: 'Sports'
-                }));
-                console.log(`[GAME] Loaded ${this.questions.length} fallback questions from OpenTDB.`);
-                return;
-            }
-        } catch (e) {
-            console.error('[GAME] OpenTDB fallback failed:', e);
+        // 3. FINAL FALLBACK/TOP-UP: OpenTDB
+        if (selectedQuestions.size < this.questionCount) {
+            const needed = this.questionCount - selectedQuestions.size;
+            console.log(`[GAME] Topping up ${needed} questions from OpenTDB.`);
+            const fallbackQuestions = await this.fetchOpenTDBQuestions(needed);
+            addQuestions(fallbackQuestions);
         }
+
+        this.questions = Array.from(selectedQuestions.values()).slice(0, this.questionCount);
     }
 
     private sendQuestion() {

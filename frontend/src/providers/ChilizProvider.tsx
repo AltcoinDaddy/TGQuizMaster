@@ -4,11 +4,11 @@ import { WagmiAdapter } from '@reown/appkit-adapter-wagmi';
 import { WagmiProvider, type Config } from 'wagmi';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
-// 1. Get projectId from env
-const projectId = import.meta.env.VITE_REOWN_PROJECT_ID;
+// 1. Get projectId from env. Older local env files still use the WalletConnect name.
+const projectId = import.meta.env.VITE_REOWN_PROJECT_ID || import.meta.env.VITE_WALLETCONNECT_PROJECT_ID;
 
 if (!projectId) {
-    throw new Error('VITE_REOWN_PROJECT_ID is not defined in .env');
+    throw new Error('VITE_REOWN_PROJECT_ID or VITE_WALLETCONNECT_PROJECT_ID is not defined in .env');
 }
 
 // 2. Define Chiliz Chain

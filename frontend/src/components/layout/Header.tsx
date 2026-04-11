@@ -1,7 +1,8 @@
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Star, Gem, Flame } from 'lucide-react';
-import { useAppKit, useAppKitAccount } from '@reown/appkit/react';
+import { useAppKit } from '@reown/appkit/react';
+import { useAccount } from 'wagmi';
 import { useAppStore } from '../../store/useAppStore';
 import { socket } from '../../utils/socket';
 
@@ -9,7 +10,7 @@ export const Header: React.FC = () => {
     const location = useLocation();
     const navigate = useNavigate();
     const { open } = useAppKit();
-    const { address, isConnected } = useAppKitAccount();
+    const { address, isConnected } = useAccount();
     const { user } = useAppStore();
 
     const shortAddress = address
@@ -96,4 +97,3 @@ export const Header: React.FC = () => {
         </header>
     );
 };
-

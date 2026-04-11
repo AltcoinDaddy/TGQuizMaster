@@ -1,0 +1,578 @@
+[
+  {
+    "category": "football",
+    "text": "In association football, how many players does each team normally start with on the pitch?",
+    "options": ["9", "10", "11", "12"],
+    "correct_answer": "11",
+    "difficulty": "easy",
+    "source": "manual"
+  },
+  {
+    "category": "football",
+    "text": "What is awarded when a defending player commits a direct free-kick offence inside their own penalty area?",
+    "options": ["Corner kick", "Penalty kick", "Goal kick", "Throw-in"],
+    "correct_answer": "Penalty kick",
+    "difficulty": "easy",
+    "source": "manual"
+  },
+  {
+    "category": "football",
+    "text": "Which position is the only one normally allowed to handle the ball inside its own penalty area?",
+    "options": ["Striker", "Goalkeeper", "Centre-back", "Winger"],
+    "correct_answer": "Goalkeeper",
+    "difficulty": "easy",
+    "source": "manual"
+  },
+  {
+    "category": "football",
+    "text": "What does VAR stand for in football?",
+    "options": ["Video Assistant Referee", "Verified Attack Review", "Virtual Area Referee", "Video Advantage Rule"],
+    "correct_answer": "Video Assistant Referee",
+    "difficulty": "easy",
+    "source": "manual"
+  },
+  {
+    "category": "football",
+    "text": "Which restart is used when the ball fully crosses the touchline?",
+    "options": ["Goal kick", "Throw-in", "Corner kick", "Drop ball"],
+    "correct_answer": "Throw-in",
+    "difficulty": "easy",
+    "source": "manual"
+  },
+  {
+    "category": "football",
+    "text": "What is the maximum number of touches a single player may take during a penalty shootout kick?",
+    "options": ["One", "Two", "Three", "Unlimited until saved"],
+    "correct_answer": "One",
+    "difficulty": "medium",
+    "source": "manual"
+  },
+  {
+    "category": "football",
+    "text": "Which tournament is commonly known as the Euros?",
+    "options": ["UEFA European Championship", "Copa America", "AFC Asian Cup", "CONCACAF Gold Cup"],
+    "correct_answer": "UEFA European Championship",
+    "difficulty": "easy",
+    "source": "manual"
+  },
+  {
+    "category": "football",
+    "text": "In football tactics, what does a 'false nine' usually describe?",
+    "options": ["A goalkeeper wearing number 9", "A striker who drops deeper from the forward line", "A defender playing offside on purpose", "A winger who never crosses"],
+    "correct_answer": "A striker who drops deeper from the forward line",
+    "difficulty": "medium",
+    "source": "manual"
+  },
+  {
+    "category": "football",
+    "text": "Which body writes and maintains the Laws of the Game for football?",
+    "options": ["IFAB", "FIFA only", "UEFA only", "CAS"],
+    "correct_answer": "IFAB",
+    "difficulty": "hard",
+    "source": "manual"
+  },
+  {
+    "category": "football",
+    "text": "What does a red card mean for a player in football?",
+    "options": ["Temporary substitution", "Immediate sending off", "One free kick awarded", "Captaincy transfer"],
+    "correct_answer": "Immediate sending off",
+    "difficulty": "easy",
+    "source": "manual"
+  },
+  {
+    "category": "football",
+    "text": "What is a hat-trick in football?",
+    "options": ["Three assists in a match", "Three goals by one player in a match", "Three saves in a row", "Three yellow cards for a team"],
+    "correct_answer": "Three goals by one player in a match",
+    "difficulty": "easy",
+    "source": "manual"
+  },
+  {
+    "category": "football",
+    "text": "Which line marks the halfway point of a football pitch?",
+    "options": ["Goal line", "Touchline", "Halfway line", "Penalty arc"],
+    "correct_answer": "Halfway line",
+    "difficulty": "easy",
+    "source": "manual"
+  },
+  {
+    "category": "basketball",
+    "text": "How many players from one team are on the court during standard basketball play?",
+    "options": ["4", "5", "6", "7"],
+    "correct_answer": "5",
+    "difficulty": "easy",
+    "source": "manual"
+  },
+  {
+    "category": "basketball",
+    "text": "How many points is a successful shot worth from beyond the three-point line?",
+    "options": ["1", "2", "3", "4"],
+    "correct_answer": "3",
+    "difficulty": "easy",
+    "source": "manual"
+  },
+  {
+    "category": "basketball",
+    "text": "What is a triple-double in basketball?",
+    "options": ["Three dunks in one quarter", "Double figures in three statistical categories", "Three made free throws in a row", "Two players scoring 30 points each"],
+    "correct_answer": "Double figures in three statistical categories",
+    "difficulty": "medium",
+    "source": "manual"
+  },
+  {
+    "category": "basketball",
+    "text": "Which violation is called when a player moves both feet illegally without dribbling?",
+    "options": ["Traveling", "Goaltending", "Charging", "Screening"],
+    "correct_answer": "Traveling",
+    "difficulty": "easy",
+    "source": "manual"
+  },
+  {
+    "category": "basketball",
+    "text": "What is the name of the line where uncontested foul shots are taken?",
+    "options": ["Half-court line", "Free-throw line", "Baseline", "Restricted arc"],
+    "correct_answer": "Free-throw line",
+    "difficulty": "easy",
+    "source": "manual"
+  },
+  {
+    "category": "basketball",
+    "text": "What does an assist record in basketball?",
+    "options": ["A pass leading directly to a made basket", "A blocked shot", "A defensive rebound", "A player substitution"],
+    "correct_answer": "A pass leading directly to a made basket",
+    "difficulty": "easy",
+    "source": "manual"
+  },
+  {
+    "category": "basketball",
+    "text": "Which basketball role is usually responsible for organizing the offense and bringing the ball up court?",
+    "options": ["Point guard", "Center", "Power forward", "Small forward"],
+    "correct_answer": "Point guard",
+    "difficulty": "easy",
+    "source": "manual"
+  },
+  {
+    "category": "basketball",
+    "text": "What is goaltending in basketball?",
+    "options": ["Blocking a shot illegally on its downward path", "Standing under the hoop on offense", "Missing a free throw", "Passing backward over half court"],
+    "correct_answer": "Blocking a shot illegally on its downward path",
+    "difficulty": "medium",
+    "source": "manual"
+  },
+  {
+    "category": "basketball",
+    "text": "What is a rebound in basketball?",
+    "options": ["Recovering the ball after a missed shot", "Making two baskets in a row", "A pass off the backboard", "A defensive timeout"],
+    "correct_answer": "Recovering the ball after a missed shot",
+    "difficulty": "easy",
+    "source": "manual"
+  },
+  {
+    "category": "basketball",
+    "text": "Which area is commonly called the paint in basketball?",
+    "options": ["The sideline area", "The free-throw lane near the basket", "The center circle", "The three-point arc"],
+    "correct_answer": "The free-throw lane near the basket",
+    "difficulty": "medium",
+    "source": "manual"
+  },
+  {
+    "category": "basketball",
+    "text": "What is a fast break in basketball?",
+    "options": ["A quick offensive attack before the defense is set", "A timeout after a foul", "A slow possession to use the clock", "A halftime warm-up drill"],
+    "correct_answer": "A quick offensive attack before the defense is set",
+    "difficulty": "medium",
+    "source": "manual"
+  },
+  {
+    "category": "basketball",
+    "text": "What does a shot clock limit?",
+    "options": ["How long a team can possess the ball before shooting", "How long a player can sit on the bench", "How long halftime lasts", "How long a referee can review a play"],
+    "correct_answer": "How long a team can possess the ball before shooting",
+    "difficulty": "easy",
+    "source": "manual"
+  },
+  {
+    "category": "tennis",
+    "text": "What is the first point score called in a standard tennis game?",
+    "options": ["10", "15", "20", "30"],
+    "correct_answer": "15",
+    "difficulty": "easy",
+    "source": "manual"
+  },
+  {
+    "category": "tennis",
+    "text": "What is a serve that the receiver cannot touch called?",
+    "options": ["Ace", "Volley", "Lob", "Slice"],
+    "correct_answer": "Ace",
+    "difficulty": "easy",
+    "source": "manual"
+  },
+  {
+    "category": "tennis",
+    "text": "What score is called when both tennis players have at least three points and the score is tied?",
+    "options": ["Love", "Deuce", "Advantage", "Break point"],
+    "correct_answer": "Deuce",
+    "difficulty": "easy",
+    "source": "manual"
+  },
+  {
+    "category": "tennis",
+    "text": "Which Grand Slam is played on grass courts?",
+    "options": ["Wimbledon", "US Open", "French Open", "Australian Open"],
+    "correct_answer": "Wimbledon",
+    "difficulty": "easy",
+    "source": "manual"
+  },
+  {
+    "category": "tennis",
+    "text": "Which Grand Slam tournament is famously played on clay courts?",
+    "options": ["French Open", "Wimbledon", "US Open", "Australian Open"],
+    "correct_answer": "French Open",
+    "difficulty": "easy",
+    "source": "manual"
+  },
+  {
+    "category": "tennis",
+    "text": "What does 'love' mean in tennis scoring?",
+    "options": ["Zero", "One point", "A tied score", "A winning shot"],
+    "correct_answer": "Zero",
+    "difficulty": "easy",
+    "source": "manual"
+  },
+  {
+    "category": "tennis",
+    "text": "What is a break of serve in tennis?",
+    "options": ["The receiver wins a game served by the opponent", "The server hits two aces", "A player changes racket", "A rain delay begins"],
+    "correct_answer": "The receiver wins a game served by the opponent",
+    "difficulty": "medium",
+    "source": "manual"
+  },
+  {
+    "category": "tennis",
+    "text": "What is a volley in tennis?",
+    "options": ["A shot hit before the ball bounces", "A serve into the net", "A shot hit after two bounces", "A ball hit outside the court"],
+    "correct_answer": "A shot hit before the ball bounces",
+    "difficulty": "medium",
+    "source": "manual"
+  },
+  {
+    "category": "tennis",
+    "text": "What is a tiebreak used for in tennis?",
+    "options": ["Settling a tied set score", "Replacing the first serve", "Choosing the umpire", "Ending the warm-up"],
+    "correct_answer": "Settling a tied set score",
+    "difficulty": "medium",
+    "source": "manual"
+  },
+  {
+    "category": "tennis",
+    "text": "Which side of the court is the deuce court for a right-handed server facing the net?",
+    "options": ["Right side", "Left side", "Back side", "Center line only"],
+    "correct_answer": "Right side",
+    "difficulty": "hard",
+    "source": "manual"
+  },
+  {
+    "category": "tennis",
+    "text": "What is a double fault in tennis?",
+    "options": ["Missing both serve attempts", "Losing two points in a row", "Hitting two winners in one rally", "Serving from the wrong side twice"],
+    "correct_answer": "Missing both serve attempts",
+    "difficulty": "easy",
+    "source": "manual"
+  },
+  {
+    "category": "tennis",
+    "text": "What is the term for a high defensive shot sent over an opponent near the net?",
+    "options": ["Lob", "Drop shot", "Smash", "Slice"],
+    "correct_answer": "Lob",
+    "difficulty": "medium",
+    "source": "manual"
+  },
+  {
+    "category": "motorsports",
+    "text": "What does a yellow flag usually signal in circuit racing?",
+    "options": ["Danger ahead, slow down", "Race finished", "Pit lane closed forever", "Start the race"],
+    "correct_answer": "Danger ahead, slow down",
+    "difficulty": "easy",
+    "source": "manual"
+  },
+  {
+    "category": "motorsports",
+    "text": "What does a checkered flag traditionally indicate in motorsport?",
+    "options": ["Race finish", "Start of practice", "Wet track warning", "Driver penalty"],
+    "correct_answer": "Race finish",
+    "difficulty": "easy",
+    "source": "manual"
+  },
+  {
+    "category": "motorsports",
+    "text": "What is a pit stop used for in racing?",
+    "options": ["Servicing the car during a race", "Choosing the starting grid", "Measuring track length", "Ending qualifying"],
+    "correct_answer": "Servicing the car during a race",
+    "difficulty": "easy",
+    "source": "manual"
+  },
+  {
+    "category": "motorsports",
+    "text": "In Formula 1, what does pole position mean?",
+    "options": ["Starting first on the grid", "Finishing last", "Driving through the pit lane", "Setting the slowest lap"],
+    "correct_answer": "Starting first on the grid",
+    "difficulty": "easy",
+    "source": "manual"
+  },
+  {
+    "category": "motorsports",
+    "text": "What is understeer in car racing?",
+    "options": ["The car turns less than the driver wants", "The rear tires slide outward first", "The engine shuts off", "The brakes lock only at the rear"],
+    "correct_answer": "The car turns less than the driver wants",
+    "difficulty": "medium",
+    "source": "manual"
+  },
+  {
+    "category": "motorsports",
+    "text": "What is oversteer in car racing?",
+    "options": ["The rear of the car steps out more than intended", "The steering wheel stops moving", "The front tires never grip", "The car gains an extra lap"],
+    "correct_answer": "The rear of the car steps out more than intended",
+    "difficulty": "medium",
+    "source": "manual"
+  },
+  {
+    "category": "motorsports",
+    "text": "What does DNF mean in race results?",
+    "options": ["Did Not Finish", "Driver Needs Fuel", "Downforce Not Found", "Double Neutral Flag"],
+    "correct_answer": "Did Not Finish",
+    "difficulty": "easy",
+    "source": "manual"
+  },
+  {
+    "category": "motorsports",
+    "text": "What is downforce designed to do on a race car?",
+    "options": ["Push the car toward the track for grip", "Make fuel evaporate faster", "Increase cockpit temperature", "Reduce tire contact"],
+    "correct_answer": "Push the car toward the track for grip",
+    "difficulty": "medium",
+    "source": "manual"
+  },
+  {
+    "category": "motorsports",
+    "text": "What is a chicane on a racing circuit?",
+    "options": ["A sequence of tight turns", "A pit crew role", "A tire compound", "A start light failure"],
+    "correct_answer": "A sequence of tight turns",
+    "difficulty": "medium",
+    "source": "manual"
+  },
+  {
+    "category": "motorsports",
+    "text": "What is slipstreaming in motorsport?",
+    "options": ["Following another vehicle to reduce air resistance", "Driving with wet tires on a dry track", "Spinning in the pit lane", "Starting from the wrong grid slot"],
+    "correct_answer": "Following another vehicle to reduce air resistance",
+    "difficulty": "medium",
+    "source": "manual"
+  },
+  {
+    "category": "motorsports",
+    "text": "Which flag is commonly used to disqualify or order a driver to stop racing?",
+    "options": ["Black flag", "Green flag", "Blue flag", "White flag"],
+    "correct_answer": "Black flag",
+    "difficulty": "medium",
+    "source": "manual"
+  },
+  {
+    "category": "motorsports",
+    "text": "What is qualifying used to determine in many racing series?",
+    "options": ["Starting order for the race", "Final championship prize money", "Tire manufacturer ownership", "Number of spectators"],
+    "correct_answer": "Starting order for the race",
+    "difficulty": "easy",
+    "source": "manual"
+  },
+  {
+    "category": "combat_sports",
+    "text": "In boxing, what is a knockout?",
+    "options": ["A fighter is unable to continue after being counted out", "A fighter wins by crowd vote", "A round ends early for water", "A referee changes gloves"],
+    "correct_answer": "A fighter is unable to continue after being counted out",
+    "difficulty": "easy",
+    "source": "manual"
+  },
+  {
+    "category": "combat_sports",
+    "text": "Which combat sport uses the terms jab, cross, hook, and uppercut?",
+    "options": ["Boxing", "Archery", "Cricket", "Cycling"],
+    "correct_answer": "Boxing",
+    "difficulty": "easy",
+    "source": "manual"
+  },
+  {
+    "category": "combat_sports",
+    "text": "In judo, what does ippon usually represent?",
+    "options": ["A full-point winning score", "A warning only", "A draw", "A uniform adjustment"],
+    "correct_answer": "A full-point winning score",
+    "difficulty": "medium",
+    "source": "manual"
+  },
+  {
+    "category": "combat_sports",
+    "text": "Which martial art is especially known for armbars, chokes, and ground grappling?",
+    "options": ["Brazilian Jiu-Jitsu", "Table tennis", "Shot put", "Darts"],
+    "correct_answer": "Brazilian Jiu-Jitsu",
+    "difficulty": "easy",
+    "source": "manual"
+  },
+  {
+    "category": "combat_sports",
+    "text": "What is a tap-out in grappling sports?",
+    "options": ["A physical signal of submission", "A coin toss", "A starting whistle", "A scoring celebration"],
+    "correct_answer": "A physical signal of submission",
+    "difficulty": "easy",
+    "source": "manual"
+  },
+  {
+    "category": "combat_sports",
+    "text": "What does MMA stand for?",
+    "options": ["Mixed Martial Arts", "Modern Match Association", "Major Muay Alliance", "Multiple Medal Athletics"],
+    "correct_answer": "Mixed Martial Arts",
+    "difficulty": "easy",
+    "source": "manual"
+  },
+  {
+    "category": "combat_sports",
+    "text": "Which combat sport is known as the 'art of eight limbs'?",
+    "options": ["Muay Thai", "Boxing", "Fencing", "Wrestling"],
+    "correct_answer": "Muay Thai",
+    "difficulty": "medium",
+    "source": "manual"
+  },
+  {
+    "category": "combat_sports",
+    "text": "In wrestling, what is a takedown?",
+    "options": ["Bringing an opponent to the mat from standing control", "Leaving the arena", "Changing shoes", "Calling a timeout"],
+    "correct_answer": "Bringing an opponent to the mat from standing control",
+    "difficulty": "easy",
+    "source": "manual"
+  },
+  {
+    "category": "combat_sports",
+    "text": "What is the main purpose of weight classes in combat sports?",
+    "options": ["Matching athletes of similar size", "Choosing walkout music", "Setting ticket prices", "Deciding referee uniforms"],
+    "correct_answer": "Matching athletes of similar size",
+    "difficulty": "easy",
+    "source": "manual"
+  },
+  {
+    "category": "combat_sports",
+    "text": "In fencing, which weapon is a thrusting weapon with a valid target limited to the torso?",
+    "options": ["Foil", "Sabre", "Longbow", "Discus"],
+    "correct_answer": "Foil",
+    "difficulty": "hard",
+    "source": "manual"
+  },
+  {
+    "category": "combat_sports",
+    "text": "Which boxing result means the fight ends with no winner due to equal scoring or rules conditions?",
+    "options": ["Draw", "Knockout", "Submission", "Forfeit only"],
+    "correct_answer": "Draw",
+    "difficulty": "easy",
+    "source": "manual"
+  },
+  {
+    "category": "combat_sports",
+    "text": "What is a southpaw stance in boxing?",
+    "options": ["Right hand and right foot forward", "Left hand and left foot forward", "Both feet square at all times", "A stance used only by referees"],
+    "correct_answer": "Right hand and right foot forward",
+    "difficulty": "medium",
+    "source": "manual"
+  },
+  {
+    "category": "esports",
+    "text": "What does FPS commonly stand for as a game genre?",
+    "options": ["First-Person Shooter", "Final Player Score", "Fast Play System", "Full Power Strategy"],
+    "correct_answer": "First-Person Shooter",
+    "difficulty": "easy",
+    "source": "manual"
+  },
+  {
+    "category": "esports",
+    "text": "In esports, what does MOBA stand for?",
+    "options": ["Multiplayer Online Battle Arena", "Modern Online Boxing App", "Multiple Objective Board Action", "Massive Offline Battle Arcade"],
+    "correct_answer": "Multiplayer Online Battle Arena",
+    "difficulty": "easy",
+    "source": "manual"
+  },
+  {
+    "category": "esports",
+    "text": "What is a LAN tournament?",
+    "options": ["A tournament played on a local area network", "A tournament with no teams", "A tournament using only mobile phones", "A tournament without referees"],
+    "correct_answer": "A tournament played on a local area network",
+    "difficulty": "medium",
+    "source": "manual"
+  },
+  {
+    "category": "esports",
+    "text": "What does GG usually mean in competitive gaming?",
+    "options": ["Good game", "Great gear", "Game glitch", "Gold goal"],
+    "correct_answer": "Good game",
+    "difficulty": "easy",
+    "source": "manual"
+  },
+  {
+    "category": "esports",
+    "text": "What is a patch in video games?",
+    "options": ["An update that changes or fixes the game", "A type of controller cable", "A player ranking badge only", "A tournament bracket"],
+    "correct_answer": "An update that changes or fixes the game",
+    "difficulty": "easy",
+    "source": "manual"
+  },
+  {
+    "category": "esports",
+    "text": "What is a meta in competitive gaming?",
+    "options": ["The commonly strongest or most-used strategies", "The loading screen only", "A keyboard brand", "A spectator camera angle"],
+    "correct_answer": "The commonly strongest or most-used strategies",
+    "difficulty": "medium",
+    "source": "manual"
+  },
+  {
+    "category": "esports",
+    "text": "What is an objective in many team-based esports games?",
+    "options": ["A map goal that helps win the match", "A player's chair position", "A keyboard shortcut list", "A sponsor logo"],
+    "correct_answer": "A map goal that helps win the match",
+    "difficulty": "easy",
+    "source": "manual"
+  },
+  {
+    "category": "esports",
+    "text": "What does DPS commonly mean in games?",
+    "options": ["Damage per second", "Defense point score", "Dual player setup", "Digital prize system"],
+    "correct_answer": "Damage per second",
+    "difficulty": "easy",
+    "source": "manual"
+  },
+  {
+    "category": "esports",
+    "text": "What is a scrim in esports?",
+    "options": ["A practice match between teams", "A final trophy ceremony", "A hardware ban", "A streaming overlay"],
+    "correct_answer": "A practice match between teams",
+    "difficulty": "medium",
+    "source": "manual"
+  },
+  {
+    "category": "esports",
+    "text": "What does ping measure in online gaming?",
+    "options": ["Network latency", "Mouse weight", "Screen brightness", "Prize money"],
+    "correct_answer": "Network latency",
+    "difficulty": "easy",
+    "source": "manual"
+  },
+  {
+    "category": "esports",
+    "text": "What is a best-of-three series?",
+    "options": ["The first side to win two games wins the series", "A series with exactly three teams", "A match that cannot end early", "A match played for three hours"],
+    "correct_answer": "The first side to win two games wins the series",
+    "difficulty": "easy",
+    "source": "manual"
+  },
+  {
+    "category": "esports",
+    "text": "What is a caster in esports?",
+    "options": ["A commentator who calls the match", "A player who only uses magic characters", "A tournament accountant", "A game installation file"],
+    "correct_answer": "A commentator who calls the match",
+    "difficulty": "easy",
+    "source": "manual"
+  }
+]

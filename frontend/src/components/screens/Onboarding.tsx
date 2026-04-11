@@ -7,8 +7,8 @@ import { useNavigate } from 'react-router-dom';
 const onboardingSteps = [
     {
         icon: <Zap size={64} className="text-primary" />,
-        title: "Sport & Entertainment",
-        description: "The ultimate arena for fans. Compete in specialized categories like Football, Motorsports, and Pop Culture!",
+        title: "SportFi Trivia",
+        description: "The ultimate arena for sports fans. Compete in specialized categories like Football, Motorsports, Basketball, and Esports!",
         color: "from-primary"
     },
     {
