@@ -864,7 +864,7 @@ io.on('connection', (socket) => {
             const result = await RewardService.performLuckySpin(userId);
             
             if (!result.success) {
-                socket.emit('error', { message: result.error });
+                socket.emit('lucky_spin_error', { message: result.error });
                 return;
             }
 
@@ -877,15 +877,17 @@ io.on('connection', (socket) => {
                     stars: user.balance_stars,
                     balanceCHZ: user.balance_chz || 0,
                     xp: user.stats_xp || 0,
+                    balanceCP: user.balance_cp || 0,
                     balanceQP: user.balance_qp || 0,
-                    balanceShards: user.balance_shards || 0
+                    balanceShards: user.balance_shards || 0,
+                    lastLuckySpin: user.last_lucky_spin
                 }
             });
 
             // Log the achievement if it's their first spin (Optional logic can be added here)
         } catch (e) {
             console.error('[LUCKY-SPIN] Exception:', e);
-            socket.emit('error', { message: 'Failed to perform lucky spin.' });
+            socket.emit('lucky_spin_error', { message: 'Failed to perform lucky spin.' });
         }
     });
 

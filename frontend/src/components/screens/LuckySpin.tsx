@@ -14,14 +14,14 @@ import {
 import { useNavigate } from 'react-router-dom';
 
 const REWARDS = [
-    { type: 'STARS', label: '50 Stars', color: '#ffcc00', icon: Star },
-    { type: 'CP', label: '10 CP', color: '#f97316', icon: Flame },
+    { type: 'STARS', label: 'Small Stars', color: '#ffcc00', icon: Star },
+    { type: 'CP', label: 'Small CP', color: '#f97316', icon: Flame },
     { type: 'SHARD', label: 'Avatar Shard', color: '#cc33ff', icon: User },
-    { type: 'STARS', label: '500 Stars', color: '#ffcc00', icon: Star },
-    { type: 'CP', label: '100 CP', color: '#f97316', icon: Flame },
+    { type: 'STARS', label: 'Big Stars', color: '#ffcc00', icon: Star },
+    { type: 'CP', label: 'Big CP', color: '#f97316', icon: Flame },
     { type: 'SHARD', label: 'Avatar Shard', color: '#cc33ff', icon: User },
-    { type: 'STARS', label: '200 Stars', color: '#ffcc00', icon: Star },
-    { type: 'STARS', label: '100 Stars', color: '#ffcc00', icon: Star },
+    { type: 'STARS', label: 'Bonus Stars', color: '#ffcc00', icon: Star },
+    { type: 'STARS', label: 'Stars', color: '#ffcc00', icon: Star },
 ];
 
 export const LuckySpin: React.FC = () => {
@@ -45,6 +45,8 @@ export const LuckySpin: React.FC = () => {
             } else {
                 setCooldown(null);
             }
+        } else {
+            setCooldown(null);
         }
 
         const handleResult = (data: any) => {
@@ -52,9 +54,10 @@ export const LuckySpin: React.FC = () => {
 
             // Calculate final rotation to land on the correct segment
             // 360 / 8 segments = 45 degrees per segment
-            const rewardIndex = REWARDS.findIndex(r => r.type === data.type);
+            const fallbackIndex = REWARDS.findIndex(r => r.type === data.type);
+            const rewardIndex = typeof data.segmentIndex === 'number' ? data.segmentIndex : Math.max(fallbackIndex, 0);
             const extraSpins = 5; // Spin 5 times before landing
-            const finalAngle = (extraSpins * 360) + (rewardIndex * 45);
+            const finalAngle = (extraSpins * 360) - (rewardIndex * 45);
 
             setRotation(finalAngle);
 
@@ -71,19 +74,24 @@ export const LuckySpin: React.FC = () => {
         };
 
         socket.on('lucky_spin_result', handleResult);
-        socket.on('error', handleError);
+        socket.on('lucky_spin_error', handleError);
 
         return () => {
             socket.off('lucky_spin_result', handleResult);
-            socket.off('error', handleError);
+            socket.off('lucky_spin_error', handleError);
         };
     }, [user.lastLuckySpin, syncFromBackend]);
 
     const handleSpin = () => {
         if (isSpinning || cooldown) return;
+        if (!user.telegramId) {
+            alert('Open the app through Telegram to use Lucky Spin.');
+            return;
+        }
 
         setIsSpinning(true);
         setResult(null);
+        if (!socket.connected) socket.connect();
         socket.emit('lucky_spin', {
             telegramId: user.telegramId,
             username: user.username

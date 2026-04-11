@@ -283,24 +283,35 @@ export class RewardService {
                 rewardType = 'STARS';
                 amount = Math.floor(Math.random() * 451) + 50; // 50-500
                 label = `${amount} Stars`;
-                await this.awardStars(userId, amount, { type: 'LUCKY_SPIN' });
+                const award = await this.awardStars(userId, amount, { type: 'LUCKY_SPIN' });
+                if (!award.success) throw new Error(award.error || 'Failed to award Stars');
             } else if (roll < 0.9) {
                 rewardType = 'CP';
                 amount = Math.floor(Math.random() * 91) + 10; // 10-100
                 label = `${amount} CP`;
-                await this.awardCP(userId, amount);
+                const award = await this.awardCP(userId, amount);
+                if (!award.success) throw new Error(award.error || 'Failed to award CP');
             } else {
                 rewardType = 'SHARD';
                 amount = 1;
                 label = `Avatar Shard`;
-                await this.awardShard(userId, amount);
+                const award = await this.awardShard(userId, amount);
+                if (!award.success) throw new Error(award.error || 'Failed to award shard');
             }
 
             // 3. Update last_lucky_spin
+            const spunAt = new Date().toISOString();
             await supabase
                 .from('users')
-                .update({ last_lucky_spin: new Date().toISOString() })
+                .update({ last_lucky_spin: spunAt })
                 .eq('telegram_id', userId);
+
+            const segmentIndex =
+                rewardType === 'STARS'
+                    ? (amount >= 400 ? 3 : amount >= 175 ? 6 : amount >= 90 ? 7 : 0)
+                    : rewardType === 'CP'
+                        ? (amount >= 55 ? 4 : 1)
+                        : (roll < 0.95 ? 2 : 5);
 
             return { 
                 success: true, 
@@ -308,7 +319,9 @@ export class RewardService {
                     type: rewardType, 
                     amount, 
                     label,
-                    roll 
+                    roll,
+                    segmentIndex,
+                    spunAt
                 } 
             };
         } catch (error: any) {
